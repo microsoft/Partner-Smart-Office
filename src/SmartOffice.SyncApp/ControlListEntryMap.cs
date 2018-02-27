@@ -11,6 +11,9 @@ namespace Microsoft.Partner.SmartOffice.SyncApp
 
     public class ControlListEntryMap : ClassMap<ControlListEntry>
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ControlListEntryMap"/> class.
+        /// </summary>
         public ControlListEntryMap()
         {
             Map(m => m.ActionCategory).Name("Action Category");

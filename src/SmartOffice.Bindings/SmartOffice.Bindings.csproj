@@ -7,7 +7,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.Azure.KeyVault" Version="2.3.2" />
+    <PackageReference Include="Microsoft.Azure.Services.AppAuthentication" Version="1.1.0-preview" />
     <PackageReference Include="Microsoft.Azure.WebJobs" Version="3.0.0-beta4" />
+    <PackageReference Include="Microsoft.IdentityModel.Clients.ActiveDirectory" Version="3.19.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SmartOffice.Models\SmartOffice.Models.csproj" />
+    <ProjectReference Include="..\SmartOffice.Services\SmartOffice.Services.csproj" />
   </ItemGroup>
 
 </Project>

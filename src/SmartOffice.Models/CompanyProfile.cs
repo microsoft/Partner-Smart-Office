@@ -1,5 +1,5 @@
 ﻿// -----------------------------------------------------------------------
-// <copyright file="Customer.cs" company="Microsoft">
+// <copyright file="CompanyProfile.cs" company="Microsoft">
 //     Copyright (c) Microsoft Corporation. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -8,18 +8,18 @@ namespace Microsoft.Partner.SmartOffice.Models
 {
     using Newtonsoft.Json;
 
-    public sealed class Customer
+    public class CompanyProfile
     {
         /// <summary>
-        /// Gets or sets the company profile.
+        /// Gets or sets the company name.
         /// </summary>
-        [JsonProperty(PropertyName = "companyProfile")]
-        public CompanyProfile CompanyProfile { get; set; }
+        [JsonProperty(PropertyName = "companyName")]
+        public string CompanyName { get; set; }
 
         /// <summary>
-        /// Gets or sets the customer identifier.
+        /// Gets or set the domain.
         /// </summary>
-        [JsonProperty(PropertyName = "id")]
-        public string Id { get; set; }
+        [JsonProperty(PropertyName = "domain")]
+        public string Domain { get; set; }
     }
 }
