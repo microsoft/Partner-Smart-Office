@@ -5,6 +5,10 @@
     <AssemblyName>Microsoft.Partner.SmartOffice.Functions</AssemblyName>
     <RootNamespace>Microsoft.Partner.SmartOffice.Functions</RootNamespace>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <WarningsAsErrors>NU1605</WarningsAsErrors>
+    <NoWarn>1701;1702;1705;NU1701</NoWarn>
+  </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Sdk.Functions" Version="1.0.8" />
   </ItemGroup>
