@@ -6,6 +6,7 @@
 
 namespace Microsoft.Partner.SmartOffice.Bindings.Converters
 {
+    using System;
     using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
@@ -13,23 +14,23 @@ namespace Microsoft.Partner.SmartOffice.Bindings.Converters
     using Models;
     using Services;
 
-    public class SecureScoreConverter : IAsyncConverter<SecureScoreAttribute, SecureScore>
+    internal class SecureScoreConverter : IAsyncConverter<SecureScoreAttribute, List<SecureScore>>
     {
         /// <summary>
-        /// Provides access to application settings.
+        /// Provides access to configuration information for the extension.
         /// </summary>
-        private INameResolver appSettings;
+        private SmartOfficeExtensionConfig config;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SecureScoreConverter" /> class.
+        /// Initializes a new instance of the <see cref="TokenConverter" /> class.
         /// </summary>
-        /// <param name="appSettings">Provides access to application settings.</param>
-        public SecureScoreConverter(INameResolver appSettings)
+        /// <param name="config">Provides access to configuration information for the extension.</param>
+        public SecureScoreConverter(SmartOfficeExtensionConfig config)
         {
-            this.appSettings = appSettings;
+            this.config = config;
         }
 
-        public async Task<SecureScore> ConvertAsync(SecureScoreAttribute input, CancellationToken cancellationToken)
+        public async Task<List<SecureScore>> ConvertAsync(SecureScoreAttribute input, CancellationToken cancellationToken)
         {
             GraphService graphService;
             List<SecureScore> secureScore;
@@ -41,10 +42,16 @@ namespace Microsoft.Partner.SmartOffice.Bindings.Converters
                 secureScore = await graphService.GetSecureScoreAsync(
                     new RequestContext
                     {
+                        AccessToken = await config.GetAccessTokenAsync(
+                            $"https://login.microsoftonline.com/{input.CustomerId}",
+                            input.ApplicationId,
+                            input.SecretName,
+                            input.Resource).ConfigureAwait(false),
+                        CorrelationId = Guid.NewGuid()
                     },
                     input.Period).ConfigureAwait(false);
 
-                return secureScore[0];
+                return secureScore;
             }
             finally
             {

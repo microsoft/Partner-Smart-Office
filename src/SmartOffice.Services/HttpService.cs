@@ -7,6 +7,7 @@
 namespace Microsoft.Partner.SmartOffice.Services
 {
     using System;
+    using System.Collections.Generic;
     using System.Net.Http;
     using System.Net.Http.Headers;
     using System.Threading.Tasks;
@@ -59,6 +60,25 @@ namespace Microsoft.Partner.SmartOffice.Services
         /// </summary>
         public static HttpService Instance => instance.Value;
 
+        public async Task<TResponse> GetAsync<TResponse>(Uri requestUri, Dictionary<string, string> headersToAdd = null)
+        {
+            using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, requestUri))
+            {
+                if (headersToAdd != null)
+                {
+                    foreach (KeyValuePair<string, string> pair in headersToAdd)
+                    {
+                        request.Headers.Add(pair.Key, pair.Value);
+                    }
+                }
+
+                return await HandleResponseAsync<TResponse>(
+                    await client.SendAsync(request).ConfigureAwait(false)).ConfigureAwait(false);
+            }
+        }
+
+
+
         public async Task<TResponse> GetAsync<TResponse>(Uri requestUri, IRequestContext requestContext)
         {
             using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, requestUri))
@@ -70,7 +90,7 @@ namespace Microsoft.Partner.SmartOffice.Services
             }
         }
 
-        private async Task<TResponse> HandleResponseAsync<TResponse>(HttpResponseMessage response)
+        private static async Task<TResponse> HandleResponseAsync<TResponse>(HttpResponseMessage response)
         {
             string content = (response.Content == null) ?
                 string.Empty : await response.Content.ReadAsStringAsync().ConfigureAwait(false);
@@ -84,7 +104,7 @@ namespace Microsoft.Partner.SmartOffice.Services
             return JsonConvert.DeserializeObject<TResponse>(content);
         }
 
-        private void InjectHeaders(IRequestContext requestContext, HttpRequestMessage request)
+        private static void InjectHeaders(IRequestContext requestContext, HttpRequestMessage request)
         {
             request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(JsonMediaType));
 

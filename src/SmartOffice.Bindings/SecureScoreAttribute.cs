@@ -15,17 +15,12 @@ namespace Microsoft.Partner.SmartOffice.Bindings
     public sealed class SecureScoreAttribute : Attribute
     {
         /// <summary>
-        /// Gets or sets the name of the application identifier setting.
+        /// Gets or sets the application identifier used to request an access token.
         /// </summary>
 #pragma warning disable CS0618 // Type or member is obsolete
         [AppSetting(Default = "ApplicationId")]
 #pragma warning restore CS0618 // Type or member is obsolete
         public string ApplicationId { get; set; }
-
-        /// <summary>
-        /// Gets or sets the Key Vault secret name for the application secret.
-        /// </summary>
-        public string ApplicationSecret { get; set; }
 
         /// <summary>
         /// Gets or sets the customer identifier.
@@ -41,8 +36,13 @@ namespace Microsoft.Partner.SmartOffice.Bindings
         public int Period { get; set; }
 
         /// <summary>
-        /// Gets or sets the resource used for authentication.
+        /// Gets or sets the identifier of the target resource that is the recipient of the token being requested.
         /// </summary>
         public string Resource { get; set; }
+
+        /// <summary>
+        /// Gets or sets the name of the Key Vault secret containing the application secret.
+        /// </summary>
+        public string SecretName { get; set; }
     }
 }

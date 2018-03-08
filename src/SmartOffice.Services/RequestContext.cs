@@ -42,6 +42,11 @@ namespace Microsoft.Partner.SmartOffice.Services
         public string AccessToken { get; set; }
 
         /// <summary>
+        /// Gets or sets the name of the application.
+        /// </summary>
+        public string ApplicationName { get; set; }
+
+        /// <summary>
         /// Gets or sets the correlation identifier that is used to group operations together.
         /// </summary>
         public Guid CorrelationId { get; set; }
