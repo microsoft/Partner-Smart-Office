@@ -35,6 +35,12 @@ namespace Microsoft.Partner.SmartOffice.Services
         private const string NotFoundErrorCode = "SecretNotFound";
 
         /// <summary>
+        /// Provides the ability to perform cryptographic key operations and vault operations 
+        /// against the Key Vault service.
+        /// </summary>
+        private IKeyVaultClient keyVaultClient;
+
+        /// <summary>
         /// Address for the Azure Key Vault endpoint.
         /// </summary>
         private string endpoint;
@@ -49,6 +55,33 @@ namespace Microsoft.Partner.SmartOffice.Services
         }
 
         /// <summary>
+        /// Initializes a new instance of the <see cref="KeyVaultService" /> class.
+        /// </summary>
+        /// <param name="keyVaultClient">
+        /// Provides the ability to perform cryptographic key operations and vault operations 
+        /// against the Key Vault service.
+        /// </param>
+        /// <param name="endpoint">The Azure Key Vault service endpoint.</param>
+        public KeyVaultService(IKeyVaultClient keyVaultClient, string endpoint)
+        {
+            this.endpoint = endpoint;
+            this.keyVaultClient = keyVaultClient;
+        }
+
+        private IKeyVaultClient KeyVault
+        {
+            get
+            {
+                if (keyVaultClient == null)
+                {
+                    keyVaultClient = new KeyVaultClient(new KeyVaultClient.AuthenticationCallback(GetKeyVaultAccessTokenAsync));
+                }
+
+                return keyVaultClient;
+            }
+        }
+
+        /// <summary>
         /// Gets the secret value from the configured instance of Azure Key Vault.
         /// </summary>
         /// <param name="identifier">Identifier of the entity to be retrieved.</param>
@@ -59,22 +92,19 @@ namespace Microsoft.Partner.SmartOffice.Services
 
             try
             {
-                using (KeyVaultClient client = new KeyVaultClient(new KeyVaultClient.AuthenticationCallback(GetKeyVaultAccessTokenAsync)))
+                try
                 {
-                    try
+                    bundle = await KeyVault.GetSecretAsync(endpoint, identifier).ConfigureAwait(false);
+                }
+                catch (KeyVaultErrorException ex)
+                {
+                    if (ex.Body.Error.Code.Equals(NotFoundErrorCode, StringComparison.CurrentCultureIgnoreCase))
                     {
-                        bundle = await client.GetSecretAsync(endpoint, identifier).ConfigureAwait(false);
+                        bundle = null;
                     }
-                    catch (KeyVaultErrorException ex)
+                    else
                     {
-                        if (ex.Body.Error.Code.Equals(NotFoundErrorCode, StringComparison.CurrentCultureIgnoreCase))
-                        {
-                            bundle = null;
-                        }
-                        else
-                        {
-                            throw;
-                        }
+                        throw;
                     }
                 }
 
