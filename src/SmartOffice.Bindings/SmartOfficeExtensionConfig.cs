@@ -6,13 +6,12 @@
 
 namespace Microsoft.Partner.SmartOffice.Bindings
 {
-    using System.Collections.Generic;
     using System.Threading.Tasks;
     using Azure.WebJobs;
     using Azure.WebJobs.Host;
     using Azure.WebJobs.Host.Config;
-    using Collectors;
     using Converters;
+    using Data;
     using IdentityModel.Clients.ActiveDirectory;
     using Models;
     using Services;
@@ -40,14 +39,14 @@ namespace Microsoft.Partner.SmartOffice.Bindings
         private const string StorageConnectionStringSecret = "StorageConnectionString";
 
         /// <summary>
-        /// Used to access application settings for the function application.
-        /// </summary>
-        private INameResolver appSettings;
-
-        /// <summary>
         /// Used to write to the function application log.
         /// </summary>
         private TraceWriter log;
+
+        /// <summary>
+        /// Gets the reference to the application settings resolver.
+        /// </summary>
+        internal INameResolver AppSettings { get; private set; }
 
         /// <summary>
         /// Initialize the binding extension
@@ -55,13 +54,13 @@ namespace Microsoft.Partner.SmartOffice.Bindings
         /// <param name="context">Context for the extension</param>
         public void Initialize(ExtensionConfigContext context)
         {
-            appSettings = context.Config.NameResolver;
+            AppSettings = context.Config.NameResolver;
             log = context.Trace;
 
-            Task.Run(() => InitializeAsync()).Wait();
-
-            context.AddBindingRule<CustomersAttribute>().BindToCollector(CreateCollector);
+            context.AddBindingRule<CustomersRepositoryAttribute>().BindToInput(new CustomersRepoConverter(this));
             context.AddBindingRule<SecureScoreAttribute>().BindToInput(new SecureScoreConverter(this));
+            context.AddBindingRule<SecureScoreRepositoryAttribute>().BindToInput(new SecureScoreRepoConverter(this));
+            context.AddBindingRule<StorageServiceAttribute>().BindToInput(new StorageServiceConverter(this));
             context.AddBindingRule<TokenAttribute>().BindToInput(new TokenConverter(this));
         }
 
@@ -82,7 +81,7 @@ namespace Microsoft.Partner.SmartOffice.Bindings
 
             try
             {
-                keyVault = new KeyVaultService(appSettings.Resolve(KeyVaultEndpoint));
+                keyVault = new KeyVaultService(AppSettings.Resolve(KeyVaultEndpoint));
 
                 clientSecret = await keyVault.GetSecretAsync(secretName).ConfigureAwait(false);
 
@@ -99,34 +98,8 @@ namespace Microsoft.Partner.SmartOffice.Bindings
             {
                 authContext = null;
                 authResult = null;
+                keyVault = null;
             }
-        }
-
-        private static IAsyncCollector<List<Customer>> CreateCollector(CustomersAttribute attribute)
-        {
-            return new CustomersAsyncCollector(attribute);
-        }
-
-        private async Task InitializeAsync()
-        {
-            await CosmosDbService.Instance.InitializeAsync(
-                new CosmosDbOptions
-                {
-                    BulkImportStoredProcedureId = DataConstants.BulkImportStoredProcedureId,
-                    Collections = new List<string>
-                    {
-                       DataConstants.CustomersCollectionId,
-                       DataConstants.SecureScoreCollectionId
-                    },
-                    DatabaseId = DataConstants.DatabaseId,
-                    Endpoint = appSettings.Resolve(CosmosDbEndpoint),
-                    KeyVaultEndpoint = appSettings.Resolve(KeyVaultEndpoint),
-                    AccessKeySecretName = CosmsosDbAccessKey
-                }).ConfigureAwait(false);
-
-            await StorageService.Instance.InitializeAsync(
-                appSettings.Resolve(KeyVaultEndpoint),
-                StorageConnectionStringSecret).ConfigureAwait(false);
         }
     }
 }

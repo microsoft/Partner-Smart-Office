@@ -12,6 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\SmartOffice.Data\SmartOffice.Data.csproj" />
     <ProjectReference Include="..\SmartOffice.Models\SmartOffice.Models.csproj" />
     <ProjectReference Include="..\SmartOffice.Services\SmartOffice.Services.csproj" />
   </ItemGroup>

@@ -12,13 +12,14 @@ namespace Microsoft.Partner.SmartOffice.Functions
     using Azure.WebJobs.Host;
     using Bindings;
     using Models;
-    using Services;
+    using Data;
 
     public static class ProcessSecureScore
     {
         [FunctionName("ProcessSecureScore")]
         public static async Task RunAsync(
             [QueueTrigger("customers", Connection = "StorageConnectionString")]Customer customer,
+            [SecureScoreRepository]IDocumentRepository<SecureScore> repository,
             [SecureScore(
                 ApplicationId = "ApplicationId",
                 CustomerId = "{id}",
@@ -28,12 +29,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
             )]List<SecureScore> secureScore,
             TraceWriter log)
         {
-
-            await CosmosDbService.Instance.ExecuteStoredProcedureAsync(
-                DataConstants.DatabaseId,
-                DataConstants.SecureScoreCollectionId,
-                DataConstants.BulkImportStoredProcedureId,
-                secureScore).ConfigureAwait(false);
+            await repository.AddOrUpdateAsync(secureScore).ConfigureAwait(false);
         }
     }
 }
