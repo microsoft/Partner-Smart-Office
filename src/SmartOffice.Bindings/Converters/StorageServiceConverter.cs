@@ -13,8 +13,15 @@ namespace Microsoft.Partner.SmartOffice.Bindings.Converters
 
     internal class StorageServiceConverter : IAsyncConverter<StorageServiceAttribute, StorageService>
     {
+        /// <summary>
+        /// Provides access to configuration information for the extension.
+        /// </summary>
         private SmartOfficeExtensionConfig config;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="StorageServiceConverter" /> class.
+        /// </summary>
+        /// <param name="config">Provides access to configuration information for the extension.</param>
         public StorageServiceConverter(SmartOfficeExtensionConfig config)
         {
             this.config = config;

@@ -23,7 +23,7 @@ namespace Microsoft.Partner.SmartOffice.Services
         /// Provides the ability to perform cryptographic key operations and vault operations 
         /// against the Key Vault service.
         /// </summary>
-        private IVaultSerivce vaultSerivce;
+        private IVaultService vaultSerivce;
 
         /// <summary>
         /// Singleton instance of the <see cref="StorageService" /> class.

@@ -1,13 +1,15 @@
 // -----------------------------------------------------------------------
-// <copyright file="ProcessCustomersTests.cs" company="Microsoft">
+// <copyright file="CustomersTests.cs" company="Microsoft">
 //     Copyright (c) Microsoft Corporation. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
 
 namespace Microsoft.Partner.SmartOffice.Functions.Tests
 {
+    using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Threading;
     using System.Threading.Tasks;
     using Data;
     using Models;
@@ -16,10 +18,10 @@ namespace Microsoft.Partner.SmartOffice.Functions.Tests
     using VisualStudio.TestTools.UnitTesting;
 
     [TestClass]
-    public class ProcessCustomersTests
+    public class CustomersTests
     {
         [TestMethod]
-        public async Task RunTestAsync()
+        public async Task ProcessTestAsync()
         {
             Mock<IDocumentRepository<Customer>> repository;
             Mock<IStorageService> storage;
@@ -35,7 +37,7 @@ namespace Microsoft.Partner.SmartOffice.Functions.Tests
 
                 traceWriter = new TestTraceWriter();
 
-                await ProcessCustomers.RunAsync(
+                await Customers.ProcessAsync(
                     null,
                     repository.Object,
                     storage.Object,
@@ -47,6 +49,42 @@ namespace Microsoft.Partner.SmartOffice.Functions.Tests
             {
                 repository = null;
                 storage = null;
+                traceWriter = null;
+            }
+        }
+
+        [TestMethod]
+        public async Task PullTestAsync()
+        {
+            Mock<IPartnerService> partnerService;
+            Mock<IDocumentRepository<Customer>> repository;
+            TestTraceWriter traceWriter;
+
+            try
+            {
+                partnerService = new Mock<IPartnerService>();
+                partnerService.Setup(p => p.GetCustomersAsync(It.IsAny<CancellationToken>()))
+                    .Returns(Task.FromResult(GetTestCustomers()));
+
+                repository = new Mock<IDocumentRepository<Customer>>();
+                repository.Setup(r => r.AddOrUpdateAsync(It.IsAny<List<Customer>>())).Returns(Task.FromResult(0));
+
+                traceWriter = new TestTraceWriter();
+
+                await Customers.PullAsync(
+                    null,
+                    repository.Object,
+                    partnerService.Object,
+                    traceWriter).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                Assert.Fail(ex.Message);
+            }
+            finally
+            {
+                partnerService = null;
+                repository = null;
                 traceWriter = null;
             }
         }

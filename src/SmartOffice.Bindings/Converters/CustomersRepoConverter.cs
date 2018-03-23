@@ -30,8 +30,15 @@ namespace Microsoft.Partner.SmartOffice.Bindings.Converters
         /// </summary>
         private const string KeyVaultEndpoint = "KeyVaultEndpoint";
 
+        /// <summary>
+        /// Provides access to configuration information for the extension.
+        /// </summary>
         private readonly SmartOfficeExtensionConfig config;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CustomersRepoConverter" /> class.
+        /// </summary>
+        /// <param name="config">Provides access to configuration information for the extension.</param>
         public CustomersRepoConverter(SmartOfficeExtensionConfig config)
         {
             this.config = config;

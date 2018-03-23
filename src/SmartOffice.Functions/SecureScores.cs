@@ -1,5 +1,5 @@
 // -----------------------------------------------------------------------
-// <copyright file="ProcessSecureScore.cs" company="Microsoft">
+// <copyright file="SecureScores.cs" company="Microsoft">
 //     Copyright (c) Microsoft Corporation. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -14,10 +14,10 @@ namespace Microsoft.Partner.SmartOffice.Functions
     using Models;
     using Data;
 
-    public static class ProcessSecureScore
+    public static class SecureScores
     {
         [FunctionName("ProcessSecureScore")]
-        public static async Task RunAsync(
+        public static async Task ProcessAsync(
             [QueueTrigger("customers", Connection = "StorageConnectionString")]Customer customer,
             [SecureScoreRepository]IDocumentRepository<SecureScore> repository,
             [SecureScore(

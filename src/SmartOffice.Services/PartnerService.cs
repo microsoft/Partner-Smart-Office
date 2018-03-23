@@ -8,50 +8,66 @@ namespace Microsoft.Partner.SmartOffice.Services
 {
     using System;
     using System.Collections.Generic;
+    using System.Net.Http;
+    using System.Threading;
     using System.Threading.Tasks;
     using Models;
+    using Rest;
+    using Rest.Serialization;
 
-    public class PartnerService : IPartnerService
+    public class PartnerService : ServiceClient<PartnerService>, IPartnerService
     {
-        private IHttpService httpService; 
-
-        /// <summary>
-        /// The Partner Center service endpoint.
-        /// </summary>
-        private string endpoint;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="PartnerService" /> class.
-        /// </summary>
-        /// <param name="endpoint">The Partner Center service endpoint.</param>
-        public PartnerService(string endpoint)
+        public PartnerService(ServiceClientCredentials credentials, params DelegatingHandler[] handlers) : base(handlers)
         {
-            this.endpoint = endpoint;
+            Credentials = credentials;
         }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="PartnerService" /> class.
-        /// </summary>
-        /// <param name="httpService">Provides the ability to perform HTTP operations.</param>
-        /// <param name="endpoint">The Partner Center service endpoint.</param>
-        public PartnerService(IHttpService httpService, string endpoint)
+        public PartnerService(Uri endpoint, ServiceClientCredentials credentials, params DelegatingHandler[] handlers) : base(handlers)
         {
-            this.endpoint = endpoint;
-            this.httpService = httpService;
+            Credentials = credentials;
+            Endpoint = endpoint;
         }
 
+        public ServiceClientCredentials Credentials { get; private set; }
+
+        public Uri Endpoint { get; private set; }
+
         /// <summary>
-        /// Gets the approprtiate instance of the HTTP service.
+        /// Gets a list of available customers.
         /// </summary>
-        private IHttpService Http => httpService ?? HttpService.Instance;
-
-        public async Task<List<Customer>> GetCustomersAsync(IRequestContext requestContext)
+        /// <param name="cancellationToken">
+        /// The token to monitor for cancellation requests.
+        /// </param>
+        /// <returns>A list of available customers.</returns>
+        public async Task<List<Customer>> GetCustomersAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
-            Resources<Customer> customers = await Http.GetAsync<Resources<Customer>>(
-                new Uri($"{endpoint}/v1.0/customers"),
-                requestContext).ConfigureAwait(false);
+            HttpResponseMessage response = null;
+            Resources<Customer> customers;
+            string content;
 
-            return customers.Items;
+            try
+            {
+                using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{Endpoint}/v1.0/customers")))
+                {
+                    await Credentials.ProcessHttpRequestAsync(request, cancellationToken).ConfigureAwait(false);
+
+                    response = await HttpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
+                    content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        throw new Exception(content);
+                    }
+
+                    customers = SafeJsonConvert.DeserializeObject<Resources<Customer>>(content);
+
+                    return customers.Items;
+                }
+            }
+            finally
+            {
+                response?.Dispose();
+            }
         }
     }
 }

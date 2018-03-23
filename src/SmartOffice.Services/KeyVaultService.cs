@@ -8,12 +8,16 @@ namespace Microsoft.Partner.SmartOffice.Services
 {
     using System;
     using System.Collections.Generic;
+    using System.Net.Http;
     using System.Threading.Tasks;
     using Azure.KeyVault;
     using Azure.KeyVault.Models;
+    using Newtonsoft.Json;
 
-    public class KeyVaultService : IVaultSerivce
+    public class KeyVaultService : IVaultService
     {
+        private static HttpClient httpClient = new HttpClient();
+
         /// <summary>
         /// Name of the MSI endpoint environment variable.
         /// </summary>
@@ -118,7 +122,9 @@ namespace Microsoft.Partner.SmartOffice.Services
 
         private static async Task<string> GetKeyVaultAccessTokenAsync(string authority, string resource, string scope)
         {
-            TokenResponse response;
+            HttpResponseMessage response = null;
+            TokenResponse token;
+            string content;
             string endpoint;
             string secret;
 
@@ -127,15 +133,28 @@ namespace Microsoft.Partner.SmartOffice.Services
                 endpoint = Environment.GetEnvironmentVariable(MsiEndpoint);
                 secret = Environment.GetEnvironmentVariable(MsiSecret);
 
-                response = await HttpService.Instance.GetAsync<TokenResponse>(
-                     new Uri($"{endpoint}?resource={resource}&api-version=2017-09-01"),
-                     new Dictionary<string, string> { { SecretHeader, secret } }).ConfigureAwait(false);
+                using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{endpoint}?resource={resource}&api-version=2017-09-01")))
+                {
+                    request.Headers.Add(SecretHeader, secret);
 
-                return response.AccessToken;
+                    response = await httpClient.SendAsync(request).ConfigureAwait(false);
+
+                    content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        throw new Exception(content);
+                    }
+
+                    token = JsonConvert.DeserializeObject<TokenResponse>(content);
+
+                    return token.AccessToken;
+                }
             }
             finally
             {
-                response = null;
+                response?.Dispose();
+                token = null;
             }
         }
     }

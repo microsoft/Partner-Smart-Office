@@ -8,7 +8,7 @@ namespace Microsoft.Partner.SmartOffice.Services
 {
     using System.Threading.Tasks;
 
-    public interface IVaultSerivce
+    public interface IVaultService
     {
         /// <summary>
         /// Gets the secret value from the configured instance of Azure Key Vault.

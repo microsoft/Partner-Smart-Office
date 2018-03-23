@@ -10,8 +10,8 @@ namespace Microsoft.Partner.SmartOffice.Bindings.Converters
     using System.Threading.Tasks;
     using Azure.WebJobs;
     using Data;
-    using Microsoft.Partner.SmartOffice.Services;
     using Models;
+    using Services;
 
     internal class SecureScoreRepoConverter : IAsyncConverter<SecureScoreRepositoryAttribute, DocumentRepository<SecureScore>>
     {
@@ -30,8 +30,15 @@ namespace Microsoft.Partner.SmartOffice.Bindings.Converters
         /// </summary>
         private const string KeyVaultEndpoint = "KeyVaultEndpoint";
 
+        /// <summary>
+        /// Provides access to configuration information for the extension.
+        /// </summary>
         private SmartOfficeExtensionConfig config;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SecureScoreRepoConverter" /> class.
+        /// </summary>
+        /// <param name="config">Provides access to configuration information for the extension.</param>
         public SecureScoreRepoConverter(SmartOfficeExtensionConfig config)
         {
             this.config = config;

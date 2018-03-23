@@ -7,11 +7,12 @@
 namespace Microsoft.Partner.SmartOffice.Services
 {
     using System.Collections.Generic;
+    using System.Threading;
     using System.Threading.Tasks;
     using Models;
 
     public interface IGraphService
     {
-        Task<List<SecureScore>> GetSecureScoreAsync(IRequestContext requestContext, int period);
+        Task<List<SecureScore>> GetSecureScoreAsync(int period, CancellationToken cancellationToken = default(CancellationToken));
     }
 }

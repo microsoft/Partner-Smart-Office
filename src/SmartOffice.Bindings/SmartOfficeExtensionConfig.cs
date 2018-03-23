@@ -58,10 +58,10 @@ namespace Microsoft.Partner.SmartOffice.Bindings
             log = context.Trace;
 
             context.AddBindingRule<CustomersRepositoryAttribute>().BindToInput(new CustomersRepoConverter(this));
+            context.AddBindingRule<PartnerServiceAttribute>().BindToInput(new PartnerServiceConverter(this));
             context.AddBindingRule<SecureScoreAttribute>().BindToInput(new SecureScoreConverter(this));
             context.AddBindingRule<SecureScoreRepositoryAttribute>().BindToInput(new SecureScoreRepoConverter(this));
             context.AddBindingRule<StorageServiceAttribute>().BindToInput(new StorageServiceConverter(this));
-            context.AddBindingRule<TokenAttribute>().BindToInput(new TokenConverter(this));
         }
 
         /// <summary>

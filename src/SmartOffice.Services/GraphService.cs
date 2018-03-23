@@ -8,57 +8,59 @@ namespace Microsoft.Partner.SmartOffice.Services
 {
     using System;
     using System.Collections.Generic;
+    using System.Net.Http;
+    using System.Threading;
     using System.Threading.Tasks;
     using Models;
+    using Rest;
+    using Rest.Serialization;
 
-    public class GraphService : IGraphService
+    public class GraphService : ServiceClient<GraphService>, IGraphService
     {
-        /// <summary>
-        /// Provides the ability to perform HTTP operations.
-        /// </summary>
-        private IHttpService httpService;
-
-        /// <summary>
-        /// The Microsoft Graph service endpoint.
-        /// </summary>
-        private string endpoint;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="GraphService" /> class.
-        /// </summary>
-        /// <param name="endpoint">The Microsoft Graph service endpoint.</param>
-        public GraphService(string endpoint)
+        public GraphService(ServiceClientCredentials credentials, params DelegatingHandler[] handlers) : base(handlers)
         {
-            this.endpoint = endpoint;
+            Credentials = credentials;
         }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="GraphService" /> class.
-        /// </summary>
-        /// <param name="httpService">Provides the ability to perform HTTP operations.</param>
-        /// <param name="endpoint">The Microsoft Graph service endpoint.</param>
-        public GraphService(IHttpService httpService, string endpoint)
+        public GraphService(Uri endpoint, ServiceClientCredentials credentials, params DelegatingHandler[] handlers) : base(handlers)
         {
-            this.endpoint = endpoint;
-            this.httpService = httpService;
+            Credentials = credentials;
+            Endpoint = endpoint;
         }
 
-        /// <summary>
-        /// Gets the approprtiate instance of the HTTP service.
-        /// </summary>
-        private IHttpService Http => httpService ?? HttpService.Instance;
+        public ServiceClientCredentials Credentials { get; private set; }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="requestContext"></param>
-        /// <param name="period"></param>
-        /// <returns></returns>
-        public async Task<List<SecureScore>> GetSecureScoreAsync(IRequestContext requestContext, int period)
+        public Uri Endpoint { get; private set; }
+
+        public async Task<List<SecureScore>> GetSecureScoreAsync(int period, CancellationToken cancellationToken = default(CancellationToken))
         {
-            return await Http.GetAsync<List<SecureScore>>(
-                new Uri($"{endpoint}/beta/reports/getTenantSecureScores(period={period})/content"),
-                requestContext).ConfigureAwait(false);
+            HttpResponseMessage response = null;
+            List<SecureScore> scores;
+            string content;
+
+            try
+            {
+                using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{Endpoint}/beta/reports/getTenantSecureScores(period={period})/content")))
+                {
+                    await Credentials.ProcessHttpRequestAsync(request, cancellationToken).ConfigureAwait(false);
+
+                    response = await HttpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
+                    content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        throw new Exception(content);
+                    }
+
+                    scores = SafeJsonConvert.DeserializeObject<List<SecureScore>>(content);
+
+                    return scores;
+                }
+            }
+            finally
+            {
+                response?.Dispose();
+            }
         }
     }
 }

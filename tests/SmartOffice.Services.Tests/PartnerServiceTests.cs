@@ -4,44 +4,55 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-
 namespace Microsoft.Partner.SmartOffice.Services.Tests
 {
     using System;
     using System.Collections.Generic;
+    using System.IO;
     using System.Threading.Tasks;
+    using Azure.Test.HttpRecorder;
     using Models;
+    using Rest.ClientRuntime.Azure.TestFramework;
     using VisualStudio.TestTools.UnitTesting;
 
     [TestClass]
     public class PartnerServiceTests
     {
+        /// <summary>
+        /// The endpoint address for the Partner Center service.
+        /// </summary>
         private const string PartnerCenterEndpoint = "https://api.partnercenter.microsoft.com";
 
         [TestMethod]
         public async Task GetCustomersTestAsync()
         {
-            IPartnerService service;
+            IPartnerService partner; 
             List<Customer> customers;
 
             try
             {
-                service = new PartnerService(new TestHttpService(), PartnerCenterEndpoint);
-
-                customers = await service.GetCustomersAsync(new RequestContext
+                using (MockContext context = MockContext.Start(GetType().Name))
                 {
-                    AccessToken = string.Empty,
-                    CorrelationId = Guid.NewGuid(),
-                    Locale = "en-US"
-                }).ConfigureAwait(false);
+                    HttpMockServer.Initialize(GetType().Name, "GetCustomersTestAsync", HttpRecorderMode.Playback);
 
-                Assert.IsNotNull(customers);
-                Assert.AreEqual(customers.Count, 1);
+                    var name = Path.Combine(HttpMockServer.RecordsDirectory, HttpMockServer.CallerIdentity);
+
+                    partner = new PartnerService(
+                        new Uri(PartnerCenterEndpoint),
+                        new TestServiceCredentials("STUB_TOKEN"),
+                        HttpMockServer.CreateInstance());
+
+                    customers = await partner.GetCustomersAsync().ConfigureAwait(false);
+
+                    Assert.IsNotNull(customers);
+
+                    context.Stop();
+                }
             }
             finally
             {
                 customers = null;
-                service = null;
+                partner = null;
             }
         }
     }

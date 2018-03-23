@@ -1,5 +1,5 @@
 ﻿// -----------------------------------------------------------------------
-// <copyright file="TokenAttribute.cs" company="Microsoft">
+// <copyright file="StorageServiceAttribute.cs" company="Microsoft">
 //     Copyright (c) Microsoft Corporation. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -12,13 +12,13 @@ namespace Microsoft.Partner.SmartOffice.Bindings
 
     [AttributeUsage(AttributeTargets.Parameter, AllowMultiple = false)]
     [Binding]
-    public sealed class TokenAttribute : Attribute
+    public sealed class PartnerServiceAttribute : Attribute
     {
         /// <summary>
         /// Gets or sets the application identifier used to request an access token.
         /// </summary>
 #pragma warning disable CS0618 // Type or member is obsolete
-        [AppSetting(Default = "ApplicationId")]
+        [AppSetting(Default = "PartnerCenter.ApplicationId")]
 #pragma warning restore CS0618 // Type or member is obsolete
         public string ApplicationId { get; set; }
 
@@ -26,7 +26,7 @@ namespace Microsoft.Partner.SmartOffice.Bindings
         /// Gets or sets the tenant identifer that owns the application.
         /// </summary>
 #pragma warning disable CS0618 // Type or member is obsolete
-        [AppSetting(Default = "ApplicationTenantId")]
+        [AppSetting(Default = "PartnerCenter.ApplicationTenantId")]
         public string ApplicationTenantId { get; set; }
 #pragma warning restore CS0618 // Type or member is obsolete
 

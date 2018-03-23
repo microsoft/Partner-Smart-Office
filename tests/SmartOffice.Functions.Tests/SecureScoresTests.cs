@@ -1,5 +1,5 @@
 ﻿// -----------------------------------------------------------------------
-// <copyright file="ProcessSecureScoreTests.cs" company="Microsoft">
+// <copyright file="SecureScoresTests.cs" company="Microsoft">
 //     Copyright (c) Microsoft Corporation. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -15,7 +15,7 @@ namespace Microsoft.Partner.SmartOffice.Functions.Tests
     using VisualStudio.TestTools.UnitTesting;
 
     [TestClass]
-    public class ProcessSecureScoreTests
+    public class SecureScoresTests
     {
         [TestMethod]
         public async Task ReceiveQueueTestAsync()
@@ -60,7 +60,7 @@ namespace Microsoft.Partner.SmartOffice.Functions.Tests
 
                 traceWriter = new TestTraceWriter();
 
-                await ProcessSecureScore.RunAsync(
+                await SecureScores.ProcessAsync(
                     customer,
                     repository.Object,
                     secureScore,

@@ -1,5 +1,5 @@
 ﻿// -----------------------------------------------------------------------
-// <copyright file="SecureScoreConverter.cs" company="Microsoft">
+// <copyright file="PartnerServiceConverter.cs" company="Microsoft">
 //     Copyright (c) Microsoft Corporation. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -7,14 +7,12 @@
 namespace Microsoft.Partner.SmartOffice.Bindings.Converters
 {
     using System;
-    using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
     using Azure.WebJobs;
-    using Models;
     using Services;
 
-    internal class SecureScoreConverter : IAsyncConverter<SecureScoreAttribute, List<SecureScore>>
+    internal class PartnerServiceConverter : IAsyncConverter<PartnerServiceAttribute, PartnerService>
     {
         /// <summary>
         /// Name of the Key Vault endpoint setting.
@@ -27,38 +25,31 @@ namespace Microsoft.Partner.SmartOffice.Bindings.Converters
         private SmartOfficeExtensionConfig config;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TokenConverter" /> class.
+        /// Initializes a new instance of the <see cref="SmartOfficeExtensionConfig" /> class.
         /// </summary>
         /// <param name="config">Provides access to configuration information for the extension.</param>
-        public SecureScoreConverter(SmartOfficeExtensionConfig config)
+        public PartnerServiceConverter(SmartOfficeExtensionConfig config)
         {
             this.config = config;
         }
 
-        public async Task<List<SecureScore>> ConvertAsync(SecureScoreAttribute input, CancellationToken cancellationToken)
+        public async Task<PartnerService> ConvertAsync(PartnerServiceAttribute input, CancellationToken cancellationToken)
         {
-            GraphService graphService;
             IVaultService vaultService;
-            List<SecureScore> secureScore;
 
             try
             {
                 vaultService = new KeyVaultService(config.AppSettings.Resolve(KeyVaultEndpoint));
 
-                graphService = new GraphService(new Uri(input.Resource),
+                return new PartnerService(new Uri("https://api.partnercenter.microsoft.com"),
                     new ServiceCredentials(
                         input.ApplicationId,
                         await vaultService.GetSecretAsync(input.SecretName).ConfigureAwait(false),
                         input.Resource,
-                        input.CustomerId));
-
-                secureScore = await graphService.GetSecureScoreAsync(input.Period).ConfigureAwait(false);
-
-                return secureScore;
+                        input.ApplicationTenantId));
             }
             finally
             {
-                graphService = null;
                 vaultService = null;
             }
         }
