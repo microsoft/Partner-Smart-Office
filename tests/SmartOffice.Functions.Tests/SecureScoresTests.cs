@@ -18,6 +18,35 @@ namespace Microsoft.Partner.SmartOffice.Functions.Tests
     public class SecureScoresTests
     {
         [TestMethod]
+        public async Task ImportControlsAsync()
+        {
+            Mock<IDocumentRepository<ControlListEntry>> repository;
+            TestTraceWriter traceWriter;
+
+            try
+            {
+                repository = new Mock<IDocumentRepository<ControlListEntry>>();
+                repository.Setup(r => r.AddOrUpdateAsync(It.IsAny<IEnumerable<ControlListEntry>>())).Returns(Task.FromResult(0));
+
+                traceWriter = new TestTraceWriter();
+
+                await SecureScores.ImportControlsAsync(
+                    null,
+                    repository.Object,
+                    traceWriter).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                Assert.Fail(ex.Message);
+            }
+            finally
+            {
+                repository = null;
+                traceWriter = null;
+            }
+        }
+
+        [TestMethod]
         public async Task ReceiveQueueTestAsync()
         {
             Customer customer;

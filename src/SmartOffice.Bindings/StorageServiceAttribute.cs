@@ -14,8 +14,14 @@ namespace Microsoft.Partner.SmartOffice.Bindings
     [Binding]
     public sealed class StorageServiceAttribute : Attribute
     {
+        /// <summary>
+        /// Gets or sets the name of the storage connection string.
+        /// </summary>
         public string ConnectionStringName { get; set; }
 
+        /// <summary>
+        /// Gets or sets the Azure Key Vault endpoint address.
+        /// </summary>
 #pragma warning disable CS0618 // Type or member is obsolete
         [AppSetting(Default = "KeyVaultEndpoint")]
 #pragma warning restore CS0618 // Type or member is obsolete

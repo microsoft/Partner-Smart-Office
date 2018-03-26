@@ -21,7 +21,7 @@ namespace Microsoft.Partner.SmartOffice.Functions.Tests
     public class CustomersTests
     {
         [TestMethod]
-        public async Task ProcessTestAsync()
+        public async Task ProcessAsync()
         {
             Mock<IDocumentRepository<Customer>> repository;
             Mock<IStorageService> storage;
@@ -54,7 +54,7 @@ namespace Microsoft.Partner.SmartOffice.Functions.Tests
         }
 
         [TestMethod]
-        public async Task PullTestAsync()
+        public async Task PullAsync()
         {
             Mock<IPartnerService> partnerService;
             Mock<IDocumentRepository<Customer>> repository;

@@ -51,18 +51,6 @@
         "description": "Secret key for the Azure AD application configured to access the Partner Center API."
       }
     },
-    "databaseAccountName": {
-      "type": "string",
-      "metadata": {
-        "description": "Name of the instance of Azure Cosmos DB that you wish to create."
-      }
-    },
-    "keyVaultName": {
-      "type": "string",
-      "metadata": {
-        "description": "The name of the instance of Azure Key Vault you wish to create."
-      }
-    },
     "repoUrl": {
       "type": "string",
       "defaultValue": "https://github.com/Microsoft/Partner-Smart-Office.git",
@@ -91,9 +79,11 @@
     }
   },
   "variables": {
+    "databaseAccountName": "[concat(uniquestring(resourceGroup().id), 'cosmosDb')]",
     "functionAppName": "[parameters('appName')]",
     "hostingPlanName": "[parameters('appName')]",
     "identityResourceId": "[concat(resourceId('Microsoft.Web/sites', parameters('appName')),'/providers/Microsoft.ManagedIdentity/Identities/default')]",
+    "keyVaultName": "[concat(uniquestring(resourceGroup().id), 'vault')]",
     "storageAccountName": "[concat(uniquestring(resourceGroup().id), 'azfunctions')]",
     "storageAccountid": "[concat(resourceGroup().id,'/providers/','Microsoft.Storage/storageAccounts/', variables('storageAccountName'))]"
   },
@@ -113,7 +103,7 @@
     {
       "type": "Microsoft.DocumentDB/databaseAccounts",
       "kind": "GlobalDocumentDB",
-      "name": "[parameters('databaseAccountName')]",
+      "name": "[variables('databaseAccountName')]",
       "apiVersion": "2015-04-08",
       "location": "[resourceGroup().location]",
       "tags": {
@@ -127,7 +117,7 @@
           "maxIntervalInSeconds": 5,
           "maxStalenessPrefix": 100
         },
-        "name": "[parameters('databaseAccountName')]"
+        "name": "[variables('databaseAccountName')]"
       },
       "dependsOn": []
     },
@@ -208,11 +198,11 @@
             },
             {
               "name": "CosmosDbEndpoint",
-              "value": "[reference(concat('Microsoft.DocumentDb/databaseAccounts/', parameters('databaseAccountName'))).documentEndpoint]"
+              "value": "[reference(concat('Microsoft.DocumentDb/databaseAccounts/', variables('databaseAccountName'))).documentEndpoint]"
             },
             {
               "name": "KeyVaultEndpoint",
-              "value": "[concat('https://', parameters('keyVaultName'), '.vault.azure.net')]"
+              "value": "[concat('https://', variables('keyVaultName'), '.vault.azure.net')]"
             },
             {
               "name": "PartnerCenter.AccountId",
@@ -247,7 +237,7 @@
     },
     {
       "type": "Microsoft.KeyVault/vaults",
-      "name": "[parameters('keyVaultName')]",
+      "name": "[variables('keyVaultName')]",
       "apiVersion": "2015-06-01",
       "location": "[resourceGroup().location]",
       "tags": {},
@@ -277,50 +267,50 @@
     {
       "apiVersion": "2015-06-01",
       "type": "Microsoft.KeyVault/vaults/secrets",
-      "name": "[concat(parameters('keyVaultName'), '/', 'ApplicationSecret')]",
+      "name": "[concat(variables('keyVaultName'), '/', 'ApplicationSecret')]",
       "properties": {
         "contentType": "text/plain",
         "value": "[parameters('applicationSecret')]"
       },
       "dependsOn": [
-        "[concat('Microsoft.KeyVault/vaults/', parameters('keyVaultName'))]"
+        "[concat('Microsoft.KeyVault/vaults/', variables('keyVaultName'))]"
       ]
     },
     {
       "apiVersion": "2015-06-01",
       "type": "Microsoft.KeyVault/vaults/secrets",
-      "name": "[concat(parameters('keyVaultName'), '/', 'CosmosDbAccessKey')]",
+      "name": "[concat(variables('keyVaultName'), '/', 'CosmosDbAccessKey')]",
       "properties": {
         "contentType": "text/plain",
-        "value": "[listKeys(resourceId('Microsoft.DocumentDB/databaseAccounts', parameters('databaseAccountName')), providers('Microsoft.DocumentDB', 'databaseAccounts').apiVersions[0]).primaryMasterKey]"
+        "value": "[listKeys(resourceId('Microsoft.DocumentDB/databaseAccounts', variables('databaseAccountName')), providers('Microsoft.DocumentDB', 'databaseAccounts').apiVersions[0]).primaryMasterKey]"
       },
       "dependsOn": [
-        "[concat('Microsoft.DocumentDB/databaseAccounts/', parameters('databaseAccountName'))]",
-        "[concat('Microsoft.KeyVault/vaults/', parameters('keyVaultName'))]"
+        "[concat('Microsoft.DocumentDB/databaseAccounts/', variables('databaseAccountName'))]",
+        "[concat('Microsoft.KeyVault/vaults/', variables('keyVaultName'))]"
       ]
     },
     {
       "apiVersion": "2015-06-01",
       "type": "Microsoft.KeyVault/vaults/secrets",
-      "name": "[concat(parameters('keyVaultName'), '/', 'PartnerCenterApplicationSecret')]",
+      "name": "[concat(variables('keyVaultName'), '/', 'PartnerCenterApplicationSecret')]",
       "properties": {
         "contentType": "text/plain",
         "value": "[parameters('partnerCenterApplicationSecret')]"
       },
       "dependsOn": [
-        "[concat('Microsoft.KeyVault/vaults/', parameters('keyVaultName'))]"
+        "[concat('Microsoft.KeyVault/vaults/', variables('keyVaultName'))]"
       ]
     },
     {
       "apiVersion": "2015-06-01",
       "type": "Microsoft.KeyVault/vaults/secrets",
-      "name": "[concat(parameters('keyVaultName'), '/', 'StorageConnectionString')]",
+      "name": "[concat(variables('keyVaultName'), '/', 'StorageConnectionString')]",
       "properties": {
         "contentType": "text/plain",
         "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountName'), ';AccountKey=', listKeys(variables('storageAccountid'),'2015-05-01-preview').key1)]"
       },
       "dependsOn": [
-        "[concat('Microsoft.KeyVault/vaults/', parameters('keyVaultName'))]",
+        "[concat('Microsoft.KeyVault/vaults/', variables('keyVaultName'))]",
         "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
       ]
     }
