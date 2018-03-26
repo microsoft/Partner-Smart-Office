@@ -27,7 +27,7 @@ namespace Microsoft.Partner.SmartOffice.Data
         /// <returns>
         /// An instance of the <see cref="Task" /> class that represents the asynchronous operation.
         /// </returns>
-        Task AddOrUpdateAsync(List<TEntity> items);
+        Task AddOrUpdateAsync(IEnumerable<TEntity> items);
 
         /// <summary>
         /// Gets an item from the repository.

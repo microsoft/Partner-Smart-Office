@@ -32,12 +32,22 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="SessionRecords\GraphServiceTests\GetSecureScoreAsync.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="SessionRecords\GraphServiceTests\GetSecureScoreInvalidPeriodAsync.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="SessionRecords\PartnerServiceTests\GetCustomersAsync.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="SessionRecords\PartnerServiceTests\GetCustomersTestAsync.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="SessionRecords\GraphServiceTests\" />
   </ItemGroup>
 
 </Project>

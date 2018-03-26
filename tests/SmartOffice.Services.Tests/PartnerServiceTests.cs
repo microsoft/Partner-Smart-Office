@@ -8,7 +8,6 @@ namespace Microsoft.Partner.SmartOffice.Services.Tests
 {
     using System;
     using System.Collections.Generic;
-    using System.IO;
     using System.Threading.Tasks;
     using Azure.Test.HttpRecorder;
     using Models;
@@ -34,8 +33,6 @@ namespace Microsoft.Partner.SmartOffice.Services.Tests
                 using (MockContext context = MockContext.Start(GetType().Name))
                 {
                     HttpMockServer.Initialize(GetType().Name, "GetCustomersTestAsync", HttpRecorderMode.Playback);
-
-                    var name = Path.Combine(HttpMockServer.RecordsDirectory, HttpMockServer.CallerIdentity);
 
                     partner = new PartnerService(
                         new Uri(PartnerCenterEndpoint),

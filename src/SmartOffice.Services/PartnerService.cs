@@ -17,19 +17,36 @@ namespace Microsoft.Partner.SmartOffice.Services
 
     public class PartnerService : ServiceClient<PartnerService>, IPartnerService
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="PartnerService" /> class.
+        /// </summary>
+        /// <param name="credentials">Credentials used when accessing resources.</param>
+        /// <param name="handlers">List of handlers from top to bottom (outer handler is the first in the list)</param>
         public PartnerService(ServiceClientCredentials credentials, params DelegatingHandler[] handlers) : base(handlers)
         {
             Credentials = credentials;
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="PartnerService" /> class.
+        /// </summary>
+        /// <param name="endpoint">Address of the resource being accessed.</param>
+        /// <param name="credentials">Credentials used when accessing resources.</param>
+        /// <param name="handlers">List of handlers from top to bottom (outer handler is the first in the list)</param>
         public PartnerService(Uri endpoint, ServiceClientCredentials credentials, params DelegatingHandler[] handlers) : base(handlers)
         {
             Credentials = credentials;
             Endpoint = endpoint;
         }
 
+        /// <summary>
+        /// Gets or sets the credentials used when accessing resources.
+        /// </summary>
         public ServiceClientCredentials Credentials { get; private set; }
 
+        /// <summary>
+        /// Gets or sets the address of the resource being accessed.
+        /// </summary>
         public Uri Endpoint { get; private set; }
 
         /// <summary>

@@ -20,7 +20,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
         [FunctionName("ProcessCustomers")]
         public static async Task ProcessAsync(
             [TimerTrigger("0 0 12 * * *")]TimerInfo timerInfo,
-            [CustomersRepository]IDocumentRepository<Customer> repository,
+            [DataRepository(typeof(Customer))]IDocumentRepository<Customer> repository,
             [StorageService(
                 ConnectionStringName = "StorageConnectionString",
                 KeyVaultEndpoint = "KeyVaultEndpoint")]IStorageService storage,
@@ -47,7 +47,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
         [FunctionName("PullCustomers")]
         public static async Task PullAsync(
             [TimerTrigger("0 0 10 * * *")]TimerInfo timerInfo,
-            [CustomersRepository]IDocumentRepository<Customer> repository,
+            [DataRepository(typeof(Customer))]IDocumentRepository<Customer> repository,
             [PartnerService(
                 ApplicationId ="PartnerCenter.ApplicationId",
                 SecretName = "PartnerCenterApplicationSecret",

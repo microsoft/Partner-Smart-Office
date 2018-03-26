@@ -17,21 +17,44 @@ namespace Microsoft.Partner.SmartOffice.Services
 
     public class GraphService : ServiceClient<GraphService>, IGraphService
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="GraphService" /> class.
+        /// </summary>
+        /// <param name="credentials">Credentials used when accessing resources.</param>
+        /// <param name="handlers">List of handlers from top to bottom (outer handler is the first in the list)</param>
         public GraphService(ServiceClientCredentials credentials, params DelegatingHandler[] handlers) : base(handlers)
         {
             Credentials = credentials;
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="GraphService" /> class.
+        /// </summary>
+        /// <param name="endpoint">Address of the resource being accessed.</param>
+        /// <param name="credentials">Credentials used when accessing resources.</param>
+        /// <param name="handlers">List of handlers from top to bottom (outer handler is the first in the list)</param>
         public GraphService(Uri endpoint, ServiceClientCredentials credentials, params DelegatingHandler[] handlers) : base(handlers)
         {
             Credentials = credentials;
             Endpoint = endpoint;
         }
 
+        /// <summary>
+        /// Gets or sets the credentials used when accessing resources.
+        /// </summary>
         public ServiceClientCredentials Credentials { get; private set; }
 
+        /// <summary>
+        /// Gets or sets the address of the resource being accessed.
+        /// </summary>
         public Uri Endpoint { get; private set; }
 
+        /// <summary>
+        /// Gets the secure score for the defined period.
+        /// </summary>
+        /// <param name="period">Number of days of score results to retrieve starting from current date.</param>
+        /// <param name="cancellationToken">The cancellation token to monitor.</param>
+        /// <returns>A list of secure scores for the defined period.</returns>
         public async Task<List<SecureScore>> GetSecureScoreAsync(int period, CancellationToken cancellationToken = default(CancellationToken))
         {
             HttpResponseMessage response = null;
@@ -40,7 +63,12 @@ namespace Microsoft.Partner.SmartOffice.Services
 
             try
             {
-                using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{Endpoint}/beta/reports/getTenantSecureScores(period={period})/content")))
+                if (period <= 0 || period > 90)
+                {
+                    throw new Exception($"{period} is an invalid period.");
+                }
+
+                using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{Endpoint}beta/reports/getTenantSecureScores(period={period})/content")))
                 {
                     await Credentials.ProcessHttpRequestAsync(request, cancellationToken).ConfigureAwait(false);
 

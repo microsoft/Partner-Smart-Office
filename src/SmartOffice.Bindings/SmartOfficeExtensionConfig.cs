@@ -11,9 +11,7 @@ namespace Microsoft.Partner.SmartOffice.Bindings
     using Azure.WebJobs.Host;
     using Azure.WebJobs.Host.Config;
     using Converters;
-    using Data;
     using IdentityModel.Clients.ActiveDirectory;
-    using Models;
     using Services;
 
     public class SmartOfficeExtensionConfig : IExtensionConfigProvider
@@ -57,10 +55,9 @@ namespace Microsoft.Partner.SmartOffice.Bindings
             AppSettings = context.Config.NameResolver;
             log = context.Trace;
 
-            context.AddBindingRule<CustomersRepositoryAttribute>().BindToInput(new CustomersRepoConverter(this));
+            context.AddBindingRule<DataRepositoryAttribute>().BindToInput(new DataRepositoryConverter(this));
             context.AddBindingRule<PartnerServiceAttribute>().BindToInput(new PartnerServiceConverter(this));
             context.AddBindingRule<SecureScoreAttribute>().BindToInput(new SecureScoreConverter(this));
-            context.AddBindingRule<SecureScoreRepositoryAttribute>().BindToInput(new SecureScoreRepoConverter(this));
             context.AddBindingRule<StorageServiceAttribute>().BindToInput(new StorageServiceConverter(this));
         }
 

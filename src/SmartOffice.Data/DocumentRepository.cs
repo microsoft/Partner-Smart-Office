@@ -135,7 +135,7 @@ namespace Microsoft.Partner.SmartOffice.Data
         /// <returns>
         /// An instance of the <see cref="Task" /> class that represents the asynchronous operation.
         /// </returns>
-        public async Task AddOrUpdateAsync(List<TEntity> items)
+        public async Task AddOrUpdateAsync(IEnumerable<TEntity> items)
         {
             await Client.ExecuteStoredProcedureAsync<int>(
                 UriFactory.CreateStoredProcedureUri(
