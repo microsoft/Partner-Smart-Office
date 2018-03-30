@@ -7,7 +7,6 @@
 namespace Microsoft.Partner.SmartOffice.Bindings
 {
     using System;
-    using Azure.WebJobs;
     using Azure.WebJobs.Description;
 
     [AttributeUsage(AttributeTargets.Parameter, AllowMultiple = false)]
@@ -17,18 +16,20 @@ namespace Microsoft.Partner.SmartOffice.Bindings
         /// <summary>
         /// Gets or sets the application identifier used to request an access token.
         /// </summary>
-#pragma warning disable CS0618 // Type or member is obsolete
         [AppSetting(Default = "PartnerCenter.ApplicationId")]
-#pragma warning restore CS0618 // Type or member is obsolete
         public string ApplicationId { get; set; }
 
         /// <summary>
         /// Gets or sets the tenant identifer that owns the application.
         /// </summary>
-#pragma warning disable CS0618 // Type or member is obsolete
         [AppSetting(Default = "PartnerCenter.ApplicationTenantId")]
         public string ApplicationTenantId { get; set; }
-#pragma warning restore CS0618 // Type or member is obsolete
+
+        /// <summary>
+        /// Gets or sets the Azure Key Vault endpoint address.
+        /// </summary>
+        [AppSetting(Default = "KeyVaultEndpoint")]
+        public string KeyVaultEndpoint { get; set; }
 
         /// <summary>
         /// Gets or sets the identifier of the target resource that is the recipient of the token being requested.

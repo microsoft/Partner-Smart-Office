@@ -14,17 +14,20 @@ namespace Microsoft.Partner.SmartOffice.Bindings
     public sealed class DataRepositoryAttribute : Attribute
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="DataRepositoryAttribute" /> class.
+        /// Gets or sets the Azure Cosmos DB endpoint address.
         /// </summary>
-        /// <param name="dataType">The data type of the repository.</param>
-        public DataRepositoryAttribute(Type dataType)
-        {
-            DataType = dataType;
-        }
+        [AppSetting(Default = "CosmosDbEndpoint")]
+        public string CosmosDbEndpoint { get; set; }
 
         /// <summary>
         /// Gets or sets the data type of the repository. 
         /// </summary>
         public Type DataType { get; set; }
+
+        /// <summary>
+        /// Gets or sets the Azure Key Vault endpoint address.
+        /// </summary>
+        [AppSetting(Default = "KeyVaultEndpoint")]
+        public string KeyVaultEndpoint { get; set; }
     }
 }

@@ -7,7 +7,6 @@
 namespace Microsoft.Partner.SmartOffice.Bindings
 {
     using System;
-    using Azure.WebJobs;
     using Azure.WebJobs.Description;
 
     [AttributeUsage(AttributeTargets.Parameter, AllowMultiple = false)]
@@ -17,18 +16,20 @@ namespace Microsoft.Partner.SmartOffice.Bindings
         /// <summary>
         /// Gets or sets the application identifier used to request an access token.
         /// </summary>
-#pragma warning disable CS0618 // Type or member is obsolete
         [AppSetting(Default = "ApplicationId")]
-#pragma warning restore CS0618 // Type or member is obsolete
         public string ApplicationId { get; set; }
 
         /// <summary>
         /// Gets or sets the customer identifier.
         /// </summary>
-#pragma warning disable CS0618 // Type or member is obsolete
         [AutoResolve]
-#pragma warning restore CS0618 // Type or member is obsolete
         public string CustomerId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the Azure Key Vault endpoint address.
+        /// </summary>
+        [AppSetting(Default = "KeyVaultEndpoint")]
+        public string KeyVaultEndpoint { get; set; }
 
         /// <summary>
         /// Gets or sets the period for the secure score.

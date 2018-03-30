@@ -28,7 +28,10 @@ namespace Microsoft.Partner.SmartOffice.Functions
         [FunctionName("ImportSecureScoreControls")]
         public static async Task ImportControlsAsync(
             [TimerTrigger("0 0 10 * * *")]TimerInfo timerInfo,
-            [DataRepository(typeof(ControlListEntry))]IDocumentRepository<ControlListEntry> repository,
+            [DataRepository(
+                CosmosDbEndpoint = "CosmosDbEndpoint",
+                DataType = typeof(ControlListEntry),
+                KeyVaultEndpoint = "KeyVaultEndpoint")]IDocumentRepository<ControlListEntry> repository,
             TraceWriter log)
         {
             CsvReader reader = null;
@@ -57,10 +60,14 @@ namespace Microsoft.Partner.SmartOffice.Functions
         [FunctionName("ProcessSecureScore")]
         public static async Task ProcessAsync(
             [QueueTrigger("customers", Connection = "StorageConnectionString")]Customer customer,
-            [DataRepository(typeof(SecureScore))]IDocumentRepository<SecureScore> repository,
+            [DataRepository(
+                CosmosDbEndpoint = "CosmosDbEndpoint",
+                DataType = typeof(SecureScore),
+                KeyVaultEndpoint = "KeyVaultEndpoint")]IDocumentRepository<SecureScore> repository,
             [SecureScore(
                 ApplicationId = "ApplicationId",
                 CustomerId = "{id}",
+                KeyVaultEndpoint = "KeyVaultEndpoint",
                 Period = 1,
                 Resource = "https://graph.microsoft.com",
                 SecretName = "ApplicationSecret"

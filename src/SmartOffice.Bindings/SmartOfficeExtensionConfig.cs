@@ -6,16 +6,28 @@
 
 namespace Microsoft.Partner.SmartOffice.Bindings
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Threading;
     using System.Threading.Tasks;
     using Azure.WebJobs;
-    using Azure.WebJobs.Host;
     using Azure.WebJobs.Host.Config;
-    using Converters;
-    using IdentityModel.Clients.ActiveDirectory;
+    using Data;
+    using Models;
     using Services;
 
-    public class SmartOfficeExtensionConfig : IExtensionConfigProvider
+    public class SmartOfficeExtensionConfig :
+        IAsyncConverter<DataRepositoryAttribute, object>,
+        IAsyncConverter<PartnerServiceAttribute, PartnerService>,
+        IAsyncConverter<SecureScoreAttribute, List<SecureScore>>,
+        IAsyncConverter<StorageServiceAttribute, StorageService>,
+        IExtensionConfigProvider
     {
+        /// <summary>
+        /// Identifier for the bulk import stored procedure.
+        /// </summary>
+        public const string BulkImportStoredProcedureId = "BulkImport";
+
         /// <summary>
         /// Name of the secret that contains the Comsos DB access key.
         /// </summary>
@@ -27,24 +39,144 @@ namespace Microsoft.Partner.SmartOffice.Bindings
         private const string CosmosDbEndpoint = "CosmosDbEndpoint";
 
         /// <summary>
+        /// Identifier for the customers collection.
+        /// </summary>
+        public const string CustomersCollectionId = "Customers";
+
+        /// <summary>
+        /// Identifier for the Azure Cosmos DB database.
+        /// </summary>
+        public const string DatabaseId = "SmartOffice";
+
+        /// <summary>
         /// Name of the Key Vault endpoint setting.
         /// </summary>
         private const string KeyVaultEndpoint = "KeyVaultEndpoint";
 
         /// <summary>
-        /// Name of the Azure Storage account connection string secret.
+        /// Identifier for the secure score collection.
         /// </summary>
-        private const string StorageConnectionStringSecret = "StorageConnectionString";
+        public const string SecureScoreCollectionId = "SecureScore";
 
         /// <summary>
-        /// Used to write to the function application log.
+        /// Identifier for the secure score controls collection.
         /// </summary>
-        private TraceWriter log;
+        public const string SecureScoreControlsCollectionId = "SecureScoreControls";
 
-        /// <summary>
-        /// Gets the reference to the application settings resolver.
-        /// </summary>
-        internal INameResolver AppSettings { get; private set; }
+
+        public async Task<object> ConvertAsync(DataRepositoryAttribute input, CancellationToken cancellationToken)
+        {
+            KeyVaultService keyVault;
+            string authKey;
+
+            try
+            {
+                keyVault = new KeyVaultService(input.KeyVaultEndpoint);
+
+                authKey = await keyVault.GetSecretAsync(CosmsosDbAccessKey).ConfigureAwait(false);
+
+                if (input.DataType == typeof(ControlListEntry))
+                {
+                    DocumentRepository<ControlListEntry> controls = new DocumentRepository<ControlListEntry>(
+                        input.CosmosDbEndpoint,
+                        authKey,
+                        DatabaseId,
+                        SecureScoreControlsCollectionId);
+
+                    await controls.InitializeAsync().ConfigureAwait(false);
+
+                    return controls;
+                }
+                else if (input.DataType == typeof(Customer))
+                {
+                    DocumentRepository<Customer> customers = new DocumentRepository<Customer>(
+                        input.CosmosDbEndpoint,
+                        authKey,
+                        DatabaseId,
+                        CustomersCollectionId);
+
+                    await customers.InitializeAsync().ConfigureAwait(false);
+
+                    return customers;
+                }
+                else if (input.DataType == typeof(SecureScore))
+                {
+                    DocumentRepository<SecureScore> score = new DocumentRepository<SecureScore>(
+                        input.CosmosDbEndpoint,
+                        authKey,
+                        DatabaseId,
+                        SecureScoreCollectionId);
+
+                    await score.InitializeAsync().ConfigureAwait(false);
+
+                    return score;
+                }
+
+                throw new Exception($"Invalid data type of {input.DataType} specified.");
+            }
+            finally
+            {
+                keyVault = null;
+            }
+        }
+
+        public async Task<PartnerService> ConvertAsync(PartnerServiceAttribute input, CancellationToken cancellationToken)
+        {
+            IVaultService vaultService;
+
+            try
+            {
+                vaultService = new KeyVaultService(input.KeyVaultEndpoint);
+
+                return new PartnerService(new Uri("https://api.partnercenter.microsoft.com"),
+                    new ServiceCredentials(
+                        input.ApplicationId,
+                        await vaultService.GetSecretAsync(input.SecretName).ConfigureAwait(false),
+                        input.Resource,
+                        input.ApplicationTenantId));
+            }
+            finally
+            {
+                vaultService = null;
+            }
+        }
+
+        public async Task<List<SecureScore>> ConvertAsync(SecureScoreAttribute input, CancellationToken cancellationToken)
+        {
+            GraphService graphService;
+            IVaultService vaultService;
+            List<SecureScore> secureScore;
+
+            try
+            {
+                vaultService = new KeyVaultService(input.KeyVaultEndpoint);
+
+                graphService = new GraphService(new Uri(input.Resource),
+                    new ServiceCredentials(
+                        input.ApplicationId,
+                        await vaultService.GetSecretAsync(input.SecretName).ConfigureAwait(false),
+                        input.Resource,
+                        input.CustomerId));
+
+                secureScore = await graphService.GetSecureScoreAsync(input.Period).ConfigureAwait(false);
+
+                return secureScore;
+            }
+            finally
+            {
+                graphService = null;
+                vaultService = null;
+            }
+        }
+
+        public async Task<StorageService> ConvertAsync(StorageServiceAttribute input, CancellationToken cancellationToken)
+        {
+            await StorageService.Instance.InitializeAsync(
+                input.KeyVaultEndpoint,
+                input.ConnectionStringName).ConfigureAwait(false);
+
+            return StorageService.Instance;
+        }
 
         /// <summary>
         /// Initialize the binding extension
@@ -52,51 +184,10 @@ namespace Microsoft.Partner.SmartOffice.Bindings
         /// <param name="context">Context for the extension</param>
         public void Initialize(ExtensionConfigContext context)
         {
-            AppSettings = context.Config.NameResolver;
-            log = context.Trace;
-
-            context.AddBindingRule<DataRepositoryAttribute>().BindToInput(new DataRepositoryConverter(this));
-            context.AddBindingRule<PartnerServiceAttribute>().BindToInput(new PartnerServiceConverter(this));
-            context.AddBindingRule<SecureScoreAttribute>().BindToInput(new SecureScoreConverter(this));
-            context.AddBindingRule<StorageServiceAttribute>().BindToInput(new StorageServiceConverter(this));
-        }
-
-        /// <summary>
-        /// Gets an OAuth access token for the specified resource.
-        /// </summary>
-        /// <param name="authority">Address of the authority to issue the token.</param>
-        /// <param name="clientId">Identifier of the client requesting the token.</param>
-        /// <param name="secretName">Name of the secret that contains the secret of the client requesting the token.</param>
-        /// <param name="resource">Identifier of the target resource that is the recipient of the requested token.</param>
-        /// <returns>A string that represents the requested OAuth access token.</returns>
-        public async Task<string> GetAccessTokenAsync(string authority, string clientId, string secretName, string resource)
-        {
-            AuthenticationContext authContext;
-            AuthenticationResult authResult;
-            KeyVaultService keyVault;
-            string clientSecret;
-
-            try
-            {
-                keyVault = new KeyVaultService(AppSettings.Resolve(KeyVaultEndpoint));
-
-                clientSecret = await keyVault.GetSecretAsync(secretName).ConfigureAwait(false);
-
-                authContext = new AuthenticationContext(authority);
-                authResult = await authContext.AcquireTokenAsync(
-                    resource,
-                    new ClientCredential(
-                        clientId,
-                        clientSecret)).ConfigureAwait(false);
-
-                return authResult.AccessToken;
-            }
-            finally
-            {
-                authContext = null;
-                authResult = null;
-                keyVault = null;
-            }
+            context.AddBindingRule<DataRepositoryAttribute>().BindToInput<object>(this);
+            context.AddBindingRule<PartnerServiceAttribute>().BindToInput<PartnerService>(this);
+            context.AddBindingRule<SecureScoreAttribute>().BindToInput<List<SecureScore>>(this);
+            context.AddBindingRule<StorageServiceAttribute>().BindToInput<StorageService>(this);
         }
     }
 }

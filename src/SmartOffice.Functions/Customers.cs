@@ -20,7 +20,10 @@ namespace Microsoft.Partner.SmartOffice.Functions
         [FunctionName("ProcessCustomers")]
         public static async Task ProcessAsync(
             [TimerTrigger("0 0 12 * * *")]TimerInfo timerInfo,
-            [DataRepository(typeof(Customer))]IDocumentRepository<Customer> repository,
+            [DataRepository(
+                CosmosDbEndpoint = "CosmosDbEndpoint",
+                DataType = typeof(Customer),
+                KeyVaultEndpoint = "KeyVaultEndpoint")]IDocumentRepository<Customer> repository,
             [StorageService(
                 ConnectionStringName = "StorageConnectionString",
                 KeyVaultEndpoint = "KeyVaultEndpoint")]IStorageService storage,
@@ -47,11 +50,15 @@ namespace Microsoft.Partner.SmartOffice.Functions
         [FunctionName("PullCustomers")]
         public static async Task PullAsync(
             [TimerTrigger("0 0 10 * * *")]TimerInfo timerInfo,
-            [DataRepository(typeof(Customer))]IDocumentRepository<Customer> repository,
+            [DataRepository(
+                CosmosDbEndpoint = "CosmosDbEndpoint",
+                DataType = typeof(Customer),
+                KeyVaultEndpoint = "KeyVaultEndpoint")]IDocumentRepository<Customer> repository,
             [PartnerService(
                 ApplicationId ="PartnerCenter.ApplicationId",
                 SecretName = "PartnerCenterApplicationSecret",
                 ApplicationTenantId = "PartnerCenter.AccountId",
+                KeyVaultEndpoint = "KeyVaultEndpoint",
                 Resource = "https://graph.windows.net")]IPartnerService partner,
             TraceWriter log)
         {

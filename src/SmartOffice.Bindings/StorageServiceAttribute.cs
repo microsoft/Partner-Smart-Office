@@ -7,7 +7,6 @@
 namespace Microsoft.Partner.SmartOffice.Bindings
 {
     using System;
-    using Azure.WebJobs;
     using Azure.WebJobs.Description;
 
     [AttributeUsage(AttributeTargets.Parameter, AllowMultiple = false)]
@@ -22,9 +21,7 @@ namespace Microsoft.Partner.SmartOffice.Bindings
         /// <summary>
         /// Gets or sets the Azure Key Vault endpoint address.
         /// </summary>
-#pragma warning disable CS0618 // Type or member is obsolete
         [AppSetting(Default = "KeyVaultEndpoint")]
-#pragma warning restore CS0618 // Type or member is obsolete
         public string KeyVaultEndpoint { get; set; }
     }
 }
