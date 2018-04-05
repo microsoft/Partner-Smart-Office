@@ -79,7 +79,7 @@
     }
   },
   "variables": {
-    "databaseAccountName": "[concat(uniquestring(resourceGroup().id), 'cosmosDb')]",
+    "databaseAccountName": "[concat(uniquestring(resourceGroup().id), 'cosmosdb')]",
     "functionAppName": "[parameters('appName')]",
     "hostingPlanName": "[parameters('appName')]",
     "identityResourceId": "[concat(resourceId('Microsoft.Web/sites', parameters('appName')),'/providers/Microsoft.ManagedIdentity/Identities/default')]",
