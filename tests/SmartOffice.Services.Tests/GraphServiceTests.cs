@@ -58,7 +58,7 @@ namespace Microsoft.Partner.SmartOffice.Services.Tests
         }
 
 
-        [ExpectedException(typeof(Exception))]
+        [ExpectedException(typeof(InvalidOperationException))]
         [TestMethod]
         public async Task GetSecureScoreInvalidPeriodAsync()
         {
