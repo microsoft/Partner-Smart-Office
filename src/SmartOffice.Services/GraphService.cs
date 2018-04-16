@@ -65,7 +65,7 @@ namespace Microsoft.Partner.SmartOffice.Services
             {
                 if (period <= 0 || period > 90)
                 {
-                    throw new Exception($"{period} is an invalid period.");
+                    throw new InvalidOperationException($"{period} is an invalid period.");
                 }
 
                 using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{Endpoint}beta/reports/getTenantSecureScores(period={period})/content")))
@@ -77,7 +77,7 @@ namespace Microsoft.Partner.SmartOffice.Services
 
                     if (!response.IsSuccessStatusCode)
                     {
-                        throw new Exception(content);
+                        throw new ServiceException(content, response.StatusCode);
                     }
 
                     scores = SafeJsonConvert.DeserializeObject<List<SecureScore>>(content);

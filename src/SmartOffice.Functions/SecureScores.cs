@@ -6,6 +6,7 @@
 
 namespace Microsoft.Partner.SmartOffice.Functions
 {
+    using System;
     using System.Collections.Generic;
     using System.IO;
     using System.Reflection;
@@ -16,6 +17,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
     using ClassMaps;
     using CsvHelper;
     using Data;
+    using Microsoft.Partner.SmartOffice.Services;
     using Models;
 
     public static class SecureScores
@@ -74,7 +76,18 @@ namespace Microsoft.Partner.SmartOffice.Functions
             )]List<SecureScore> secureScore,
             TraceWriter log)
         {
-            await repository.AddOrUpdateAsync(secureScore).ConfigureAwait(false);
+            try
+            {
+                await repository.AddOrUpdateAsync(secureScore).ConfigureAwait(false);
+            }
+            catch (ServiceException ex)
+            {
+                log.Error($"Microsoft Graph returned {ex.Message} with a status code of {ex.HtttpStatusCode}", ex);
+            }
+            catch (Exception ex)
+            {
+                log.Error(ex.Message, ex, ex.Source);
+            }
         }
     }
 }
