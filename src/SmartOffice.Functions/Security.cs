@@ -1,12 +1,11 @@
-// -----------------------------------------------------------------------
-// <copyright file="SecureScores.cs" company="Microsoft">
+﻿// -----------------------------------------------------------------------
+// <copyright file="Security.cs" company="Microsoft">
 //     Copyright (c) Microsoft Corporation. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
 
 namespace Microsoft.Partner.SmartOffice.Functions
 {
-    using System;
     using System.Collections.Generic;
     using System.IO;
     using System.Reflection;
@@ -17,10 +16,9 @@ namespace Microsoft.Partner.SmartOffice.Functions
     using ClassMaps;
     using CsvHelper;
     using Data;
-    using Microsoft.Partner.SmartOffice.Services;
     using Models;
 
-    public static class SecureScores
+    public static class Security
     {
         /// <summary>
         /// Path for the SecureScoreControlsList.csv embedded resource.
@@ -59,34 +57,40 @@ namespace Microsoft.Partner.SmartOffice.Functions
             }
         }
 
-        [FunctionName("ProcessSecureScore")]
+        [FunctionName("ImportSecurityInfo")]
         public static async Task ProcessAsync(
             [QueueTrigger("customers", Connection = "StorageConnectionString")]Customer customer,
             [DataRepository(
                 CosmosDbEndpoint = "CosmosDbEndpoint",
                 DataType = typeof(SecureScore),
                 KeyVaultEndpoint = "KeyVaultEndpoint")]IDocumentRepository<SecureScore> repository,
+            [DataRepository(
+                CosmosDbEndpoint = "CosmosDbEndpoint",
+                DataType = typeof(Alert),
+                KeyVaultEndpoint = "KeyVaultEndpoint")]IDocumentRepository<Alert> securityAlerts,
             [SecureScore(
                 ApplicationId = "ApplicationId",
                 CustomerId = "{id}",
                 KeyVaultEndpoint = "KeyVaultEndpoint",
                 Period = 1,
                 Resource = "https://graph.microsoft.com",
-                SecretName = "ApplicationSecret"
-            )]List<SecureScore> secureScore,
+                SecretName = "ApplicationSecret")]List<SecureScore> scores,
+            [SecurityAlerts(
+                ApplicationId = "ApplicationId",
+                CustomerId = "{id}",
+                KeyVaultEndpoint = "KeyVaultEndpoint",
+                Resource = "https://graph.microsoft.com",
+                SecretName = "ApplicationSecret")]List<Alert> alerts,
             TraceWriter log)
         {
-            try
+            if (scores?.Count > 0)
             {
-                await repository.AddOrUpdateAsync(secureScore).ConfigureAwait(false);
+                await repository.AddOrUpdateAsync(scores).ConfigureAwait(false);
             }
-            catch (ServiceException ex)
+
+            if (alerts?.Count > 0)
             {
-                log.Error($"Microsoft Graph returned {ex.Message} with a status code of {ex.HtttpStatusCode}", ex);
-            }
-            catch (Exception ex)
-            {
-                log.Error(ex.Message, ex, ex.Source);
+                await securityAlerts.AddOrUpdateAsync(alerts).ConfigureAwait(false);
             }
         }
     }

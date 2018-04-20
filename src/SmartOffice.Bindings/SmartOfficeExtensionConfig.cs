@@ -13,6 +13,8 @@ namespace Microsoft.Partner.SmartOffice.Bindings
     using Azure.WebJobs;
     using Azure.WebJobs.Host.Config;
     using Data;
+    using Extensions.Logging;
+    using Microsoft.Azure.WebJobs.Logging;
     using Models;
     using Services;
 
@@ -20,6 +22,7 @@ namespace Microsoft.Partner.SmartOffice.Bindings
         IAsyncConverter<DataRepositoryAttribute, object>,
         IAsyncConverter<PartnerServiceAttribute, PartnerService>,
         IAsyncConverter<SecureScoreAttribute, List<SecureScore>>,
+        IAsyncConverter<SecurityAlertsAttribute, List<Alert>>,
         IAsyncConverter<StorageServiceAttribute, StorageService>,
         IExtensionConfigProvider
     {
@@ -54,15 +57,24 @@ namespace Microsoft.Partner.SmartOffice.Bindings
         private const string KeyVaultEndpoint = "KeyVaultEndpoint";
 
         /// <summary>
+        /// Identifier for the security alerts collection.
+        /// </summary>
+        private const string SecurityAlertsCollectionId = "SecurityAlerts";
+
+        /// <summary>
         /// Identifier for the secure score collection.
         /// </summary>
-        public const string SecureScoreCollectionId = "SecureScore";
+        private const string SecureScoreCollectionId = "SecureScore";
 
         /// <summary>
         /// Identifier for the secure score controls collection.
         /// </summary>
-        public const string SecureScoreControlsCollectionId = "SecureScoreControls";
+        private const string SecureScoreControlsCollectionId = "SecureScoreControls";
 
+        /// <summary>
+        /// Provides the ability to capture log information.
+        /// </summary>
+        private ILogger log;
 
         public async Task<object> ConvertAsync(DataRepositoryAttribute input, CancellationToken cancellationToken)
         {
@@ -75,7 +87,19 @@ namespace Microsoft.Partner.SmartOffice.Bindings
 
                 authKey = await keyVault.GetSecretAsync(CosmsosDbAccessKey).ConfigureAwait(false);
 
-                if (input.DataType == typeof(ControlListEntry))
+                if (input.DataType == typeof(Alert))
+                {
+                    DocumentRepository<Alert> securityAlerts = new DocumentRepository<Alert>(
+                        input.CosmosDbEndpoint,
+                        authKey,
+                        DatabaseId,
+                        SecurityAlertsCollectionId);
+
+                    await securityAlerts.InitializeAsync().ConfigureAwait(false);
+
+                    return securityAlerts;
+                }
+                else if (input.DataType == typeof(ControlListEntry))
                 {
                     DocumentRepository<ControlListEntry> controls = new DocumentRepository<ControlListEntry>(
                         input.CosmosDbEndpoint,
@@ -99,6 +123,7 @@ namespace Microsoft.Partner.SmartOffice.Bindings
 
                     return customers;
                 }
+
                 else if (input.DataType == typeof(SecureScore))
                 {
                     DocumentRepository<SecureScore> score = new DocumentRepository<SecureScore>(
@@ -151,7 +176,8 @@ namespace Microsoft.Partner.SmartOffice.Bindings
             {
                 vaultService = new KeyVaultService(input.KeyVaultEndpoint);
 
-                graphService = new GraphService(new Uri(input.Resource),
+                graphService = new GraphService(
+                    new Uri(input.Resource),
                     new ServiceCredentials(
                         input.ApplicationId,
                         await vaultService.GetSecretAsync(input.SecretName).ConfigureAwait(false),
@@ -161,6 +187,44 @@ namespace Microsoft.Partner.SmartOffice.Bindings
                 secureScore = await graphService.GetSecureScoreAsync(input.Period).ConfigureAwait(false);
 
                 return secureScore;
+            }
+            catch (ServiceException ex)
+            {
+                log.LogError(ex, $"Encountered {ex.Message} when processing {input.CustomerId}");
+                return null;
+            }
+            finally
+            {
+                graphService = null;
+                vaultService = null;
+            }
+        }
+
+        public async Task<List<Alert>> ConvertAsync(SecurityAlertsAttribute input, CancellationToken cancellationToken)
+        {
+            GraphService graphService;
+            IVaultService vaultService;
+            List<Alert> alerts;
+
+            try
+            {
+                vaultService = new KeyVaultService(input.KeyVaultEndpoint);
+
+                graphService = new GraphService(new Uri(input.Resource),
+                    new ServiceCredentials(
+                        input.ApplicationId,
+                        await vaultService.GetSecretAsync(input.SecretName).ConfigureAwait(false),
+                        input.Resource,
+                        input.CustomerId));
+
+                alerts = await graphService.GetAlertsAsync().ConfigureAwait(false);
+
+                return alerts;
+            }
+            catch (ServiceException ex)
+            {
+                log.LogError(ex, $"Encountered {ex.Message} when processing {input.CustomerId}");
+                return null;
             }
             finally
             {
@@ -184,9 +248,13 @@ namespace Microsoft.Partner.SmartOffice.Bindings
         /// <param name="context">Context for the extension</param>
         public void Initialize(ExtensionConfigContext context)
         {
+
+            log = context.Config.LoggerFactory.CreateLogger(LogCategories.CreateFunctionCategory("SmartOffice"));
+
             context.AddBindingRule<DataRepositoryAttribute>().BindToInput<object>(this);
             context.AddBindingRule<PartnerServiceAttribute>().BindToInput<PartnerService>(this);
             context.AddBindingRule<SecureScoreAttribute>().BindToInput<List<SecureScore>>(this);
+            context.AddBindingRule<SecurityAlertsAttribute>().BindToInput<List<Alert>>(this);
             context.AddBindingRule<StorageServiceAttribute>().BindToInput<StorageService>(this);
         }
     }
