@@ -97,6 +97,9 @@ $graphAppAccess = [Microsoft.Open.AzureAD.Model.RequiredResourceAccess]@{
     ResourceAccess = 
         [Microsoft.Open.AzureAD.Model.ResourceAccess]@{
             Id = "230c1aed-a721-4c5d-9cb4-a90514e508ef";
+            Type = "Role"},
+        [Microsoft.Open.AzureAD.Model.ResourceAccess]@{
+            Id = "bf394140-e372-4bf9-a898-299cfc7564e5";
             Type = "Role"}
 }
 
