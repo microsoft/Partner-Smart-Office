@@ -11,7 +11,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Azure.DocumentDB.Core" Version="1.9.1" />
+    <PackageReference Include="Microsoft.Azure.DocumentDB.Core" Version="1.10.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.7.0" />
     <PackageReference Include="Moq" Version="4.8.2" />
     <PackageReference Include="MSTest.TestAdapter" Version="1.2.1" />
@@ -21,6 +21,10 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\SmartOffice.Data\SmartOffice.Data.csproj" />
     <ProjectReference Include="..\..\src\SmartOffice.Models\SmartOffice.Models.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Service Include="{82a7f48d-3b50-4b1e-b82e-3ada8210c358}" />
   </ItemGroup>
 
 </Project>

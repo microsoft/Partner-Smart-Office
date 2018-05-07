@@ -12,6 +12,7 @@ namespace Microsoft.Partner.SmartOffice.Services
     using System.Threading;
     using System.Threading.Tasks;
     using Models;
+    using Newtonsoft.Json;
     using Rest;
     using Rest.Serialization;
 
@@ -50,6 +51,42 @@ namespace Microsoft.Partner.SmartOffice.Services
         public Uri Endpoint { get; private set; }
 
         /// <summary>
+        /// Gets the alerts for the customer. 
+        /// </summary>
+        /// <param name="cancellationToken">The cancellation token to monitor.</param>
+        /// <returns>A list of alerts for the customer.</returns>
+        public async Task<List<Alert>> GetAlertsAsync(CancellationToken cancellationToken = default(CancellationToken))
+        {
+            HttpResponseMessage response = null;
+            ODataResponse<Alert> alerts;
+            string content;
+
+            try
+            {
+                using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, new Uri(Endpoint, "/beta/security/alerts")))
+                {
+                    await Credentials.ProcessHttpRequestAsync(request, cancellationToken).ConfigureAwait(false);
+
+                    response = await HttpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
+                    content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        throw new ServiceException(content, response.StatusCode);
+                    }
+
+                    alerts = JsonConvert.DeserializeObject<ODataResponse<Alert>>(content);
+
+                    return alerts.Value;
+                }
+            }
+            finally
+            {
+                response = null;
+            }
+        }
+
+        /// <summary>
         /// Gets the secure score for the defined period.
         /// </summary>
         /// <param name="period">Number of days of score results to retrieve starting from current date.</param>
@@ -68,7 +105,7 @@ namespace Microsoft.Partner.SmartOffice.Services
                     throw new InvalidOperationException($"{period} is an invalid period.");
                 }
 
-                using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{Endpoint}beta/reports/getTenantSecureScores(period={period})/content")))
+                using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, new Uri(Endpoint, $"/beta/reports/getTenantSecureScores(period={period})/content")))
                 {
                     await Credentials.ProcessHttpRequestAsync(request, cancellationToken).ConfigureAwait(false);
 

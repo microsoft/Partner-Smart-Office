@@ -30,7 +30,7 @@ namespace Microsoft.Partner.SmartOffice.Functions.Tests
 
                 traceWriter = new TestTraceWriter();
 
-                await SecureScores.ImportControlsAsync(
+                await Security.ImportControlsAsync(
                     null,
                     repository.Object,
                     traceWriter).ConfigureAwait(false);
@@ -50,8 +50,10 @@ namespace Microsoft.Partner.SmartOffice.Functions.Tests
         public async Task ReceiveQueueTestAsync()
         {
             Customer customer;
+            List<Alert> alerts;
             List<SecureScore> secureScore;
-            Mock<IDocumentRepository<SecureScore>> repository;
+            Mock<IDocumentRepository<SecureScore>> scores;
+            Mock<IDocumentRepository<Alert>> securityAlerts;
             TestTraceWriter traceWriter;
 
             try
@@ -64,6 +66,16 @@ namespace Microsoft.Partner.SmartOffice.Functions.Tests
                         Domain = "contoso.onmicrosoft.com"
                     },
                     Id = "e0fad1f4-c643-49f1-87b6-d3f1796e94b9"
+                };
+
+                alerts = new List<Alert>
+                {
+                    {
+                        new Alert
+                        {
+                             AzureTenantId = "e0fad1f4-c643-49f1-87b6-d3f1796e94b9"
+                        }
+                    }
                 };
 
                 secureScore = new List<SecureScore>
@@ -83,16 +95,21 @@ namespace Microsoft.Partner.SmartOffice.Functions.Tests
                     }
                 };
 
-                repository = new Mock<IDocumentRepository<SecureScore>>();
 
-                repository.Setup(r => r.AddOrUpdateAsync(It.IsAny<List<SecureScore>>())).Returns(Task.FromResult(0));
+                scores = new Mock<IDocumentRepository<SecureScore>>();
+                scores.Setup(r => r.AddOrUpdateAsync(It.IsAny<List<SecureScore>>())).Returns(Task.FromResult(0));
+
+                securityAlerts = new Mock<IDocumentRepository<Alert>>();
+                securityAlerts.Setup(r => r.AddOrUpdateAsync(It.IsAny<List<Alert>>())).Returns(Task.FromResult(0));
 
                 traceWriter = new TestTraceWriter();
 
-                await SecureScores.ProcessAsync(
+                await Security.ProcessAsync(
                     customer,
-                    repository.Object,
+                    scores.Object,
+                    securityAlerts.Object,
                     secureScore,
+                    alerts,
                     traceWriter).ConfigureAwait(false);
             }
             catch (Exception ex)
@@ -102,7 +119,7 @@ namespace Microsoft.Partner.SmartOffice.Functions.Tests
             finally
             {
                 customer = null;
-                repository = null;
+                scores = null;
                 secureScore = null;
                 traceWriter = null;
             }

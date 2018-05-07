@@ -25,6 +25,8 @@ namespace Microsoft.Partner.SmartOffice.Services
         /// </summary>
         Uri Endpoint { get; }
 
+        Task<List<Alert>> GetAlertsAsync(CancellationToken cancellationToken = default(CancellationToken));
+
         /// <summary>
         /// Gets the secure score for the defined period.
         /// </summary>
