@@ -13,67 +13,47 @@ namespace Microsoft.Partner.SmartOffice.Functions
     using Bindings;
     using Data;
     using Models;
-    using Services;
+    using Models.Graph;
 
+    /// <summary>
+    /// Contains the defintion for the Azure functions related to environments.
+    /// </summary>
     public static class Customers
     {
-        [FunctionName("ProcessCustomers")]
-        public static async Task ProcessAsync(
-            [TimerTrigger("0 0 12 * * *")]TimerInfo timerInfo,
+        [FunctionName("ProcessCustomer")]
+        public static async Task ProcessCustomerAsync(
+            [QueueTrigger("customers", Connection = "StorageConnectionString")]CustomerDetail customer,
             [DataRepository(
                 CosmosDbEndpoint = "CosmosDbEndpoint",
-                DataType = typeof(Customer),
-                KeyVaultEndpoint = "KeyVaultEndpoint")]IDocumentRepository<Customer> repository,
-            [StorageService(
-                ConnectionStringName = "StorageConnectionString",
-                KeyVaultEndpoint = "KeyVaultEndpoint")]IStorageService storage,
-            TraceWriter log)
-        {
-            IEnumerable<Customer> customers;
-
-            try
-            {
-                customers = await repository.GetAsync().ConfigureAwait(false);
-
-                foreach (Customer customer in customers)
-                {
-                    log.Info($"Processing {customer.CompanyProfile.CompanyName}...");
-                    await storage.WriteToQueueAsync("customers", customer).ConfigureAwait(false);
-                }
-            }
-            finally
-            {
-                customers = null;
-            }
-        }
-
-        [FunctionName("PullCustomers")]
-        public static async Task PullAsync(
-            [TimerTrigger("0 0 10 * * *")]TimerInfo timerInfo,
+                DataType = typeof(SecureScore),
+                KeyVaultEndpoint = "KeyVaultEndpoint")]IDocumentRepository<SecureScore> repository,
             [DataRepository(
                 CosmosDbEndpoint = "CosmosDbEndpoint",
-                DataType = typeof(Customer),
-                KeyVaultEndpoint = "KeyVaultEndpoint")]IDocumentRepository<Customer> repository,
-            [PartnerService(
-                ApplicationId ="PartnerCenter.ApplicationId",
-                SecretName = "PartnerCenterApplicationSecret",
-                ApplicationTenantId = "PartnerCenter.AccountId",
+                DataType = typeof(Alert),
+                KeyVaultEndpoint = "KeyVaultEndpoint")]IDocumentRepository<Alert> securityAlerts,
+            [SecureScore(
+                ApplicationId = "{AppEndpoint.ApplicationId}",
+                CustomerId = "{Id}",
                 KeyVaultEndpoint = "KeyVaultEndpoint",
-                Resource = "https://graph.windows.net")]IPartnerService partner,
+                Period = 1,
+                Resource = "https://graph.microsoft.com",
+                SecretName = "{AppEndpoint.ApplicationSecretId}")]List<SecureScore> scores,
+            [SecurityAlerts(
+                ApplicationId = "{AppEndpoint.ApplicationId}",
+                CustomerId = "{Id}",
+                KeyVaultEndpoint = "KeyVaultEndpoint",
+                Resource = "https://graph.microsoft.com",
+                SecretName = "{AppEndpoint.ApplicationSecretId}")]List<Alert> alerts,
             TraceWriter log)
         {
-            List<Customer> customers;
-
-            try
+            if (scores?.Count > 0)
             {
-
-                customers = await partner.GetCustomersAsync().ConfigureAwait(false);
-
-                await repository.AddOrUpdateAsync(customers).ConfigureAwait(false);
+                await repository.AddOrUpdateAsync(scores).ConfigureAwait(false);
             }
-            finally
+
+            if (alerts?.Count > 0)
             {
-                customers = null;
+                await securityAlerts.AddOrUpdateAsync(alerts).ConfigureAwait(false);
             }
         }
     }

@@ -14,6 +14,7 @@ namespace Microsoft.Partner.SmartOffice.Data.Tests
     using Azure.Documents;
     using Azure.Documents.Client;
     using Models;
+    using Models.PartnerCenter; 
     using Moq;
     using VisualStudio.TestTools.UnitTesting;
 
