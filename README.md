@@ -17,21 +17,24 @@ This solution utilizes an Azure Function App to request and store Secure Score i
 
 ## Deployment
 
-Perform the following tasks to deploy this project. If you are not a part of the CSP program then you can skip steps 3 - 6.
+Perform one of the following tasks to deploy this solution.
 
-1. Create and configure the Azure AD application required to access Microsoft Graph, by running the [Create-AzureADApplication.ps1](https://raw.githubusercontent.com/Microsoft/Partner-Smart-Office/master/scripts/Create-AzureADApplication.ps1) script.
-2. Document the __ApplicationId__ and __AplicationSecret__ values that the script outputs. These values will be used when deploying the ARM template.
-3. Login into the [Partner Center](https://partnercenter.microsoft.com) portal using credentials that have _AdminAgents_ and _Global Admin_ privileges
-4. Click _Dashboard_ -> _Account Settings_ -> _App Management_
-5. Click on the _Register existing_ app if you want to use an existing Azure AD application, or click _Add new web app_ to create a new one
+### Azure Cloud Shell
 
-    ![Partner Center App](docs/media/appmgmt01.png)
+Azure Cloud Shell is an interactive, browser-accessible shell for managing Azure resources. Using this shell you can invoke commands to  button below and invoke the following PowerShell cmdlets to deploy Partner Smart Office.
 
-6. Document the _App ID_ and _Account ID_ values. Also, if necessary create a key and document that value.
+[![Launch Cloud Shell](https://shell.azure.com/images/launchcloudshell.png "Launch Azure Cloud Shell")](https://shell.azure.com)
 
-    ![Partner Center App](docs/media/appmgmt02.png)
+```powershell
+$ResourceGroup = Read-Host -Prompt "Specify a resource group name"
 
-7. Click the __Deploy to Azure__ button below to deploy this project to Azure.
+New-AzureRmResourceGroup -Location southcentralus -Name $ResourceGroup
+New-AzureRmResourceGroupDeployment -Name $(New-Guid).ToString() -ResourceGroupName $ResourceGroup -TemplateUri https://raw.githubusercontent.com/Microsoft/Partner-Smart-Office/master/azuredeploy.json
+```
 
-[![Deploy to Azure](http://azuredeploy.net/deploybutton.png)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FMicrosoft%2FPartner-Smart-Office%2Fmaster%2Fazuredeploy.json)
+More information about Azure Cloud Shell can be found at [Overivew of Azure Cloud Shell](https://docs.microsoft.com/en-us/azure/cloud-shell/overview).
+
+### Azure Resource Manager (ARM) Template
+
+[![Deploy to Azure](https://azuredeploy.net/deploybutton.png)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FMicrosoft%2FPartner-Smart-Office%2Fmaster%2Fazuredeploy.json)
 [![Visualize](http://armviz.io/visualizebutton.png)](http://armviz.io/#/?load=https%3A%2F%2Fraw.githubusercontent.com%2FMicrosoft%2FPartner-Smart-Office%2Fmaster%2Fazuredeploy.json)
