@@ -18,7 +18,7 @@ namespace Microsoft.Partner.SmartOffice.Services
         /// <summary>
         /// Gets the credentials used when accessing resources.
         /// </summary>
-        ServiceCredentials Credentials { get; }
+        ServiceClientCredentials Credentials { get; }
 
         /// <summary>
         /// Gets or sets the address of the resource being accessed.

@@ -27,7 +27,7 @@ namespace Microsoft.Partner.SmartOffice.Services.PartnerCenter
         /// <param name="endpoint">Address of the resource being accessed.</param>
         /// <param name="credentials">Credentials used when accessing resources.</param>
         /// <param name="handlers">List of handlers from top to bottom (outer handler is the first in the list)</param>
-        public PartnerServiceClient(Uri endpoint, ServiceCredentials credentials, params DelegatingHandler[] handlers) : base(handlers)
+        public PartnerServiceClient(Uri endpoint, ServiceClientCredentials credentials, params DelegatingHandler[] handlers) : base(handlers)
         {
             Credentials = credentials;
             Endpoint = endpoint;
@@ -59,7 +59,7 @@ namespace Microsoft.Partner.SmartOffice.Services.PartnerCenter
         /// <summary>
         /// Gets the credentials used when accessing resources.
         /// </summary>
-        public ServiceCredentials Credentials { get; private set; }
+        public ServiceClientCredentials Credentials { get; private set; }
 
         /// <summary>
         /// Gets or sets the address of the resource being accessed.

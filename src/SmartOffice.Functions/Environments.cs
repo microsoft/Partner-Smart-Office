@@ -13,6 +13,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
     using Azure.WebJobs.Host;
     using Bindings;
     using Data;
+    using Microsoft.Partner.SmartOffice.Models.Graph;
     using Models;
     using Models.PartnerCenter;
     using Services;
@@ -24,22 +25,60 @@ namespace Microsoft.Partner.SmartOffice.Functions
     public static class Environments
     {
         /// <summary>
-        /// Name of the CSP environments storage queue.
-        /// </summary>
-        private const string CspEnvironmentQueue = "environments-csp";
-
-        /// <summary>
         /// Name of the customers storage queue.
         /// </summary>
-        private const string CustomerQueue = "customers";
+        private const string CustomersQueue = "customers";
 
         /// <summary>
-        /// Name of the EA environments storage queue.
+        /// Name of the partners storage queue.
         /// </summary>
-        private const string EaEnvironmentQueue = "environments-ea";
+        private const string PartnersQueue = "partners";
+
+        [FunctionName("ProcessCustomer")]
+        public static async Task ProcessCustomerAsync(
+            [QueueTrigger(CustomersQueue, Connection = "StorageConnectionString")]CustomerDetail customer,
+            [DataRepository(
+                CosmosDbEndpoint = "CosmosDbEndpoint",
+                DataType = typeof(SecureScore),
+                KeyVaultEndpoint = "KeyVaultEndpoint")]IDocumentRepository<SecureScore> repository,
+            [DataRepository(
+                CosmosDbEndpoint = "CosmosDbEndpoint",
+                DataType = typeof(Alert),
+                KeyVaultEndpoint = "KeyVaultEndpoint")]IDocumentRepository<Alert> securityAlerts,
+            [SecureScore(
+                ApplicationId = "{AppEndpoint.ApplicationId}",
+                CustomerId = "{Id}",
+                KeyVaultEndpoint = "KeyVaultEndpoint",
+                Period = 1,
+                Resource = "{AppEndpoint.ServiceAddress}",
+                SecretName = "{AppEndpoint.ApplicationSecretId}")]List<SecureScore> scores,
+            [SecurityAlerts(
+                ApplicationId = "{AppEndpoint.ApplicationId}",
+                CustomerId = "{Id}",
+                KeyVaultEndpoint = "KeyVaultEndpoint",
+                Resource = "{AppEndpoint.ServiceAddress}",
+                SecretName = "{AppEndpoint.ApplicationSecretId}")]List<Alert> alerts,
+            TraceWriter log)
+        {
+            log.Info($"Processing data for {customer.Id}");
+
+            if (scores?.Count > 0)
+            {
+                log.Info($"Importing {scores.Count} Secure Score entries for {customer.Id}...");
+                await repository.AddOrUpdateAsync(scores).ConfigureAwait(false);
+            }
+
+            if (alerts?.Count > 0)
+            {
+                log.Info($"Importing {alerts.Count} security alert entries for {customer.Id}...");
+                await securityAlerts.AddOrUpdateAsync(alerts).ConfigureAwait(false);
+            }
+
+            log.Info($"Successfully process data for {customer.Id}");
+        }
 
         /// <summary>
-        /// 
+        /// Azure function that process partner evnironments.
         /// </summary>
         /// <param name="environment"></param>
         /// <param name="auditRecordRepository"></param>
@@ -47,9 +86,9 @@ namespace Microsoft.Partner.SmartOffice.Functions
         /// <param name="partner"></param>
         /// <param name="storage"></param>
         /// <returns>An instance of the <see cref="Task" /> class that represents the asynchronous operation.</returns>
-        [FunctionName("ProcessCspEnvironment")]
-        public static async Task ProcessCspEnvironmentAsync(
-            [QueueTrigger(CspEnvironmentQueue, Connection = "StorageConnectionString")]EnvironmentDetail environment,
+        [FunctionName("ProcessPartner")]
+        public static async Task ProcessPartnerAsync(
+            [QueueTrigger(PartnersQueue, Connection = "StorageConnectionString")]EnvironmentDetail environment,
             [DataRepository(
                 CosmosDbEndpoint = "CosmosDbEndpoint",
                 DataType = typeof(AuditRecord),
@@ -60,7 +99,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
                 KeyVaultEndpoint = "KeyVaultEndpoint")]IDocumentRepository<Customer> customerRepository,
             [PartnerService(
                 ApplicationId = "{PartnerCenterEndpoint.ApplicationId}",
-                Endpoint = "{PartnerCenterEndpoint.EndpointUri}",
+                Endpoint = "{PartnerCenterEndpoint.ServiceAddress}",
                 SecretName = "{PartnerCenterEndpoint.ApplicationSecretId}",
                 ApplicationTenantId = "{PartnerCenterEndpoint.TenantId}",
                 KeyVaultEndpoint = "KeyVaultEndpoint",
@@ -112,7 +151,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
                 {
                     // Write the customer to the customers queue to start processing the customer.
                     await storage.WriteToQueueAsync(
-                        CustomerQueue,
+                        CustomersQueue,
                         new CustomerDetail
                         {
                             AppEndpoint = environment.AppEndpoint,
@@ -153,15 +192,34 @@ namespace Microsoft.Partner.SmartOffice.Functions
 
             try
             {
+                if (timerInfo.IsPastDue)
+                {
+                    log.Info("Execution of the function is starting behind schedule.");
+                }
+
                 // Obtain a complete list of all configured environments. 
                 environments = await repository.GetAsync().ConfigureAwait(false);
 
                 foreach (EnvironmentDetail env in environments)
                 {
-                    // Write each environment detail object to the environments queue.
-                    await storage.WriteToQueueAsync(
-                        (env.EnvironmentType == EnvironmentType.CSP) ? CspEnvironmentQueue : EaEnvironmentQueue, env)
-                        .ConfigureAwait(false);
+
+                    if (env.EnvironmentType == EnvironmentType.CSP)
+                    {
+                        // Write the environment details to the partners storage queue.
+                        await storage.WriteToQueueAsync(PartnersQueue, env).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        // Extract the customer details and write them to the customers storage queue.
+                        await storage.WriteToQueueAsync(
+                            CustomersQueue,
+                            new CustomerDetail
+                            {
+                                AppEndpoint = env.AppEndpoint,
+                                Id = env.Id
+                            }).ConfigureAwait(false);
+                    }
+
                 }
             }
             finally

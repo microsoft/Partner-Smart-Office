@@ -19,11 +19,11 @@ namespace Microsoft.Partner.SmartOffice.Models
         /// Gets or sets the identifier of the application secret.
         /// </summary>
         public string ApplicationSecretId { get; set; }
-
+        
         /// <summary>
-        /// Gets or sets the endpoint address.
+        /// Gets or sets the service address.
         /// </summary>
-        public string EndpointUri { get; set; }
+        public string ServiceAddress { get; set; }
 
         /// <summary>
         /// Gets or set the identifier of the tenant.

@@ -28,7 +28,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
         /// </summary>
         private const string ControlListEmbeddedResource = "Microsoft.Partner.SmartOffice.Functions.Assets.SecureScoreControlsList.csv";
 
-        [FunctionName("ImportSecureScoreControls")]
+        [FunctionName("ImportDataControls")]
         public static async Task ImportControlsAsync(
             [TimerTrigger("0 0 10 * * *")]TimerInfo timerInfo,
             [DataRepository(
@@ -43,6 +43,11 @@ namespace Microsoft.Partner.SmartOffice.Functions
             try
             {
                 log.Info("Importing Office 365 Secure Score controls details...");
+
+                if (timerInfo.IsPastDue)
+                {
+                    log.Info("Execution of the function is starting behind schedule.");
+                }
 
                 using (StreamReader streamReader = new StreamReader(
                     Assembly.GetExecutingAssembly().GetManifestResourceStream(ControlListEmbeddedResource)))

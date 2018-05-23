@@ -1,5 +1,13 @@
 # Partner Smart Office Changelog
 
+## 0.0.2 (2018-05-23)
+
+### Features
+
+### Bug Fixes
+
+### Breaking Changes
+
 ## 0.0.1 (2018-05-07)
 
 ### Features

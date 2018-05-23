@@ -24,7 +24,7 @@ namespace Microsoft.Partner.SmartOffice.Services
         /// </summary>
         /// <param name="credentials">Credentials used when accessing resources.</param>
         /// <param name="handlers">List of handlers from top to bottom (outer handler is the first in the list)</param>
-        public GraphService(ServiceCredentials credentials, params DelegatingHandler[] handlers) : base(handlers)
+        public GraphService(ServiceClientCredentials credentials, params DelegatingHandler[] handlers) : base(handlers)
         {
             Credentials = credentials;
         }
@@ -35,7 +35,7 @@ namespace Microsoft.Partner.SmartOffice.Services
         /// <param name="endpoint">Address of the resource being accessed.</param>
         /// <param name="credentials">Credentials used when accessing resources.</param>
         /// <param name="handlers">List of handlers from top to bottom (outer handler is the first in the list)</param>
-        public GraphService(Uri endpoint, ServiceCredentials credentials, params DelegatingHandler[] handlers) : base(handlers)
+        public GraphService(Uri endpoint, ServiceClientCredentials credentials, params DelegatingHandler[] handlers) : base(handlers)
         {
             Credentials = credentials;
             Endpoint = endpoint;
@@ -44,7 +44,7 @@ namespace Microsoft.Partner.SmartOffice.Services
         /// <summary>
         /// Gets or sets the credentials used when accessing resources.
         /// </summary>
-        public ServiceCredentials Credentials { get; private set; }
+        public ServiceClientCredentials Credentials { get; private set; }
 
         /// <summary>
         /// Gets or sets the address of the resource being accessed.
@@ -73,7 +73,7 @@ namespace Microsoft.Partner.SmartOffice.Services
 
                     if (!response.IsSuccessStatusCode)
                     {
-                        throw new ServiceClientException(content, Credentials.TenantId, response.StatusCode);
+                        throw new ServiceClientException(content, ((ServiceCredentials)Credentials).TenantId, response.StatusCode);
                     }
 
                     alerts = JsonConvert.DeserializeObject<ODataResponse<Alert>>(content);
@@ -115,7 +115,7 @@ namespace Microsoft.Partner.SmartOffice.Services
 
                     if (!response.IsSuccessStatusCode)
                     {
-                        throw new ServiceClientException(content, Credentials.TenantId, response.StatusCode);
+                        throw new ServiceClientException(content, ((ServiceCredentials)Credentials).TenantId, response.StatusCode);
                     }
 
                     scores = SafeJsonConvert.DeserializeObject<List<SecureScore>>(content);
