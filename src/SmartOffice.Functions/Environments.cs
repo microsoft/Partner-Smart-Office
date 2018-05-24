@@ -8,14 +8,17 @@ namespace Microsoft.Partner.SmartOffice.Functions
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
+    using System.Reflection;
     using System.Threading.Tasks;
     using Azure.WebJobs;
     using Azure.WebJobs.Host;
     using Bindings;
     using Data;
-    using Microsoft.Partner.SmartOffice.Models.Graph;
     using Models;
+    using Models.Graph;
     using Models.PartnerCenter;
+    using Newtonsoft.Json;
     using Services;
     using Services.PartnerCenter;
 
@@ -106,15 +109,17 @@ namespace Microsoft.Partner.SmartOffice.Functions
                 Resource = "https://graph.windows.net")]IPartnerServiceClient partner,
             [StorageService(
                 ConnectionStringName = "StorageConnectionString",
-                KeyVaultEndpoint = "KeyVaultEndpoint")]IStorageService storage)
+                KeyVaultEndpoint = "KeyVaultEndpoint")]IStorageService storage,
+            TraceWriter log)
         {
             List<AuditRecord> auditRecords;
             List<Customer> customers;
             SeekBasedResourceCollection<AuditRecord> seekAuditRecords;
-            SeekBasedResourceCollection<Customer> seekCustomers;
 
             try
             {
+                log.Info($"Starting to process the {environment.FriendlyName} CSP environment.");
+
                 // Request the audit records for the previous day from the Partner Center API.
                 seekAuditRecords = await partner.AuditRecords.QueryAsync(DateTime.Now.AddDays(-1)).ConfigureAwait(false);
 
@@ -131,17 +136,15 @@ namespace Microsoft.Partner.SmartOffice.Functions
                 // Add, or update, each audit record to the database.
                 await auditRecordRepository.AddOrUpdateAsync(auditRecords).ConfigureAwait(false);
 
-                // Request a list of customers from the Partner Center API.
-                seekCustomers = await partner.Customers.GetAsync().ConfigureAwait(false);
-
-                customers = new List<Customer>(seekCustomers.Items);
-
-                while (seekCustomers.Links.Next != null)
+                if (environment.LastProcessed > DateTimeOffset.UtcNow.AddDays(-30) && environment.LastProcessed < DateTimeOffset.UtcNow)
                 {
-                    // Request the next page of customers from the Partner Center API.
-                    seekCustomers = await partner.Customers.GetAsync(seekCustomers.Links.Next).ConfigureAwait(false);
-
-                    customers.AddRange(seekCustomers.Items);
+                    customers = await GetCustomersAsync(partner).ConfigureAwait(false);
+                }
+                else
+                {
+                    customers = await GetCustomersFromAuditRecordsAsync(
+                        customerRepository,
+                        auditRecords).ConfigureAwait(false);
                 }
 
                 // Add, or update, each customer to the database.
@@ -158,13 +161,14 @@ namespace Microsoft.Partner.SmartOffice.Functions
                             Id = customer.Id
                         }).ConfigureAwait(false);
                 }
+
+                log.Info($"Successfully process the {environment.FriendlyName} CSP environment.");
             }
             finally
             {
                 auditRecords = null;
                 customers = null;
                 seekAuditRecords = null;
-                seekCustomers = null;
             }
         }
 
@@ -225,6 +229,73 @@ namespace Microsoft.Partner.SmartOffice.Functions
             finally
             {
                 environments = null;
+            }
+        }
+
+        private static async Task<List<Customer>> GetCustomersAsync(IPartnerServiceClient partner)
+        {
+            List<Customer> customers;
+            SeekBasedResourceCollection<Customer> seekCustomers;
+
+            try
+            {
+                // Request a list of customers from the Partner Center API.
+                seekCustomers = await partner.Customers.GetAsync().ConfigureAwait(false);
+
+                customers = new List<Customer>(seekCustomers.Items);
+
+                while (seekCustomers.Links.Next != null)
+                {
+                    // Request the next page of customers from the Partner Center API.
+                    seekCustomers = await partner.Customers.GetAsync(seekCustomers.Links.Next).ConfigureAwait(false);
+
+                    customers.AddRange(seekCustomers.Items);
+                }
+
+                return customers;
+            }
+            finally
+            {
+                seekCustomers = null;
+            }
+        }
+
+        private static async Task<List<Customer>> GetCustomersFromAuditRecordsAsync(IDocumentRepository<Customer> customerRepository, List<AuditRecord> auditRecords)
+        {
+            Customer modifiedCustomer;
+            List<Customer> customers;
+            AuditRecord auditRecord;
+
+            try
+            {
+                customers = await customerRepository.GetAsync().ConfigureAwait(false);
+
+                foreach (Customer customer in customers)
+                {
+                    // Select the most recent audit entry for the current customer.
+                    auditRecord = auditRecords
+                        .Where(r => r.CustomerId.Equals(customer.Id, StringComparison.InvariantCultureIgnoreCase)
+                            && r.ResourceType == ResourceType.Customer)
+                        .OrderByDescending(r => r.OperationDate).FirstOrDefault();
+
+                    if (auditRecord != null)
+                    {
+                        modifiedCustomer = JsonConvert.DeserializeObject<Customer>(auditRecord.ResourceNewValue);
+
+                        foreach (PropertyInfo info in customer.GetType().GetProperties())
+                        {
+                            info.SetValue(customer, info.GetValue(modifiedCustomer));
+                        }
+                    }
+
+                }
+
+                return customers;
+            }
+            finally
+            {
+                auditRecord = null;
+                modifiedCustomer = null;
             }
         }
     }

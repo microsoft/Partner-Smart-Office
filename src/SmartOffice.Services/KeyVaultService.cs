@@ -7,15 +7,17 @@
 namespace Microsoft.Partner.SmartOffice.Services
 {
     using System;
-    using System.Collections.Generic;
     using System.Net.Http;
     using System.Threading.Tasks;
     using Azure.KeyVault;
     using Azure.KeyVault.Models;
     using Newtonsoft.Json;
 
-    public class KeyVaultService : IVaultService
+    public class KeyVaultService : IVaultService, IDisposable
     {
+        /// <summary>
+        /// Provides the ability to perform HTTP operations. 
+        /// </summary>
         private static HttpClient httpClient = new HttpClient();
 
         /// <summary>
@@ -39,15 +41,20 @@ namespace Microsoft.Partner.SmartOffice.Services
         private const string NotFoundErrorCode = "SecretNotFound";
 
         /// <summary>
+        /// Address for the Azure Key Vault endpoint.
+        /// </summary>
+        private readonly string endpoint;
+
+        /// <summary>
         /// Provides the ability to perform cryptographic key operations and vault operations 
         /// against the Key Vault service.
         /// </summary>
         private IKeyVaultClient keyVaultClient;
 
         /// <summary>
-        /// Address for the Azure Key Vault endpoint.
+        /// Flag indicating whether or not this object has been disposed.
         /// </summary>
-        private string endpoint;
+        private bool disposed = false;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="KeyVaultService"/> class.
@@ -118,6 +125,27 @@ namespace Microsoft.Partner.SmartOffice.Services
             {
                 bundle = null;
             }
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposed)
+            {
+                return;
+            }
+
+            if (disposing)
+            {
+                KeyVault?.Dispose();
+            }
+
+            disposed = true;
         }
 
         private static async Task<string> GetKeyVaultAccessTokenAsync(string authority, string resource, string scope)

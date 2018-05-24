@@ -6,6 +6,7 @@
 
 namespace Microsoft.Partner.SmartOffice.Models
 {
+    using System;
     using Newtonsoft.Json;
 
     public class EnvironmentDetail
@@ -30,6 +31,11 @@ namespace Microsoft.Partner.SmartOffice.Models
         /// </summary>
         [JsonProperty("id")]
         public string Id { get; set; }
+
+        /// <summary>
+        /// Gets or sets the time the environment was last processed.
+        /// </summary>
+        public DateTimeOffset LastProcessed { get; set; }
 
         /// <summary>
         /// Gets or sets the Microsoft Partner Center endpoint details for the environment.

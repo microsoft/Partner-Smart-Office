@@ -184,7 +184,7 @@ namespace Microsoft.Partner.SmartOffice.Data
         /// <returns>
         /// A collection of items that represent the items in the repository.
         /// </returns>
-        public async Task<IEnumerable<TEntity>> GetAsync()
+        public async Task<List<TEntity>> GetAsync()
         {
             FeedResponse<dynamic> response;
             List<TEntity> results;
@@ -211,7 +211,7 @@ namespace Microsoft.Partner.SmartOffice.Data
         /// <returns>
         /// A collection that contains items from the repository that satisfy the condition specified by predicate.
         /// </returns>
-        public async Task<IEnumerable<TEntity>> GetAsync(Expression<Func<TEntity, bool>> predicate)
+        public async Task<List<TEntity>> GetAsync(Expression<Func<TEntity, bool>> predicate)
         {
             IDocumentQuery<TEntity> query;
             List<TEntity> results;

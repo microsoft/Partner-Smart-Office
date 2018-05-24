@@ -52,9 +52,12 @@ namespace Microsoft.Partner.SmartOffice.Services
         {
             vaultSerivce = new KeyVaultService(keyVaultEndpoint);
 
-            CloudStorageAccount.TryParse(
+            if (!CloudStorageAccount.TryParse(
                 await vaultSerivce.GetSecretAsync(connectionString).ConfigureAwait(false),
-                out storageAccount);
+                out storageAccount))
+            {
+                throw new Exception("Unable to intialize the storage account. Please check the connection string setting.");
+            }
         }
 
         /// <summary>

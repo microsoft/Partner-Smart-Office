@@ -12,21 +12,19 @@ namespace Microsoft.Partner.SmartOffice.Functions.Tests
 
     internal class TestTraceWriter : TraceWriter
     {
-        private List<TraceEvent> traceEvents;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="TestTraceWriter" />
         /// </summary>
         public TestTraceWriter() : base(TraceLevel.Verbose)
         {
-            traceEvents = new List<TraceEvent>();
+            TraceEvents = new List<TraceEvent>();
         }
 
-        internal List<TraceEvent> TraceEvents => traceEvents;
+        internal List<TraceEvent> TraceEvents { get; }
 
         public override void Trace(TraceEvent traceEvent)
         {
-            traceEvents.Add(traceEvent);
+            TraceEvents.Add(traceEvent);
         }
     }
 }

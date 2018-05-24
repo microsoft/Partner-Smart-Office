@@ -21,7 +21,7 @@ namespace Microsoft.Partner.SmartOffice.Services.PartnerCenter.Customers
         /// <summary>
         /// Initializes a new instance of the <see cref="CustomerCollectionOperations" /> class.
         /// </summary>
-        /// <param name="client">An instance of the <see cref="PartnerServiceClient" /> class.</param>
+        /// <param name="client">Provides the ability to perform HTTP operations.</param>
         public CustomerCollectionOperations(PartnerServiceClient client)
         {
             this.client = client;
