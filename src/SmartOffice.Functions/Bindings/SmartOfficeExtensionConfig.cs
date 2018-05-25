@@ -174,7 +174,8 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
             {
                 vaultService = new KeyVaultService(input.KeyVaultEndpoint);
 
-                return new PartnerServiceClient(new Uri(input.Endpoint),
+                return new PartnerServiceClient(
+                    new Uri(input.Endpoint),
                     new ServiceCredentials(
                         input.ApplicationId,
                         await vaultService.GetSecretAsync(input.SecretName).ConfigureAwait(false),

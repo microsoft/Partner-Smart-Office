@@ -13,7 +13,7 @@ namespace Microsoft.Partner.SmartOffice.Models.PartnerCenter
         /// </summary>
         protected ResourceBase()
         {
-            this.Attributes = new ResourceAttributes(GetType());
+            Attributes = new ResourceAttributes(GetType());
         }
 
         /// <summary>

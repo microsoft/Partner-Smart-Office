@@ -9,7 +9,7 @@ namespace Microsoft.Partner.SmartOffice.Models.PartnerCenter
     using System;
     using Newtonsoft.Json;
 
-    public sealed class Subscription
+    public sealed class Subscription : ResourceBaseWithLinks<StandardResourceLinks>
     {
         /// <summary>
         /// Gets or sets the date when the subscription was created.

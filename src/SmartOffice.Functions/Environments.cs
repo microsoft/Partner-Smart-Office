@@ -9,7 +9,6 @@ namespace Microsoft.Partner.SmartOffice.Functions
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using System.Reflection;
     using System.Threading.Tasks;
     using Azure.WebJobs;
     using Azure.WebJobs.Host;
@@ -80,15 +79,6 @@ namespace Microsoft.Partner.SmartOffice.Functions
             log.Info($"Successfully process data for {customer.Id}");
         }
 
-        /// <summary>
-        /// Azure function that process partner evnironments.
-        /// </summary>
-        /// <param name="environment"></param>
-        /// <param name="auditRecordRepository"></param>
-        /// <param name="customerRepository"></param>
-        /// <param name="partner"></param>
-        /// <param name="storage"></param>
-        /// <returns>An instance of the <see cref="Task" /> class that represents the asynchronous operation.</returns>
         [FunctionName("ProcessPartner")]
         public static async Task ProcessPartnerAsync(
             [QueueTrigger(PartnersQueue, Connection = "StorageConnectionString")]EnvironmentDetail environment,
@@ -133,18 +123,22 @@ namespace Microsoft.Partner.SmartOffice.Functions
                     auditRecords.AddRange(seekAuditRecords.Items);
                 }
 
-                // Add, or update, each audit record to the database.
-                await auditRecordRepository.AddOrUpdateAsync(auditRecords).ConfigureAwait(false);
-
-                if (environment.LastProcessed > DateTimeOffset.UtcNow.AddDays(-30) && environment.LastProcessed < DateTimeOffset.UtcNow)
+                if (auditRecords.Count > 0)
                 {
-                    customers = await GetCustomersAsync(partner).ConfigureAwait(false);
+                    // Add, or update, each audit record to the database.
+                    await auditRecordRepository.AddOrUpdateAsync(auditRecords).ConfigureAwait(false);
+                }
+
+                if (environment?.LastProcessed < DateTimeOffset.UtcNow.AddDays(30))
+                {
+                    customers = await BuildUsingAuditRecordsAsync(
+                        auditRecords,
+                        customerRepository,
+                        ResourceType.Customer).ConfigureAwait(false);
                 }
                 else
                 {
-                    customers = await GetCustomersFromAuditRecordsAsync(
-                        customerRepository,
-                        auditRecords).ConfigureAwait(false);
+                    customers = await GetCustomersAsync(partner).ConfigureAwait(false);
                 }
 
                 // Add, or update, each customer to the database.
@@ -260,42 +254,66 @@ namespace Microsoft.Partner.SmartOffice.Functions
             }
         }
 
-        private static async Task<List<Customer>> GetCustomersFromAuditRecordsAsync(IDocumentRepository<Customer> customerRepository, List<AuditRecord> auditRecords)
+        private static async Task<List<TResource>> BuildUsingAuditRecordsAsync<TResource>(
+            List<AuditRecord> auditRecords,
+            IDocumentRepository<TResource> repository,
+            ResourceType resourceType) where TResource : StandardResource
         {
-            Customer modifiedCustomer;
-            List<Customer> customers;
-            AuditRecord auditRecord;
+            IEnumerable<AuditRecord> filteredRecords;
+            List<TResource> resources;
+            TResource control;
+            TResource resource;
 
             try
             {
-                customers = await customerRepository.GetAsync().ConfigureAwait(false);
+                // Extract a list of audit records that are scope to the defined resource type and were successful.
+                filteredRecords = auditRecords
+                    .Where(r => r.ResourceType == resourceType && r.OperationStatus == OperationStatus.Succeeded)
+                    .OrderBy(r => r.OperationDate);
 
-                foreach (Customer customer in customers)
+                // Obtain a list of existing resources from the data repository.
+                resources = await repository.GetAsync().ConfigureAwait(false);
+
+                foreach (AuditRecord record in filteredRecords)
                 {
-                    // Select the most recent audit entry for the current customer.
-                    auditRecord = auditRecords
-                        .Where(r => r.CustomerId.Equals(customer.Id, StringComparison.InvariantCultureIgnoreCase)
-                            && r.ResourceType == ResourceType.Customer)
-                        .OrderByDescending(r => r.OperationDate).FirstOrDefault();
-
-                    if (auditRecord != null)
+                    if (record.ResourceType == ResourceType.Customer)
                     {
-                        modifiedCustomer = JsonConvert.DeserializeObject<Customer>(auditRecord.ResourceNewValue);
-
-                        foreach (PropertyInfo info in customer.GetType().GetProperties())
+                        if (record.OperationType == OperationType.AddCustomer)
                         {
-                            info.SetValue(customer, info.GetValue(modifiedCustomer));
+                            resource = JsonConvert.DeserializeObject<TResource>(record.ResourceNewValue);
+                            control = resources.SingleOrDefault(r => r.Id.Equals(resource.Id, StringComparison.InvariantCultureIgnoreCase));
+
+                            if (control != null)
+                            {
+                                resources.Remove(control);
+                            }
+
+                            resources.Add(resource);
                         }
                     }
+                    else if (record.ResourceType == ResourceType.Order)
+                    {
+                        // TODO - Convert a new order to a subscription.
+                    }
+                    else if (record.ResourceType == ResourceType.Subscription)
+                    {
+                        resource = JsonConvert.DeserializeObject<TResource>(record.ResourceNewValue);
+                        control = resources.SingleOrDefault(r => r.Id.Equals(resource.Id, StringComparison.InvariantCultureIgnoreCase));
 
+                        if (control != null)
+                        {
+                            resources.Remove(control);
+                        }
+
+                        resources.Add(resource);
+                    }
                 }
 
-                return customers;
+                return resources;
             }
             finally
             {
-                auditRecord = null;
-                modifiedCustomer = null;
+                filteredRecords = null;
             }
         }
     }

@@ -34,6 +34,7 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
         /// <summary>
         /// Gets or sets the identifier of the target resource that is the recipient of the token being requested.
         /// </summary>
+        [AutoResolve]
         public string Resource { get; set; }
 
         /// <summary>
