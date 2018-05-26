@@ -7,19 +7,27 @@
 namespace Microsoft.Partner.SmartOffice.Models
 {
     using System;
-    using System.Collections.Generic;
     using Models.PartnerCenter;
+    using Newtonsoft.Json;
 
-    public class CustomerDetail
+    public sealed class CustomerDetail
     {
-        public EndpointDetail AppEndpoint { get; set; }
+        /// <summary>
+        /// Gets or sets the customer's company profile.
+        /// </summary>
+        [JsonProperty(PropertyName = "companyProfile")]
+        public CompanyProfile CompanyProfile { get; set; }
 
-        public List<AuditRecord> AuditRecords { get; set; }
-
+        /// <summary>
+        /// Gets or sets the identifier for the customer.
+        /// </summary>
+        [JsonProperty("id")]
         public string Id { get; set; }
 
+        /// <summary>
+        /// Gets or sets the date the customer was last processed.
+        /// </summary>
+        [JsonProperty("lastProcessed")]
         public DateTimeOffset? LastProcessed { get; set; }
-
-        public EndpointDetail PartnerCenterEndpoint { get; set; }
     }
 }

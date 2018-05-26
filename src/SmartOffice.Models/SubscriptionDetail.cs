@@ -1,16 +1,17 @@
 ﻿// -----------------------------------------------------------------------
-// <copyright file="Subscription.cs" company="Microsoft">
+// <copyright file="SubscriptionDetail.cs" company="Microsoft">
 //     Copyright (c) Microsoft Corporation. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace Microsoft.Partner.SmartOffice.Models.PartnerCenter
+namespace Microsoft.Partner.SmartOffice.Models
 {
     using System;
     using System.Collections.Generic;
     using Newtonsoft.Json;
+    using PartnerCenter;
 
-    public sealed class Subscription : ResourceBaseWithLinks<StandardResourceLinks>
+    public class SubscriptionDetail
     {
         /// <summary>
         /// Gets or sets a value indicating whether automatic renew is enabled or not.
@@ -55,7 +56,7 @@ namespace Microsoft.Partner.SmartOffice.Models.PartnerCenter
         public string FriendlyName { get; set; }
 
         /// <summary>
-        /// Gets or sets the identifier for the subscription.
+        /// Gets or sets the identifier of the subscription.
         /// </summary>
         [JsonProperty("id")]
         public string Id { get; set; }
@@ -101,6 +102,11 @@ namespace Microsoft.Partner.SmartOffice.Models.PartnerCenter
         /// </summary>
         [JsonProperty("suspensionReasons")]
         public IEnumerable<string> SuspensionReasons { get; set; }
+
+        /// <summary>
+        /// Gets or sets the identifier for the tenant that owns the subscription.
+        /// </summary>
+        public string TenantId { get; set; }
 
         /// <summary>
         /// Gets or sets the units definig the quantity for the subscription.

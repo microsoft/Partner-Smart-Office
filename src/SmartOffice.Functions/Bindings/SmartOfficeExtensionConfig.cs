@@ -126,9 +126,9 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
 
                     return controls;
                 }
-                else if (input.DataType == typeof(Customer))
+                else if (input.DataType == typeof(CustomerDetail))
                 {
-                    DocumentRepository<Customer> customers = new DocumentRepository<Customer>(
+                    DocumentRepository<CustomerDetail> customers = new DocumentRepository<CustomerDetail>(
                         input.CosmosDbEndpoint,
                         authKey,
                         DatabaseId,
@@ -162,9 +162,9 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
 
                     return score;
                 }
-                else if (input.DataType == typeof(Subscription))
+                else if (input.DataType == typeof(SubscriptionDetail))
                 {
-                    DocumentRepository<Subscription> subscriptions = new DocumentRepository<Subscription>(
+                    DocumentRepository<SubscriptionDetail> subscriptions = new DocumentRepository<SubscriptionDetail>(
                         input.CosmosDbEndpoint,
                         authKey,
                         DatabaseId,

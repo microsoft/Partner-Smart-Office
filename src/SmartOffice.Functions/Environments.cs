@@ -38,19 +38,23 @@ namespace Microsoft.Partner.SmartOffice.Functions
 
         [FunctionName("ProcessCustomer")]
         public static async Task ProcessCspCustomerAsync(
-            [QueueTrigger(CustomersQueue, Connection = "StorageConnectionString")]CustomerDetail customer,
+            [QueueTrigger(CustomersQueue, Connection = "StorageConnectionString")]XEvent data,
             [DataRepository(
                 CosmosDbEndpoint = "CosmosDbEndpoint",
                 DataType = typeof(Alert),
                 KeyVaultEndpoint = "KeyVaultEndpoint")]IDocumentRepository<Alert> securityAlertRepository,
             [DataRepository(
                 CosmosDbEndpoint = "CosmosDbEndpoint",
+                DataType = typeof(CustomerDetail),
+                KeyVaultEndpoint = "KeyVaultEndpoint")]IDocumentRepository<CustomerDetail> customerRepository,
+            [DataRepository(
+                CosmosDbEndpoint = "CosmosDbEndpoint",
                 DataType = typeof(SecureScore),
                 KeyVaultEndpoint = "KeyVaultEndpoint")]IDocumentRepository<SecureScore> secureScoreRepository,
             [DataRepository(
                 CosmosDbEndpoint = "CosmosDbEndpoint",
-                DataType = typeof(Subscription),
-                KeyVaultEndpoint = "KeyVaultEndpoint")]IDocumentRepository<Subscription> subscriptionRepository,
+                DataType = typeof(SubscriptionDetail),
+                KeyVaultEndpoint = "KeyVaultEndpoint")]IDocumentRepository<SubscriptionDetail> subscriptionRepository,
             [PartnerService(
                 ApplicationId = "{PartnerCenterEndpoint.ApplicationId}",
                 Endpoint = "{PartnerCenterEndpoint.ServiceAddress}",
@@ -60,52 +64,59 @@ namespace Microsoft.Partner.SmartOffice.Functions
                 Resource = "https://graph.windows.net")]IPartnerServiceClient partner,
             [SecureScore(
                 ApplicationId = "{AppEndpoint.ApplicationId}",
-                CustomerId = "{Id}",
+                CustomerId = "{Customer.Id}",
                 KeyVaultEndpoint = "KeyVaultEndpoint",
                 Period = 1,
                 Resource = "{AppEndpoint.ServiceAddress}",
                 SecretName = "{AppEndpoint.ApplicationSecretId}")]List<SecureScore> scores,
             [SecurityAlerts(
                 ApplicationId = "{AppEndpoint.ApplicationId}",
-                CustomerId = "{Id}",
+                CustomerId = "{Customer.Id}",
                 KeyVaultEndpoint = "KeyVaultEndpoint",
                 Resource = "{AppEndpoint.ServiceAddress}",
                 SecretName = "{AppEndpoint.ApplicationSecretId}")]List<Alert> alerts,
             TraceWriter log)
         {
-            List<Subscription> subscriptions;
+            List<SubscriptionDetail> subscriptions;
 
             try
             {
-                log.Info($"Processing data for {customer.Id}");
+                log.Info($"Processing data for {data.Customer.Id}");
 
-                if ((customer?.LastProcessed - DateTimeOffset.UtcNow).Value.TotalDays >= 30)
+                if (data.Customer.LastProcessed == null || (DateTimeOffset.UtcNow - data.Customer.LastProcessed).Value.TotalDays >= 30)
                 {
-                    subscriptions = await GetSubscriptionsAsync(partner, customer.Id).ConfigureAwait(false);
+                    subscriptions = await GetSubscriptionsAsync(partner, data.Customer.Id).ConfigureAwait(false);
                 }
                 else
                 {
                     subscriptions = await BuildUsingAuditRecordsAsync(
-                        customer.AuditRecords,
+                        data.AuditRecords,
                         subscriptionRepository,
-                        ResourceType.Subscription).ConfigureAwait(false);
+                        data.Customer.Id).ConfigureAwait(false);
                 }
 
-                await subscriptionRepository.AddOrUpdateAsync(subscriptions).ConfigureAwait(false);
-
-                if (scores?.Count > 0)
+                if (subscriptions.Count > 0)
                 {
-                    log.Info($"Importing {scores.Count} Secure Score entries for {customer.Id}");
-                    await secureScoreRepository.AddOrUpdateAsync(scores).ConfigureAwait(false);
+                    await subscriptionRepository.AddOrUpdateAsync(subscriptions).ConfigureAwait(false);
+
+                    if (scores?.Count > 0)
+                    {
+                        log.Info($"Importing {scores.Count} Secure Score entries for {data.Customer.Id}");
+                        await secureScoreRepository.AddOrUpdateAsync(scores).ConfigureAwait(false);
+                    }
+
+                    if (alerts?.Count > 0)
+                    {
+                        log.Info($"Importing {alerts.Count} security alert entries for {data.Customer.Id}");
+                        await securityAlertRepository.AddOrUpdateAsync(alerts).ConfigureAwait(false);
+                    }
                 }
 
-                if (alerts?.Count > 0)
-                {
-                    log.Info($"Importing {alerts.Count} security alert entries for {customer.Id}");
-                    await securityAlertRepository.AddOrUpdateAsync(alerts).ConfigureAwait(false);
-                }
+                data.Customer.LastProcessed = DateTimeOffset.UtcNow;
 
-                log.Info($"Successfully process data for {customer.Id}");
+                await customerRepository.AddOrUpdateAsync(data.Customer).ConfigureAwait(false);
+
+                log.Info($"Successfully process data for {data.Customer.Id}");
             }
             finally
             {
@@ -122,8 +133,8 @@ namespace Microsoft.Partner.SmartOffice.Functions
                 KeyVaultEndpoint = "KeyVaultEndpoint")]IDocumentRepository<AuditRecord> auditRecordRepository,
             [DataRepository(
                 CosmosDbEndpoint = "CosmosDbEndpoint",
-                DataType = typeof(Customer),
-                KeyVaultEndpoint = "KeyVaultEndpoint")]IDocumentRepository<Customer> customerRepository,
+                DataType = typeof(CustomerDetail),
+                KeyVaultEndpoint = "KeyVaultEndpoint")]IDocumentRepository<CustomerDetail> customerRepository,
             [DataRepository(
                 CosmosDbEndpoint = "CosmosDbEndpoint",
                 DataType = typeof(EnvironmentDetail),
@@ -141,7 +152,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
             TraceWriter log)
         {
             List<AuditRecord> auditRecords;
-            List<Customer> customers;
+            List<CustomerDetail> customers;
             SeekBasedResourceCollection<AuditRecord> seekAuditRecords;
 
             try
@@ -167,7 +178,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
                     await auditRecordRepository.AddOrUpdateAsync(auditRecords).ConfigureAwait(false);
                 }
 
-                if ((environment?.LastProcessed - DateTimeOffset.UtcNow).Value.TotalDays >= 30)
+                if ((DateTimeOffset.UtcNow - environment?.LastProcessed).Value.TotalDays >= 30)
                 {
                     customers = await GetCustomersAsync(partner).ConfigureAwait(false);
                 }
@@ -175,24 +186,24 @@ namespace Microsoft.Partner.SmartOffice.Functions
                 {
                     customers = await BuildUsingAuditRecordsAsync(
                         auditRecords,
-                        customerRepository,
-                        ResourceType.Customer).ConfigureAwait(false);
+                        customerRepository).ConfigureAwait(false);
                 }
 
                 // Add, or update, each customer to the database.
                 await customerRepository.AddOrUpdateAsync(customers).ConfigureAwait(false);
 
-                foreach (Customer customer in customers)
+                foreach (CustomerDetail customer in customers)
                 {
                     // Write the customer to the customers queue to start processing the customer.
                     await storage.WriteToQueueAsync(
                         CustomersQueue,
-                        new CustomerDetail
+                        new XEvent
                         {
                             AppEndpoint = environment.AppEndpoint,
-                            AuditRecords = auditRecords.Where(r => r.CustomerId.Equals(customer.Id)).ToList(),
-                            Id = customer.Id,
-                            LastProcessed = environment.LastProcessed,
+                            AuditRecords = auditRecords
+                                .Where(r => r.CustomerId.Equals(customer.Id, StringComparison.InvariantCultureIgnoreCase))
+                                .ToList(),
+                            Customer = customer,
                             PartnerCenterEndpoint = environment.PartnerCenterEndpoint
                         }).ConfigureAwait(false);
                 }
@@ -244,14 +255,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
                     }
                     else
                     {
-                        // Extract the customer details and write them to the customers storage queue.
-                        await storage.WriteToQueueAsync(
-                            CustomersQueue,
-                            new CustomerDetail
-                            {
-                                AppEndpoint = env.AppEndpoint,
-                                Id = env.Id
-                            }).ConfigureAwait(false);
+                        // TODO - Add the logic to process direct and EA subscriptions. 
                     }
 
                 }
@@ -262,50 +266,29 @@ namespace Microsoft.Partner.SmartOffice.Functions
             }
         }
 
-        private static async Task<List<TResource>> BuildUsingAuditRecordsAsync<TResource>(
+        private static async Task<List<CustomerDetail>> BuildUsingAuditRecordsAsync(
             List<AuditRecord> auditRecords,
-            IDocumentRepository<TResource> repository,
-            ResourceType resourceType) where TResource : StandardResource
+            IDocumentRepository<CustomerDetail> repository)
         {
             IEnumerable<AuditRecord> filteredRecords;
-            List<TResource> resources;
-            TResource control;
-            TResource resource;
+            List<CustomerDetail> resources;
+            CustomerDetail control;
+            Customer resource;
 
             try
             {
                 // Extract a list of audit records that are scope to the defined resource type and were successful.
                 filteredRecords = auditRecords
-                    .Where(r => r.ResourceType == resourceType && r.OperationStatus == OperationStatus.Succeeded)
+                    .Where(r => r.ResourceType == ResourceType.Customer && r.OperationStatus == OperationStatus.Succeeded)
                     .OrderBy(r => r.OperationDate);
 
-                // Obtain a list of existing resources from the data repository.
                 resources = await repository.GetAsync().ConfigureAwait(false);
 
                 foreach (AuditRecord record in filteredRecords)
                 {
-                    if (record.ResourceType == ResourceType.Customer)
+                    if (record.OperationType == OperationType.AddCustomer)
                     {
-                        if (record.OperationType == OperationType.AddCustomer)
-                        {
-                            resource = JsonConvert.DeserializeObject<TResource>(record.ResourceNewValue);
-                            control = resources.SingleOrDefault(r => r.Id.Equals(resource.Id, StringComparison.InvariantCultureIgnoreCase));
-
-                            if (control != null)
-                            {
-                                resources.Remove(control);
-                            }
-
-                            resources.Add(resource);
-                        }
-                    }
-                    else if (record.ResourceType == ResourceType.Order)
-                    {
-                        // TODO - Convert a new order to a subscription.
-                    }
-                    else if (record.ResourceType == ResourceType.Subscription)
-                    {
-                        resource = JsonConvert.DeserializeObject<TResource>(record.ResourceNewValue);
+                        resource = JsonConvert.DeserializeObject<Customer>(record.ResourceNewValue);
                         control = resources.SingleOrDefault(r => r.Id.Equals(resource.Id, StringComparison.InvariantCultureIgnoreCase));
 
                         if (control != null)
@@ -313,7 +296,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
                             resources.Remove(control);
                         }
 
-                        resources.Add(resource);
+                        resources.Add(ConvertToCustomerDetail(resource));
                     }
                 }
 
@@ -321,13 +304,102 @@ namespace Microsoft.Partner.SmartOffice.Functions
             }
             finally
             {
+                control = null;
                 filteredRecords = null;
+                resource = null;
             }
         }
 
-        private static async Task<List<Customer>> GetCustomersAsync(IPartnerServiceClient partner)
+        private static async Task<List<SubscriptionDetail>> BuildUsingAuditRecordsAsync(
+            List<AuditRecord> auditRecords,
+            IDocumentRepository<SubscriptionDetail> repository,
+            string customerId)
         {
-            List<Customer> customers;
+            IEnumerable<AuditRecord> filteredRecords;
+            List<SubscriptionDetail> resources;
+            SubscriptionDetail control;
+            Subscription resource;
+
+            try
+            {
+                // Extract a list of audit records that are scope to the defined resource type and were successful.
+                filteredRecords = auditRecords
+                    .Where(r => (r.ResourceType == ResourceType.Subscription || r.ResourceType == ResourceType.Order)
+                        && r.OperationStatus == OperationStatus.Succeeded)
+                    .OrderBy(r => r.OperationDate);
+
+                resources = await repository
+                    .GetAsync(r => r.TenantId.Equals(customerId, StringComparison.InvariantCultureIgnoreCase))
+                    .ConfigureAwait(false);
+
+                foreach (AuditRecord record in filteredRecords)
+                {
+                    if (record.ResourceType == ResourceType.Order)
+                    {
+                        // TODO - Convert a new order to a subscription.
+                    }
+                    else if (record.ResourceType == ResourceType.Subscription)
+                    {
+                        resource = JsonConvert.DeserializeObject<Subscription>(record.ResourceNewValue);
+                        control = resources.SingleOrDefault(r => r.Id.Equals(resource.Id, StringComparison.InvariantCultureIgnoreCase));
+
+                        if (control != null)
+                        {
+                            resources.Remove(control);
+                        }
+
+                        resources.Add(ConvertToSubscriptionDetail(resource, customerId));
+                    }
+                }
+
+                return resources;
+            }
+            finally
+            {
+                control = null;
+                filteredRecords = null;
+                resource = null;
+            }
+
+        }
+
+        private static CustomerDetail ConvertToCustomerDetail(Customer customer)
+        {
+            return new CustomerDetail
+            {
+                CompanyProfile = customer.CompanyProfile,
+                Id = customer.Id,
+                LastProcessed = null
+            };
+        }
+
+        private static SubscriptionDetail ConvertToSubscriptionDetail(Subscription subscription, string customerId)
+        {
+            return new SubscriptionDetail
+            {
+                AutoRenewEnabled = subscription.AutoRenewEnabled,
+                BillingCycle = subscription.BillingCycle,
+                BillingType = subscription.BillingType,
+                CommitmentEndDate = subscription.CommitmentEndDate,
+                CreationDate = subscription.CreationDate,
+                EffectiveStartDate = subscription.EffectiveStartDate,
+                FriendlyName = subscription.FriendlyName,
+                Id = subscription.Id,
+                OfferId = subscription.OfferId,
+                OfferName = subscription.OfferName,
+                ParentSubscriptionId = subscription.ParentSubscriptionId,
+                PartnerId = subscription.PartnerId,
+                Quantity = subscription.Quantity,
+                Status = subscription.Status,
+                SuspensionReasons = subscription.SuspensionReasons,
+                TenantId = customerId,
+                UnitType = subscription.UnitType
+            };
+        }
+
+        private static async Task<List<CustomerDetail>> GetCustomersAsync(IPartnerServiceClient partner)
+        {
+            List<CustomerDetail> customers;
             SeekBasedResourceCollection<Customer> seekCustomers;
 
             try
@@ -335,14 +407,14 @@ namespace Microsoft.Partner.SmartOffice.Functions
                 // Request a list of customers from the Partner Center API.
                 seekCustomers = await partner.Customers.GetAsync().ConfigureAwait(false);
 
-                customers = new List<Customer>(seekCustomers.Items);
+                customers = new List<CustomerDetail>(seekCustomers.Items.Select(c => ConvertToCustomerDetail(c)));
 
                 while (seekCustomers.Links.Next != null)
                 {
                     // Request the next page of customers from the Partner Center API.
                     seekCustomers = await partner.Customers.GetAsync(seekCustomers.Links.Next).ConfigureAwait(false);
 
-                    customers.AddRange(seekCustomers.Items);
+                    customers.AddRange(seekCustomers.Items.Select(c => ConvertToCustomerDetail(c)));
                 }
 
                 return customers;
@@ -353,9 +425,9 @@ namespace Microsoft.Partner.SmartOffice.Functions
             }
         }
 
-        private static async Task<List<Subscription>> GetSubscriptionsAsync(IPartnerServiceClient partner, string customerId)
+        private static async Task<List<SubscriptionDetail>> GetSubscriptionsAsync(IPartnerServiceClient partner, string customerId)
         {
-            List<Subscription> subscriptions;
+            List<SubscriptionDetail> subscriptions;
             SeekBasedResourceCollection<Subscription> seekSubscriptions;
 
             try
@@ -363,7 +435,8 @@ namespace Microsoft.Partner.SmartOffice.Functions
                 // Request a list of subscriptions from the Partner Center API.
                 seekSubscriptions = await partner.Customers.ById(customerId).Subscriptions.GetAsync().ConfigureAwait(false);
 
-                subscriptions = new List<Subscription>(seekSubscriptions.Items);
+                subscriptions = new List<SubscriptionDetail>(
+                    seekSubscriptions.Items.Select(s => ConvertToSubscriptionDetail(s, customerId)));
 
                 while (seekSubscriptions.Links.Next != null)
                 {
@@ -373,7 +446,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
                         .Subscriptions
                         .GetAsync(seekSubscriptions.Links.Next).ConfigureAwait(false);
 
-                    subscriptions.AddRange(seekSubscriptions.Items);
+                    subscriptions.AddRange(seekSubscriptions.Items.Select(s => ConvertToSubscriptionDetail(s, customerId)));
                 }
 
                 return subscriptions;
