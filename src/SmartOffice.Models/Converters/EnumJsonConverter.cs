@@ -25,7 +25,7 @@ namespace Microsoft.Partner.SmartOffice.Models.Converters
                 return objectType.IsEnum;
             }
 
-            return false; 
+            return false;
         }
 
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
@@ -44,7 +44,7 @@ namespace Microsoft.Partner.SmartOffice.Models.Converters
 
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
-            throw new NotImplementedException();
+            writer.WriteValue(value.ToString());
         }
 
         private static string JScriptToPascalCase(string jsonValue)

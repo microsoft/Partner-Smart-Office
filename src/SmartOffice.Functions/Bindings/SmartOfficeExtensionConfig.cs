@@ -70,6 +70,11 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
         private const string SecureScoreControlsCollectionId = "SecureScoreControls";
 
         /// <summary>
+        /// Identifier for the subscriptions collection.
+        /// </summary>
+        private const string SubscriptionsCollectionId = "Subscriptions";
+
+        /// <summary>
         /// Provides the ability to capture log information.
         /// </summary>
         private ILogger log;
@@ -156,6 +161,18 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
                     await score.InitializeAsync().ConfigureAwait(false);
 
                     return score;
+                }
+                else if (input.DataType == typeof(Subscription))
+                {
+                    DocumentRepository<Subscription> subscriptions = new DocumentRepository<Subscription>(
+                        input.CosmosDbEndpoint,
+                        authKey,
+                        DatabaseId,
+                        SubscriptionsCollectionId);
+
+                    await subscriptions.InitializeAsync().ConfigureAwait(false);
+
+                    return subscriptions;
                 }
 
                 throw new Exception($"Invalid data type of {input.DataType} specified.");

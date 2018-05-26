@@ -9,7 +9,7 @@ namespace Microsoft.Partner.SmartOffice.Models.PartnerCenter
     using System;
     using Newtonsoft.Json;
 
-    public sealed class Subscription : ResourceBaseWithLinks<StandardResourceLinks>
+    public sealed class Subscription : StandardResource
     {
         /// <summary>
         /// Gets or sets the date when the subscription was created.
@@ -21,12 +21,6 @@ namespace Microsoft.Partner.SmartOffice.Models.PartnerCenter
         /// </summary>
         [JsonProperty(PropertyName = "friendlyName")]
         public string FriendlyName { get; set; }
-
-        /// <summary>
-        /// Gets or sets the subscription identifier.
-        /// </summary>
-        [JsonProperty(PropertyName = "id")]
-        public string Id { get; set; }
 
         /// <summary>
         /// Gets or sets the offer identifier.

@@ -37,16 +37,27 @@ namespace Microsoft.Partner.SmartOffice.Functions
         private const string PartnersQueue = "partners";
 
         [FunctionName("ProcessCustomer")]
-        public static async Task ProcessCustomerAsync(
+        public static async Task ProcessCspCustomerAsync(
             [QueueTrigger(CustomersQueue, Connection = "StorageConnectionString")]CustomerDetail customer,
             [DataRepository(
                 CosmosDbEndpoint = "CosmosDbEndpoint",
-                DataType = typeof(SecureScore),
-                KeyVaultEndpoint = "KeyVaultEndpoint")]IDocumentRepository<SecureScore> repository,
+                DataType = typeof(Alert),
+                KeyVaultEndpoint = "KeyVaultEndpoint")]IDocumentRepository<Alert> securityAlertRepository,
             [DataRepository(
                 CosmosDbEndpoint = "CosmosDbEndpoint",
-                DataType = typeof(Alert),
-                KeyVaultEndpoint = "KeyVaultEndpoint")]IDocumentRepository<Alert> securityAlerts,
+                DataType = typeof(SecureScore),
+                KeyVaultEndpoint = "KeyVaultEndpoint")]IDocumentRepository<SecureScore> secureScoreRepository,
+            [DataRepository(
+                CosmosDbEndpoint = "CosmosDbEndpoint",
+                DataType = typeof(Subscription),
+                KeyVaultEndpoint = "KeyVaultEndpoint")]IDocumentRepository<Subscription> subscriptionRepository,
+            [PartnerService(
+                ApplicationId = "{PartnerCenterEndpoint.ApplicationId}",
+                Endpoint = "{PartnerCenterEndpoint.ServiceAddress}",
+                SecretName = "{PartnerCenterEndpoint.ApplicationSecretId}",
+                ApplicationTenantId = "{PartnerCenterEndpoint.TenantId}",
+                KeyVaultEndpoint = "KeyVaultEndpoint",
+                Resource = "https://graph.windows.net")]IPartnerServiceClient partner,
             [SecureScore(
                 ApplicationId = "{AppEndpoint.ApplicationId}",
                 CustomerId = "{Id}",
@@ -62,21 +73,44 @@ namespace Microsoft.Partner.SmartOffice.Functions
                 SecretName = "{AppEndpoint.ApplicationSecretId}")]List<Alert> alerts,
             TraceWriter log)
         {
-            log.Info($"Processing data for {customer.Id}");
+            List<Subscription> subscriptions;
 
-            if (scores?.Count > 0)
+            try
             {
-                log.Info($"Importing {scores.Count} Secure Score entries for {customer.Id}...");
-                await repository.AddOrUpdateAsync(scores).ConfigureAwait(false);
-            }
+                log.Info($"Processing data for {customer.Id}");
 
-            if (alerts?.Count > 0)
+                if ((customer?.LastProcessed - DateTimeOffset.UtcNow).Value.TotalDays >= 30)
+                {
+                    subscriptions = await GetSubscriptionsAsync(partner, customer.Id).ConfigureAwait(false);
+                }
+                else
+                {
+                    subscriptions = await BuildUsingAuditRecordsAsync(
+                        customer.AuditRecords,
+                        subscriptionRepository,
+                        ResourceType.Subscription).ConfigureAwait(false);
+                }
+
+                await subscriptionRepository.AddOrUpdateAsync(subscriptions).ConfigureAwait(false);
+
+                if (scores?.Count > 0)
+                {
+                    log.Info($"Importing {scores.Count} Secure Score entries for {customer.Id}");
+                    await secureScoreRepository.AddOrUpdateAsync(scores).ConfigureAwait(false);
+                }
+
+                if (alerts?.Count > 0)
+                {
+                    log.Info($"Importing {alerts.Count} security alert entries for {customer.Id}");
+                    await securityAlertRepository.AddOrUpdateAsync(alerts).ConfigureAwait(false);
+                }
+
+                log.Info($"Successfully process data for {customer.Id}");
+            }
+            finally
             {
-                log.Info($"Importing {alerts.Count} security alert entries for {customer.Id}...");
-                await securityAlerts.AddOrUpdateAsync(alerts).ConfigureAwait(false);
+                subscriptions = null;
             }
-
-            log.Info($"Successfully process data for {customer.Id}");
         }
 
         [FunctionName("ProcessPartner")]
@@ -90,6 +124,10 @@ namespace Microsoft.Partner.SmartOffice.Functions
                 CosmosDbEndpoint = "CosmosDbEndpoint",
                 DataType = typeof(Customer),
                 KeyVaultEndpoint = "KeyVaultEndpoint")]IDocumentRepository<Customer> customerRepository,
+            [DataRepository(
+                CosmosDbEndpoint = "CosmosDbEndpoint",
+                DataType = typeof(EnvironmentDetail),
+                KeyVaultEndpoint = "KeyVaultEndpoint")]IDocumentRepository<EnvironmentDetail> environmentRepository,
             [PartnerService(
                 ApplicationId = "{PartnerCenterEndpoint.ApplicationId}",
                 Endpoint = "{PartnerCenterEndpoint.ServiceAddress}",
@@ -129,16 +167,16 @@ namespace Microsoft.Partner.SmartOffice.Functions
                     await auditRecordRepository.AddOrUpdateAsync(auditRecords).ConfigureAwait(false);
                 }
 
-                if (environment?.LastProcessed < DateTimeOffset.UtcNow.AddDays(30))
+                if ((environment?.LastProcessed - DateTimeOffset.UtcNow).Value.TotalDays >= 30)
+                {
+                    customers = await GetCustomersAsync(partner).ConfigureAwait(false);
+                }
+                else
                 {
                     customers = await BuildUsingAuditRecordsAsync(
                         auditRecords,
                         customerRepository,
                         ResourceType.Customer).ConfigureAwait(false);
-                }
-                else
-                {
-                    customers = await GetCustomersAsync(partner).ConfigureAwait(false);
                 }
 
                 // Add, or update, each customer to the database.
@@ -152,9 +190,15 @@ namespace Microsoft.Partner.SmartOffice.Functions
                         new CustomerDetail
                         {
                             AppEndpoint = environment.AppEndpoint,
-                            Id = customer.Id
+                            AuditRecords = auditRecords.Where(r => r.CustomerId.Equals(customer.Id)).ToList(),
+                            Id = customer.Id,
+                            LastProcessed = environment.LastProcessed,
+                            PartnerCenterEndpoint = environment.PartnerCenterEndpoint
                         }).ConfigureAwait(false);
                 }
+
+                environment.LastProcessed = DateTimeOffset.UtcNow;
+                await environmentRepository.AddOrUpdateAsync(environment).ConfigureAwait(false);
 
                 log.Info($"Successfully process the {environment.FriendlyName} CSP environment.");
             }
@@ -166,14 +210,6 @@ namespace Microsoft.Partner.SmartOffice.Functions
             }
         }
 
-        /// <summary>
-        /// Azure function that pulls each envrionment from the database and enqueues them for processing.
-        /// </summary>
-        /// <param name="timerInfo"></param>
-        /// <param name="repository"></param>
-        /// <param name="storage"></param>
-        /// <param name="log"></param>
-        /// <returns>An instance of the <see cref="Task" /> class that represents the asynchronous operation.</returns>
         [FunctionName("PullEnvironments")]
         public static async Task PullEnvironmentsAsync(
             [TimerTrigger("0 0 9 * * *")]TimerInfo timerInfo,
@@ -223,34 +259,6 @@ namespace Microsoft.Partner.SmartOffice.Functions
             finally
             {
                 environments = null;
-            }
-        }
-
-        private static async Task<List<Customer>> GetCustomersAsync(IPartnerServiceClient partner)
-        {
-            List<Customer> customers;
-            SeekBasedResourceCollection<Customer> seekCustomers;
-
-            try
-            {
-                // Request a list of customers from the Partner Center API.
-                seekCustomers = await partner.Customers.GetAsync().ConfigureAwait(false);
-
-                customers = new List<Customer>(seekCustomers.Items);
-
-                while (seekCustomers.Links.Next != null)
-                {
-                    // Request the next page of customers from the Partner Center API.
-                    seekCustomers = await partner.Customers.GetAsync(seekCustomers.Links.Next).ConfigureAwait(false);
-
-                    customers.AddRange(seekCustomers.Items);
-                }
-
-                return customers;
-            }
-            finally
-            {
-                seekCustomers = null;
             }
         }
 
@@ -314,6 +322,65 @@ namespace Microsoft.Partner.SmartOffice.Functions
             finally
             {
                 filteredRecords = null;
+            }
+        }
+
+        private static async Task<List<Customer>> GetCustomersAsync(IPartnerServiceClient partner)
+        {
+            List<Customer> customers;
+            SeekBasedResourceCollection<Customer> seekCustomers;
+
+            try
+            {
+                // Request a list of customers from the Partner Center API.
+                seekCustomers = await partner.Customers.GetAsync().ConfigureAwait(false);
+
+                customers = new List<Customer>(seekCustomers.Items);
+
+                while (seekCustomers.Links.Next != null)
+                {
+                    // Request the next page of customers from the Partner Center API.
+                    seekCustomers = await partner.Customers.GetAsync(seekCustomers.Links.Next).ConfigureAwait(false);
+
+                    customers.AddRange(seekCustomers.Items);
+                }
+
+                return customers;
+            }
+            finally
+            {
+                seekCustomers = null;
+            }
+        }
+
+        private static async Task<List<Subscription>> GetSubscriptionsAsync(IPartnerServiceClient partner, string customerId)
+        {
+            List<Subscription> subscriptions;
+            SeekBasedResourceCollection<Subscription> seekSubscriptions;
+
+            try
+            {
+                // Request a list of subscriptions from the Partner Center API.
+                seekSubscriptions = await partner.Customers.ById(customerId).Subscriptions.GetAsync().ConfigureAwait(false);
+
+                subscriptions = new List<Subscription>(seekSubscriptions.Items);
+
+                while (seekSubscriptions.Links.Next != null)
+                {
+                    // Request the next page of subscriptions from the Partner Center API.
+                    seekSubscriptions = await partner.Customers
+                        .ById(customerId)
+                        .Subscriptions
+                        .GetAsync(seekSubscriptions.Links.Next).ConfigureAwait(false);
+
+                    subscriptions.AddRange(seekSubscriptions.Items);
+                }
+
+                return subscriptions;
+            }
+            finally
+            {
+                seekSubscriptions = null;
             }
         }
     }

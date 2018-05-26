@@ -8,7 +8,7 @@ namespace Microsoft.Partner.SmartOffice.Models.PartnerCenter
 {
     using Newtonsoft.Json;
 
-    public class StandardResource : ResourceBaseWithLinks<StandardResourceLinks>
+    public class StandardResource 
     {
         /// <summary>
         /// Gets or sets the identifier for the resource.
