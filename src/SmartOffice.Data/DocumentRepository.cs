@@ -107,7 +107,7 @@ namespace Microsoft.Partner.SmartOffice.Data
         }
 
         /// <summary>
-        /// Adds or updates an item in the repository.
+        /// Add or update an item in the repository.
         /// </summary>
         /// <param name="item">The item to be added or updated.</param>
         /// <returns>The entity that was added or updated.</returns>
@@ -129,7 +129,7 @@ namespace Microsoft.Partner.SmartOffice.Data
         }
 
         /// <summary>
-        /// Adds or updates the items in the repository.
+        /// Add or update the collection of items in the repository.
         /// </summary>
         /// <param name="items">A collection of items to be added or updated.</param>
         /// <returns>

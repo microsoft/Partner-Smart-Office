@@ -75,112 +75,68 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
         private const string SubscriptionsCollectionId = "Subscriptions";
 
         /// <summary>
+        /// Collection of initialized data repositories.
+        /// </summary>
+        private static readonly Dictionary<string, object> repos = new Dictionary<string, object>();
+
+        /// <summary>
         /// Provides the ability to capture log information.
         /// </summary>
         private ILogger log;
 
         public async Task<object> ConvertAsync(DataRepositoryAttribute input, CancellationToken cancellationToken)
         {
-            KeyVaultService keyVault;
-            string authKey;
-
-            try
+            if (input.DataType == typeof(Alert))
             {
-                keyVault = new KeyVaultService(input.KeyVaultEndpoint);
-
-                authKey = await keyVault.GetSecretAsync(CosmsosDbAccessKey).ConfigureAwait(false);
-
-                if (input.DataType == typeof(Alert))
-                {
-                    DocumentRepository<Alert> securityAlerts = new DocumentRepository<Alert>(
-                        input.CosmosDbEndpoint,
-                        authKey,
-                        DatabaseId,
-                        SecurityAlertsCollectionId);
-
-                    await securityAlerts.InitializeAsync().ConfigureAwait(false);
-
-                    return securityAlerts;
-                }
-                else if (input.DataType == typeof(AuditRecord))
-                {
-                    DocumentRepository<AuditRecord> auditRecords = new DocumentRepository<AuditRecord>(
-                        input.CosmosDbEndpoint,
-                        authKey,
-                        DatabaseId,
-                        AuditRecordsCollectionId);
-
-                    await auditRecords.InitializeAsync().ConfigureAwait(false);
-
-                    return auditRecords;
-                }
-                else if (input.DataType == typeof(ControlListEntry))
-                {
-                    DocumentRepository<ControlListEntry> controls = new DocumentRepository<ControlListEntry>(
-                        input.CosmosDbEndpoint,
-                        authKey,
-                        DatabaseId,
-                        SecureScoreControlsCollectionId);
-
-                    await controls.InitializeAsync().ConfigureAwait(false);
-
-                    return controls;
-                }
-                else if (input.DataType == typeof(CustomerDetail))
-                {
-                    DocumentRepository<CustomerDetail> customers = new DocumentRepository<CustomerDetail>(
-                        input.CosmosDbEndpoint,
-                        authKey,
-                        DatabaseId,
-                        CustomersCollectionId);
-
-                    await customers.InitializeAsync().ConfigureAwait(false);
-
-                    return customers;
-                }
-                else if (input.DataType == typeof(EnvironmentDetail))
-                {
-                    DocumentRepository<EnvironmentDetail> environments = new DocumentRepository<EnvironmentDetail>(
-                        input.CosmosDbEndpoint,
-                        authKey,
-                        DatabaseId,
-                        EnvironmentsCollectionId);
-
-                    await environments.InitializeAsync().ConfigureAwait(false);
-
-                    return environments;
-                }
-                else if (input.DataType == typeof(SecureScore))
-                {
-                    DocumentRepository<SecureScore> score = new DocumentRepository<SecureScore>(
-                        input.CosmosDbEndpoint,
-                        authKey,
-                        DatabaseId,
-                        SecureScoreCollectionId);
-
-                    await score.InitializeAsync().ConfigureAwait(false);
-
-                    return score;
-                }
-                else if (input.DataType == typeof(SubscriptionDetail))
-                {
-                    DocumentRepository<SubscriptionDetail> subscriptions = new DocumentRepository<SubscriptionDetail>(
-                        input.CosmosDbEndpoint,
-                        authKey,
-                        DatabaseId,
-                        SubscriptionsCollectionId);
-
-                    await subscriptions.InitializeAsync().ConfigureAwait(false);
-
-                    return subscriptions;
-                }
-
-                throw new Exception($"Invalid data type of {input.DataType} specified.");
+                return await GetRepoAsync<Alert>(
+                    SecurityAlertsCollectionId,
+                    input.CosmosDbEndpoint,
+                    input.KeyVaultEndpoint).ConfigureAwait(false);
             }
-            finally
+            else if (input.DataType == typeof(AuditRecord))
             {
-                keyVault = null;
+                return await GetRepoAsync<AuditRecord>(
+                    AuditRecordsCollectionId,
+                    input.CosmosDbEndpoint,
+                    input.KeyVaultEndpoint).ConfigureAwait(false);
             }
+            else if (input.DataType == typeof(ControlListEntry))
+            {
+                return await GetRepoAsync<ControlListEntry>(
+                    SecureScoreControlsCollectionId,
+                    input.CosmosDbEndpoint,
+                    input.KeyVaultEndpoint).ConfigureAwait(false);
+            }
+            else if (input.DataType == typeof(CustomerDetail))
+            {
+                return await GetRepoAsync<CustomerDetail>(
+                    CustomersCollectionId,
+                    input.CosmosDbEndpoint,
+                    input.KeyVaultEndpoint).ConfigureAwait(false);
+            }
+            else if (input.DataType == typeof(EnvironmentDetail))
+            {
+                return await GetRepoAsync<EnvironmentDetail>(
+                    EnvironmentsCollectionId,
+                    input.CosmosDbEndpoint,
+                    input.KeyVaultEndpoint).ConfigureAwait(false);
+            }
+            else if (input.DataType == typeof(SecureScore))
+            {
+                return await GetRepoAsync<SecureScore>(
+                    SecureScoreCollectionId,
+                    input.CosmosDbEndpoint,
+                    input.KeyVaultEndpoint).ConfigureAwait(false);
+            }
+            else if (input.DataType == typeof(SubscriptionDetail))
+            {
+                return await GetRepoAsync<SubscriptionDetail>(
+                    SubscriptionsCollectionId,
+                    input.CosmosDbEndpoint,
+                    input.KeyVaultEndpoint).ConfigureAwait(false);
+            }
+
+            throw new Exception($"Invalid data type of {input.DataType} specified.");
         }
 
         public async Task<PartnerServiceClient> ConvertAsync(PartnerServiceAttribute input, CancellationToken cancellationToken)
@@ -295,6 +251,41 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
             context.AddBindingRule<SecureScoreAttribute>().BindToInput<List<SecureScore>>(this);
             context.AddBindingRule<SecurityAlertsAttribute>().BindToInput<List<Alert>>(this);
             context.AddBindingRule<StorageServiceAttribute>().BindToInput<StorageService>(this);
+        }
+
+        private static async Task<IDocumentRepository<TEntity>> GetRepoAsync<TEntity>(
+            string collectionId,
+            string cosmosDbEndpoint,
+            string keyVaultEndpoint) where TEntity : class
+        {
+            DocumentRepository<TEntity> repo;
+            KeyVaultService keyVault;
+            string authKey;
+
+            try
+            {
+                if (!repos.ContainsKey(collectionId))
+                {
+                    keyVault = new KeyVaultService(keyVaultEndpoint);
+                    authKey = await keyVault.GetSecretAsync(CosmsosDbAccessKey).ConfigureAwait(false);
+
+                    repo = new DocumentRepository<TEntity>(
+                        cosmosDbEndpoint,
+                        authKey,
+                        DatabaseId,
+                        collectionId);
+
+                    await repo.InitializeAsync().ConfigureAwait(false);
+
+                    repos[collectionId] = repo;
+                }
+
+                return repos[collectionId] as IDocumentRepository<TEntity>;
+            }
+            finally
+            {
+                keyVault = null;
+            }
         }
     }
 }

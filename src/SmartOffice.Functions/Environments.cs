@@ -329,7 +329,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
                     .OrderBy(r => r.OperationDate);
 
                 resources = await repository
-                    .GetAsync(r => r.TenantId.Equals(customerId, StringComparison.InvariantCultureIgnoreCase))
+                    .GetAsync(r => r.TenantId.ToLower() == customerId.ToLower())
                     .ConfigureAwait(false);
 
                 foreach (AuditRecord record in filteredRecords)
