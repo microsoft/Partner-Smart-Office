@@ -13,8 +13,16 @@ namespace Microsoft.Partner.SmartOffice.Services.PartnerCenter.Customers
 
     public interface ICustomerOperations
     {
+        /// <summary>
+        /// Gets the information for the customer.
+        /// </summary>
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>The information for the customer.</returns>
         Task<Customer> GetAsync(CancellationToken cancellationToken = default(CancellationToken));
 
+        /// <summary>
+        /// Obtains the subscriptions behavior for the customer.
+        /// </summary>
         ISubscriptionCollectionOperations Subscriptions { get; }
     }
 }

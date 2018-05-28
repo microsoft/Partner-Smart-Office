@@ -27,6 +27,12 @@ namespace Microsoft.Partner.SmartOffice.Services.PartnerCenter.Customers
         /// <returns>An instance of the <see cref="CustomerOperations" /> class.</returns>
         ICustomerOperations ById(string customerId);
 
+        /// <summary>
+        /// Gets a collection of customers associated with the partner.
+        /// </summary>
+        /// <param name="nextLink">An instance of the <see cref="Link" /> class that represents the next page of records to be requested.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>A collection of customers associated with the partner.</returns>
         Task<SeekBasedResourceCollection<Customer>> GetAsync(Link nextLink = null, CancellationToken cancellationToken = default(CancellationToken));
     }
 }

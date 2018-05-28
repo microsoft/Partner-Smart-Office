@@ -4,11 +4,8 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace Microsoft.Partner.SmartOffice.Models.PartnerCenter
+namespace Microsoft.Partner.SmartOffice.Models.PartnerCenter.AuditRecords
 {
-    using Converters;
-    using Newtonsoft.Json;
-
     public enum OperationStatus
     {
         Succeeded,

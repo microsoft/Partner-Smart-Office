@@ -41,6 +41,5 @@ namespace Microsoft.Partner.SmartOffice.Models
         /// </summary>
         [JsonProperty("processException")]
         public Exception ProcessException { get; set; }
-
     }
 }

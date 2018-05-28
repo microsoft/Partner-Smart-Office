@@ -7,7 +7,7 @@
 namespace Microsoft.Partner.SmartOffice.Models
 {
     using System.Collections.Generic;
-    using Models.PartnerCenter;
+    using Models.PartnerCenter.AuditRecords;
 
     public sealed class XEvent
     {

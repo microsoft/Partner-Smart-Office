@@ -18,6 +18,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
     using Models;
     using Models.Graph;
     using Models.PartnerCenter;
+    using Models.PartnerCenter.AuditRecords;
     using Models.PartnerCenter.Customers;
     using Models.PartnerCenter.Offers;
     using Models.PartnerCenter.Orders;
@@ -337,7 +338,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
                     .OrderBy(r => r.OperationDate);
 
                 resources = await repository
-                    .GetAsync(r => r.TenantId.ToLower(CultureInfo.InvariantCulture) == customer.Id.ToLower(CultureInfo.InvariantCulture))
+                    .GetAsync(r => r.TenantId.ToUpperInvariant() == customer.Id.ToUpperInvariant())
                     .ConfigureAwait(false);
 
                 foreach (AuditRecord record in filteredRecords)

@@ -7,13 +7,12 @@
 namespace Microsoft.Partner.SmartOffice.Services.Tests
 {
     using System;
-    using System.Collections.Generic;
     using System.Threading.Tasks;
     using Azure.Test.HttpRecorder;
-    using Models;
     using Models.PartnerCenter;
+    using Models.PartnerCenter.Customers;
     using Rest.ClientRuntime.Azure.TestFramework;
-    using Services.PartnerCenter; 
+    using Services.PartnerCenter;
     using VisualStudio.TestTools.UnitTesting;
 
     [TestClass]

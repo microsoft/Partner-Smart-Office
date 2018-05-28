@@ -21,7 +21,7 @@ namespace Microsoft.Partner.SmartOffice.Models.PartnerCenter
         /// <summary>
         /// Intializes a new instance of the <see cref="ResourceAttributes" /> class.
         /// </summary>
-        /// <param name="type"></param>
+        /// <param name="type">The type of resource.</param>
         public ResourceAttributes(Type type)
         {
             if (type == null)

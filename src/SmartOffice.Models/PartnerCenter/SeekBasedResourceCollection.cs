@@ -4,7 +4,6 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-
 namespace Microsoft.Partner.SmartOffice.Models.PartnerCenter
 {
     using System.Collections.Generic;

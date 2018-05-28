@@ -8,20 +8,44 @@ namespace Microsoft.Partner.SmartOffice.Models.PartnerCenter.Customers
 {
     public sealed class CustomerBillingProfile
     {
+        /// <summary>
+        /// Gets or stes the company name.
+        /// </summary>
         public string CompanyName { get; set; }
 
+        /// <summary>
+        /// Gets or sets the culture.
+        /// </summary>
         public string Culture { get; set; }
 
+        /// <summary>
+        /// Gets or sets the default address.
+        /// </summary>
         public Address DefaultAddress { get; set; }
 
+        /// <summary>
+        /// Gets or sets the email address.
+        /// </summary>
         public string Email { get; set; }
 
+        /// <summary>
+        /// Gets or sets the first name.
+        /// </summary>
         public string FirstName { get; set; }
 
+        /// <summary>
+        /// Gets or sets the identifier of the profile.
+        /// </summary>
         public string Id { get; set; }
 
-        public string LastName { get; set; }
-
+        /// <summary>
+        /// Gets or sets the language.
+        /// </summary>
         public string Language { get; set; }
+
+        /// <summary>
+        /// Gets or sets the last name.
+        /// </summary>
+        public string LastName { get; set; }
     }
 }

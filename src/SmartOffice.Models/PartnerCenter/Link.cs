@@ -15,7 +15,7 @@ namespace Microsoft.Partner.SmartOffice.Models.PartnerCenter
         /// <summary>
         /// Initializes a new instance of the <see cref="Link" /> class.
         /// </summary>
-        /// <param name="uri"></param>
+        /// <param name="uri">The uniformed resource identifier (URI) for the link.</param>
         public Link(Uri uri)
           : this(uri, "GET", null)
         {
@@ -24,9 +24,9 @@ namespace Microsoft.Partner.SmartOffice.Models.PartnerCenter
         /// <summary>
         /// Initializes a new instance of the <see cref="Link" /> class.
         /// </summary>
-        /// <param name="uri"></param>
-        /// <param name="method"></param>
-        /// <param name="headers"></param>
+        /// <param name="uri">The uniformed resource identifier (URI) for the link.</param>
+        /// <param name="method">The HTTP method used by the link.</param>
+        /// <param name="headers">The headers associated with the link.</param>
         [JsonConstructor]
         public Link(Uri uri, string method, IEnumerable<KeyValuePair<string, string>> headers = null)
         {
@@ -35,16 +35,18 @@ namespace Microsoft.Partner.SmartOffice.Models.PartnerCenter
             Headers = headers ?? new List<KeyValuePair<string, string>>();
         }
 
-        /// <summary>Gets the URI.</summary>
+        /// <summary>
+        /// Gets the uniformed resource identifier (URI) for this link.
+        /// </summary>
         public Uri Uri { get; private set; }
 
         /// <summary>
-        /// Gets the method.
+        /// Gets the HTTP method used by this link.
         /// </summary>
         public string Method { get; private set; }
 
         /// <summary>
-        /// Gets the link headers.
+        /// Gets the headers associated with this link.
         /// </summary>
         public IEnumerable<KeyValuePair<string, string>> Headers { get; private set; }
     }

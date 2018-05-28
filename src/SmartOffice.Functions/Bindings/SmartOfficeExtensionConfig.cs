@@ -17,7 +17,7 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
     using Extensions.Logging;
     using Models;
     using Models.Graph;
-    using Models.PartnerCenter;
+    using Models.PartnerCenter.AuditRecords;
     using Services;
     using Services.PartnerCenter;
 

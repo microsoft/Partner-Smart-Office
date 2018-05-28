@@ -19,8 +19,14 @@ namespace Microsoft.Partner.SmartOffice.Services.PartnerCenter.Customers
         /// </summary>
         private readonly Lazy<ISubscriptionCollectionOperations> subscriptions;
 
+        /// <summary>
+        /// Provides the ability to perform HTTP operations.
+        /// </summary>
         private readonly PartnerServiceClient client;
 
+        /// <summary>
+        /// The identifier for the customer.
+        /// </summary>
         private readonly string customerId;
 
         /// <summary>
@@ -35,6 +41,11 @@ namespace Microsoft.Partner.SmartOffice.Services.PartnerCenter.Customers
             subscriptions = new Lazy<ISubscriptionCollectionOperations>(() => new SubscriptionCollectionOperations(client, customerId));
         }
 
+        /// <summary>
+        /// Gets the information for the customer.
+        /// </summary>
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>The information for the customer.</returns>
         public async Task<Customer> GetAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
             return await client.GetAsync<Customer>(
@@ -43,7 +54,7 @@ namespace Microsoft.Partner.SmartOffice.Services.PartnerCenter.Customers
         }
 
         /// <summary>
-        /// Gets the available subscription operations.
+        /// Obtains the subscriptions behavior for the customer.
         /// </summary>
         public ISubscriptionCollectionOperations Subscriptions => subscriptions.Value;
     }
