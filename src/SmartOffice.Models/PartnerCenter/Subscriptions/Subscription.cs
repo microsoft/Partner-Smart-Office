@@ -4,11 +4,12 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace Microsoft.Partner.SmartOffice.Models.PartnerCenter
+namespace Microsoft.Partner.SmartOffice.Models.PartnerCenter.Subscriptions
 {
     using System;
     using System.Collections.Generic;
     using Newtonsoft.Json;
+    using Offers;
 
     public sealed class Subscription : ResourceBaseWithLinks<StandardResourceLinks>
     {

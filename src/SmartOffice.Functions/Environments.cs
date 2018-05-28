@@ -8,6 +8,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
 {
     using System;
     using System.Collections.Generic;
+    using System.Globalization;
     using System.Linq;
     using System.Threading.Tasks;
     using Azure.WebJobs;
@@ -17,6 +18,10 @@ namespace Microsoft.Partner.SmartOffice.Functions
     using Models;
     using Models.Graph;
     using Models.PartnerCenter;
+    using Models.PartnerCenter.Customers;
+    using Models.PartnerCenter.Offers;
+    using Models.PartnerCenter.Orders;
+    using Models.PartnerCenter.Subscriptions;
     using Newtonsoft.Json;
     using Services;
     using Services.PartnerCenter;
@@ -92,7 +97,8 @@ namespace Microsoft.Partner.SmartOffice.Functions
                     subscriptions = await BuildUsingAuditRecordsAsync(
                         data.AuditRecords,
                         subscriptionRepository,
-                        data.Customer.Id).ConfigureAwait(false);
+                        partner,
+                        data.Customer).ConfigureAwait(false);
                 }
 
                 if (subscriptions.Count > 0)
@@ -313,9 +319,11 @@ namespace Microsoft.Partner.SmartOffice.Functions
         private static async Task<List<SubscriptionDetail>> BuildUsingAuditRecordsAsync(
             List<AuditRecord> auditRecords,
             IDocumentRepository<SubscriptionDetail> repository,
-            string customerId)
+            IPartnerServiceClient client,
+            CustomerDetail customer)
         {
             IEnumerable<AuditRecord> filteredRecords;
+            List<SubscriptionDetail> fromOrders;
             List<SubscriptionDetail> resources;
             SubscriptionDetail control;
             Subscription resource;
@@ -329,14 +337,22 @@ namespace Microsoft.Partner.SmartOffice.Functions
                     .OrderBy(r => r.OperationDate);
 
                 resources = await repository
-                    .GetAsync(r => r.TenantId.ToLower() == customerId.ToLower())
+                    .GetAsync(r => r.TenantId.ToLower(CultureInfo.InvariantCulture) == customer.Id.ToLower(CultureInfo.InvariantCulture))
                     .ConfigureAwait(false);
 
                 foreach (AuditRecord record in filteredRecords)
                 {
                     if (record.ResourceType == ResourceType.Order)
                     {
-                        // TODO - Convert a new order to a subscription.
+                        fromOrders = await ConvertToSubscriptionDetailsAsync(
+                            client,
+                            customer,
+                            JsonConvert.DeserializeObject<Order>(record.ResourceNewValue)).ConfigureAwait(false);
+
+                        if (fromOrders != null)
+                        {
+                            resources.AddRange(fromOrders);
+                        }
                     }
                     else if (record.ResourceType == ResourceType.Subscription)
                     {
@@ -348,7 +364,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
                             resources.Remove(control);
                         }
 
-                        resources.Add(ConvertToSubscriptionDetail(resource, customerId));
+                        resources.Add(ConvertToSubscriptionDetail(resource, customer.Id));
                     }
                 }
 
@@ -358,19 +374,82 @@ namespace Microsoft.Partner.SmartOffice.Functions
             {
                 control = null;
                 filteredRecords = null;
+                fromOrders = null;
                 resource = null;
             }
-
         }
 
         private static CustomerDetail ConvertToCustomerDetail(Customer customer)
         {
             return new CustomerDetail
             {
+                BillingProfile = customer.BillingProfile,
                 CompanyProfile = customer.CompanyProfile,
                 Id = customer.Id,
                 LastProcessed = null
             };
+        }
+
+        private async static Task<List<SubscriptionDetail>> ConvertToSubscriptionDetailsAsync(
+            IPartnerServiceClient client,
+            CustomerDetail customer,
+            Order order)
+        {
+            DateTime effectiveStartDate;
+            DateTimeOffset creationDate;
+            List<SubscriptionDetail> details;
+            Offer offer;
+
+            try
+            {
+                if (order.BillingCycle == BillingCycleType.OneTime)
+                {
+                    return null;
+                }
+
+                details = new List<SubscriptionDetail>();
+
+                foreach (OrderLineItem lineItem in order.LineItems)
+                {
+                    creationDate = order.CreationDate.Value;
+
+                    effectiveStartDate = new DateTime(
+                            creationDate.UtcDateTime.Year,
+                            creationDate.UtcDateTime.Month,
+                            creationDate.UtcDateTime.Day);
+
+                    offer = await client.Offers
+                        .ByCountry(customer.BillingProfile.DefaultAddress.Country).ById(lineItem.OfferId)
+                        .GetAsync().ConfigureAwait(false);
+
+                    details.Add(new SubscriptionDetail
+                    {
+                        AutoRenewEnabled = offer.IsAutoRenewable,
+                        BillingCycle = order.BillingCycle,
+                        BillingType = offer.Billing,
+                        CommitmentEndDate = effectiveStartDate.AddYears(1),
+                        CreationDate = creationDate.UtcDateTime,
+                        EffectiveStartDate = effectiveStartDate,
+                        FriendlyName = lineItem.FriendlyName,
+                        Id = lineItem.SubscriptionId,
+                        OfferId = lineItem.OfferId,
+                        OfferName = offer.Name,
+                        ParentSubscriptionId = lineItem.ParentSubscriptionId,
+                        PartnerId = lineItem.PartnerIdOnRecord,
+                        Quantity = lineItem.Quantity,
+                        Status = SubscriptionStatus.Active,
+                        SuspensionReasons = null,
+                        TenantId = customer.Id,
+                        UnitType = offer.UnitType
+                    });
+                }
+
+                return details;
+            }
+            finally
+            {
+                offer = null;
+            }
         }
 
         private static SubscriptionDetail ConvertToSubscriptionDetail(Subscription subscription, string customerId)
@@ -397,24 +476,39 @@ namespace Microsoft.Partner.SmartOffice.Functions
             };
         }
 
-        private static async Task<List<CustomerDetail>> GetCustomersAsync(IPartnerServiceClient partner)
+        private static async Task<List<CustomerDetail>> GetCustomersAsync(IPartnerServiceClient client)
         {
+            Customer customer;
             List<CustomerDetail> customers;
             SeekBasedResourceCollection<Customer> seekCustomers;
 
             try
             {
                 // Request a list of customers from the Partner Center API.
-                seekCustomers = await partner.Customers.GetAsync().ConfigureAwait(false);
+                seekCustomers = await client.Customers.GetAsync().ConfigureAwait(false);
 
                 customers = new List<CustomerDetail>(seekCustomers.Items.Select(c => ConvertToCustomerDetail(c)));
 
                 while (seekCustomers.Links.Next != null)
                 {
                     // Request the next page of customers from the Partner Center API.
-                    seekCustomers = await partner.Customers.GetAsync(seekCustomers.Links.Next).ConfigureAwait(false);
+                    seekCustomers = await client.Customers.GetAsync(seekCustomers.Links.Next).ConfigureAwait(false);
 
                     customers.AddRange(seekCustomers.Items.Select(c => ConvertToCustomerDetail(c)));
+                }
+
+                foreach (CustomerDetail c in customers)
+                {
+                    try
+                    {
+                        customer = await client.Customers[c.Id].GetAsync().ConfigureAwait(false);
+                        c.BillingProfile = customer.BillingProfile;
+                    }
+                    catch (ServiceClientException)
+                    {
+                        // TODO - Add logic to add error information to the customer 
+                        // when an 2002 error is encountered
+                    }
                 }
 
                 return customers;

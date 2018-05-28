@@ -10,7 +10,8 @@ namespace Microsoft.Partner.SmartOffice.Services.PartnerCenter.Subscriptions
     using System.Threading;
     using System.Threading.Tasks;
     using Models.PartnerCenter;
-
+    using Models.PartnerCenter.Subscriptions;
+    
     public class SubscriptionCollectionOperations : ISubscriptionCollectionOperations
     {
         /// <summary>
@@ -32,6 +33,13 @@ namespace Microsoft.Partner.SmartOffice.Services.PartnerCenter.Subscriptions
         {
             this.client = client;
             this.customerId = customerId;
+        }
+
+        public ISubscriptionOperations this[string subscriptionId] => ById(subscriptionId);
+
+        public ISubscriptionOperations ById(string subscriptionId)
+        {
+            return new SubscriptionOperations(client, customerId, subscriptionId);
         }
 
         public async Task<SeekBasedResourceCollection<Subscription>> GetAsync(Link nextLink = null, CancellationToken cancellationToken = default(CancellationToken))

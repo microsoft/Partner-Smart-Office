@@ -16,6 +16,7 @@ namespace Microsoft.Partner.SmartOffice.Services.PartnerCenter
     using Models.Converters;
     using Models.PartnerCenter;
     using Newtonsoft.Json;
+    using Offers;
     using Rest;
     using Rest.Serialization;
 
@@ -34,6 +35,7 @@ namespace Microsoft.Partner.SmartOffice.Services.PartnerCenter
 
             AuditRecords = new AuditRecordCollectionOperations(this);
             Customers = new CustomerCollectionOperations(this);
+            Offers = new OfferCountrySelector(this);
 
             DeserializationSettings = new JsonSerializerSettings
             {
@@ -75,6 +77,11 @@ namespace Microsoft.Partner.SmartOffice.Services.PartnerCenter
         /// Gets the available customer operations.
         /// </summary>
         public ICustomerCollectionOperations Customers { get; private set; }
+
+        /// <summary>
+        /// Gets the available offer operations.
+        /// </summary>
+        public ICountrySelector<IOfferCollectionOperations> Offers { get; private set; }
 
         internal async Task<TResource> GetAsync<TResource>(Uri relativeUri, CancellationToken cancellationToken = default(CancellationToken))
         {

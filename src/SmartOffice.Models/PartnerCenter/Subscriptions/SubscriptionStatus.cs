@@ -4,7 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace Microsoft.Partner.SmartOffice.Models.PartnerCenter
+namespace Microsoft.Partner.SmartOffice.Models.PartnerCenter.Subscriptions
 {
     using Converters;
     using Newtonsoft.Json;

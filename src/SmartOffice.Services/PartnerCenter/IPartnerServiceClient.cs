@@ -8,6 +8,7 @@ namespace Microsoft.Partner.SmartOffice.Services.PartnerCenter
 {
     using AuditRecords;
     using Customers;
+    using Offers;
 
     public interface IPartnerServiceClient
     {
@@ -17,8 +18,13 @@ namespace Microsoft.Partner.SmartOffice.Services.PartnerCenter
         IAuditRecordCollectionOperations AuditRecords { get; }
 
         /// <summary>
-        /// Provides the available customer operations. 
+        /// Gets the the available customer operations. 
         /// </summary>
         ICustomerCollectionOperations Customers { get; }
+
+        /// <summary>
+        /// Gets the available offer operations.
+        /// </summary>
+        ICountrySelector<IOfferCollectionOperations> Offers { get; }
     }
 }

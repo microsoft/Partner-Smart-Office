@@ -9,6 +9,7 @@ namespace Microsoft.Partner.SmartOffice.Services.PartnerCenter.Customers
     using System.Threading;
     using System.Threading.Tasks;
     using Models.PartnerCenter;
+    using Models.PartnerCenter.Customers;
 
     public interface ICustomerCollectionOperations
     {
