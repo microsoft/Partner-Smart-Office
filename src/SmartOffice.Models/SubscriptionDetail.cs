@@ -9,7 +9,6 @@ namespace Microsoft.Partner.SmartOffice.Models
     using System;
     using System.Collections.Generic;
     using Newtonsoft.Json;
-    using PartnerCenter;
     using PartnerCenter.Offers;
     using PartnerCenter.Subscriptions;
 
@@ -108,6 +107,7 @@ namespace Microsoft.Partner.SmartOffice.Models
         /// <summary>
         /// Gets or sets the identifier for the tenant that owns the subscription.
         /// </summary>
+        [JsonProperty("tenantId")]
         public string TenantId { get; set; }
 
         /// <summary>
