@@ -12,6 +12,7 @@ namespace Microsoft.Partner.SmartOffice.Services
     using System.Threading;
     using System.Threading.Tasks;
     using Models;
+    using Models.Graph;
     using Newtonsoft.Json;
     using Rest;
     using Rest.Serialization;
@@ -72,7 +73,7 @@ namespace Microsoft.Partner.SmartOffice.Services
 
                     if (!response.IsSuccessStatusCode)
                     {
-                        throw new ServiceException(content, response.StatusCode);
+                        throw new ServiceClientException(content, ((ServiceCredentials)Credentials).TenantId, response.StatusCode);
                     }
 
                     alerts = JsonConvert.DeserializeObject<ODataResponse<Alert>>(content);
@@ -114,7 +115,7 @@ namespace Microsoft.Partner.SmartOffice.Services
 
                     if (!response.IsSuccessStatusCode)
                     {
-                        throw new ServiceException(content, response.StatusCode);
+                        throw new ServiceClientException(content, ((ServiceCredentials)Credentials).TenantId, response.StatusCode);
                     }
 
                     scores = SafeJsonConvert.DeserializeObject<List<SecureScore>>(content);

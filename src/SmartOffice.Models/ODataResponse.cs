@@ -11,9 +11,15 @@ namespace Microsoft.Partner.SmartOffice.Models
 
     public class ODataResponse<T>
     {
+        /// <summary>
+        /// Gets or sets the value for the response.
+        /// </summary>
         [JsonProperty("value")]
         public List<T> Value { get; set; }
 
+        /// <summary>
+        /// Gets or sets the additional data for the response.
+        /// </summary>
         [JsonExtensionData(ReadData = true)]
         public IDictionary<string, object> AdditionalData { get; set; }
     }

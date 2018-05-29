@@ -1,5 +1,5 @@
 ﻿// -----------------------------------------------------------------------
-// <copyright file="IRepository.cs" company="Microsoft">
+// <copyright file="IDocumentRepository.cs" company="Microsoft">
 //     Copyright (c) Microsoft Corporation. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -14,14 +14,14 @@ namespace Microsoft.Partner.SmartOffice.Data
     public interface IDocumentRepository<TEntity>
     {
         /// <summary>
-        /// Adds or updates an item in the repository.
+        /// Add or update an item in the repository.
         /// </summary>
         /// <param name="item">The item to be added or updated.</param>
         /// <returns>The entity that was added or updated.</returns>
         Task<TEntity> AddOrUpdateAsync(TEntity item);
 
         /// <summary>
-        /// Adds or updates the items in the repository.
+        /// Add or update a collection of items in the repository.
         /// </summary>
         /// <param name="items">A collection of items to be added or updated.</param>
         /// <returns>
@@ -44,7 +44,7 @@ namespace Microsoft.Partner.SmartOffice.Data
         /// <returns>
         /// A collection of items that represent the items in the repository.
         /// </returns>
-        Task<IEnumerable<TEntity>> GetAsync();
+        Task<List<TEntity>> GetAsync();
 
         /// <summary>
         /// Gets a sequence of items for the repository that matches the query. 
@@ -53,7 +53,7 @@ namespace Microsoft.Partner.SmartOffice.Data
         /// <returns>
         /// A collection that contains items from the repository that satisfy the condition specified by predicate.
         /// </returns>
-        Task<IEnumerable<TEntity>> GetAsync(Expression<Func<TEntity, bool>> predicate);
+        Task<List<TEntity>> GetAsync(Expression<Func<TEntity, bool>> predicate);
 
         /// <summary>
         /// Performs the initialization operations for the repository.

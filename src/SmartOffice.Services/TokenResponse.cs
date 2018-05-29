@@ -8,7 +8,7 @@ namespace Microsoft.Partner.SmartOffice.Services
 {
     using Newtonsoft.Json;
 
-    internal class TokenResponse
+    public class TokenResponse
     {
         /// <summary>
         /// Gets or sets the access token.

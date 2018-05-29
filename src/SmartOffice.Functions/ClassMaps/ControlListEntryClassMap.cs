@@ -6,9 +6,9 @@
 namespace Microsoft.Partner.SmartOffice.Functions.ClassMaps
 {
     using CsvHelper.Configuration;
-    using Models;
+    using Models.Graph;
 
-    internal class ControlListEntryClassMap : ClassMap<ControlListEntry>
+    public class ControlListEntryClassMap : ClassMap<ControlListEntry>
     {
         public ControlListEntryClassMap()
         {

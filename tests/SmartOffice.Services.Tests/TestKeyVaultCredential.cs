@@ -19,7 +19,7 @@ namespace Microsoft.Partner.SmartOffice.Services.Tests
 
         public override async Task ProcessHttpRequestAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
-            await Task.FromResult(0);
+            await Task.FromResult(0).ConfigureAwait(false);
         }
     }
 }

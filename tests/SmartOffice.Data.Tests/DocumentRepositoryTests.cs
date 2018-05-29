@@ -13,7 +13,7 @@ namespace Microsoft.Partner.SmartOffice.Data.Tests
     using System.Threading.Tasks;
     using Azure.Documents;
     using Azure.Documents.Client;
-    using Models;
+    using Models.PartnerCenter.Customers; 
     using Moq;
     using VisualStudio.TestTools.UnitTesting;
 
@@ -124,7 +124,7 @@ namespace Microsoft.Partner.SmartOffice.Data.Tests
         {
             return new Customer
             {
-                CompanyProfile = new CompanyProfile()
+                CompanyProfile = new CustomerCompanyProfile()
                 {
                     CompanyName = "Consoto",
                     Domain = "contoso.onmicrosoft.com"
@@ -140,7 +140,7 @@ namespace Microsoft.Partner.SmartOffice.Data.Tests
                 {
                     new Customer
                     {
-                         CompanyProfile = new CompanyProfile
+                         CompanyProfile = new CustomerCompanyProfile
                          {
                              CompanyName = "Contoso",
                              Domain = "contoso.onmicrosoft.com"
@@ -151,7 +151,7 @@ namespace Microsoft.Partner.SmartOffice.Data.Tests
                 {
                     new Customer
                     {
-                        CompanyProfile = new CompanyProfile
+                        CompanyProfile = new CustomerCompanyProfile
                         {
                             CompanyName = "Fabrikam",
                             Domain = "fabrikam.onmicrosoft.com"

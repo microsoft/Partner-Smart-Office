@@ -4,8 +4,6 @@
     "AzureWebJobsStorage": "UseDevelopmentStorage=true",
     "AzureWebJobsDashboard": "UseDevelopmentStorage=true",
     "KeyVaultEndpoint": "",
-    "PartnerCenter.AccountId": "",
-    "PartnerCenter.ApplicationId": "",
     "StorageConnectionString": ""
   }
 }

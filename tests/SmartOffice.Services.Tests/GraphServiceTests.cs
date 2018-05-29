@@ -11,7 +11,7 @@ namespace Microsoft.Partner.SmartOffice.Services.Tests
     using System.Threading;
     using System.Threading.Tasks;
     using Azure.Test.HttpRecorder;
-    using Microsoft.Partner.SmartOffice.Models;
+    using Models.Graph;
     using Rest.ClientRuntime.Azure.TestFramework;
     using VisualStudio.TestTools.UnitTesting;
 

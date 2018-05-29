@@ -27,7 +27,7 @@ namespace Microsoft.Partner.SmartOffice.Services.Tests
         {
             string content = string.Empty;
 
-            await Task.FromResult(0);
+            await Task.FromResult(0).ConfigureAwait(false);
 
             if (request.RequestUri.LocalPath.Equals("/secrets/UnitTest/", StringComparison.InvariantCultureIgnoreCase))
             {

@@ -4,16 +4,16 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-
 namespace Microsoft.Partner.SmartOffice.Services.Tests
 {
+    using System;
     using System.Net.Http;
     using System.Threading.Tasks;
     using Azure.KeyVault;
     using VisualStudio.TestTools.UnitTesting;
 
     [TestClass]
-    public class KeyVaultTests
+    public class KeyVaultTests : IDisposable
     {
         /// <summary>
         /// The Key Vault endpoint address to be used for testing.
@@ -24,7 +24,12 @@ namespace Microsoft.Partner.SmartOffice.Services.Tests
         /// Provides the ability to perform cryptographic key operations and vault operations 
         /// against the Key Vault service.
         /// </summary>
-        private IKeyVaultClient keyVaultClient;
+        private readonly IKeyVaultClient keyVaultClient;
+
+        /// <summary>
+        /// Flag indicating whether or not this object has been disposed.
+        /// </summary>
+        private bool disposed = false;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="KeyVaultTests" /> class.
@@ -54,12 +59,33 @@ namespace Microsoft.Partner.SmartOffice.Services.Tests
 
                 actual = await service.GetSecretAsync("UnitTest").ConfigureAwait(false);
 
-                Assert.AreEqual<string>("AmazingSecret", actual);
+                Assert.AreEqual("AmazingSecret", actual);
             }
             finally
             {
                 service = null;
             }
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposed)
+            {
+                return;
+            }
+
+            if (disposing)
+            {
+                keyVaultClient?.Dispose();
+            }
+
+            disposed = true;
         }
 
         /// <summary>
@@ -71,7 +97,7 @@ namespace Microsoft.Partner.SmartOffice.Services.Tests
         /// <returns>A string representing the requested access token.</returns>
         private static async Task<string> GetAccessToken(string authority, string resource, string scope)
         {
-            await Task.FromResult(0);
+            await Task.FromResult(0).ConfigureAwait(false);
 
             return string.Empty;
         }

@@ -107,7 +107,7 @@ namespace Microsoft.Partner.SmartOffice.Data
         }
 
         /// <summary>
-        /// Adds or updates an item in the repository.
+        /// Add or update an item in the repository.
         /// </summary>
         /// <param name="item">The item to be added or updated.</param>
         /// <returns>The entity that was added or updated.</returns>
@@ -129,7 +129,7 @@ namespace Microsoft.Partner.SmartOffice.Data
         }
 
         /// <summary>
-        /// Adds or updates the items in the repository.
+        /// Add or update the collection of items in the repository.
         /// </summary>
         /// <param name="items">A collection of items to be added or updated.</param>
         /// <returns>
@@ -184,7 +184,7 @@ namespace Microsoft.Partner.SmartOffice.Data
         /// <returns>
         /// A collection of items that represent the items in the repository.
         /// </returns>
-        public async Task<IEnumerable<TEntity>> GetAsync()
+        public async Task<List<TEntity>> GetAsync()
         {
             FeedResponse<dynamic> response;
             List<TEntity> results;
@@ -211,7 +211,7 @@ namespace Microsoft.Partner.SmartOffice.Data
         /// <returns>
         /// A collection that contains items from the repository that satisfy the condition specified by predicate.
         /// </returns>
-        public async Task<IEnumerable<TEntity>> GetAsync(Expression<Func<TEntity, bool>> predicate)
+        public async Task<List<TEntity>> GetAsync(Expression<Func<TEntity, bool>> predicate)
         {
             IDocumentQuery<TEntity> query;
             List<TEntity> results;

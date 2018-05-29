@@ -10,13 +10,13 @@ namespace Microsoft.Partner.SmartOffice.Services
     using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
-    using Models;
+    using Models.Graph;
     using Rest;
 
     public interface IGraphService
     {
         /// <summary>
-        /// Gets or sets the credentials used when accessing resources.
+        /// Gets the credentials used when accessing resources.
         /// </summary>
         ServiceClientCredentials Credentials { get; }
 

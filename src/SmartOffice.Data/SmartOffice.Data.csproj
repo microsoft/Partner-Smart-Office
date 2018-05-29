@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Azure.DocumentDB.Core" Version="1.10.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.6.0" />
   </ItemGroup>
 
   <ItemGroup>

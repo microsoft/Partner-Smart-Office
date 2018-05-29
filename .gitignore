@@ -286,3 +286,10 @@ __pycache__/
 *.btm.cs
 *.odx.cs
 *.xsd.cs
+
+# Visual Studio Code 
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json 

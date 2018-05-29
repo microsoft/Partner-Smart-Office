@@ -16,10 +16,10 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Azure.KeyVault" Version="2.3.2" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.7.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.7.2" />
     <PackageReference Include="Microsoft.Rest.ClientRuntime.Azure.TestFramework" Version="1.6.0" />
-    <PackageReference Include="MSTest.TestAdapter" Version="1.2.1" />
-    <PackageReference Include="MSTest.TestFramework" Version="1.2.1" />
+    <PackageReference Include="MSTest.TestAdapter" Version="1.3.1" />
+    <PackageReference Include="MSTest.TestFramework" Version="1.3.1" />
     <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
   </ItemGroup>
 
@@ -38,10 +38,10 @@
     <None Update="SessionRecords\GraphServiceTests\GetSecureScoreInvalidPeriodAsync.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="SessionRecords\PartnerServiceTests\GetCustomersAsync.json">
+    <None Update="SessionRecords\PartnerServiceClientTests\GetCustomersAsync.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="SessionRecords\PartnerServiceTests\GetCustomersTestAsync.json">
+    <None Update="SessionRecords\PartnerServiceClientTests\GetCustomersTestAsync.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
