@@ -27,10 +27,11 @@ Azure Cloud Shell is an interactive, browser-accessible shell for managing Azure
 [![Launch Cloud Shell](https://shell.azure.com/images/launchcloudshell.png "Launch Azure Cloud Shell")](https://shell.azure.com)
 
 ```powershell
+$AppName = Read-Host -Prompt "Specify name for the function app with no spaces"
 $ResourceGroup = Read-Host -Prompt "Specify a resource group name"
 
 New-AzureRmResourceGroup -Location southcentralus -Name $ResourceGroup
-New-AzureRmResourceGroupDeployment -Name $(New-Guid).ToString() -ResourceGroupName $ResourceGroup -TemplateUri https://raw.githubusercontent.com/Microsoft/Partner-Smart-Office/master/azuredeploy.json
+New-AzureRmResourceGroupDeployment -Name $(New-Guid).ToString() -ResourceGroupName $ResourceGroup -TemplateUri https://raw.githubusercontent.com/Microsoft/Partner-Smart-Office/master/azuredeploy.json -appName $appName
 ```
 
 More information about Azure Cloud Shell can be found at [Overivew of Azure Cloud Shell](https://docs.microsoft.com/en-us/azure/cloud-shell/overview).
