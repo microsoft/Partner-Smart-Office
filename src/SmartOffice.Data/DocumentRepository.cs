@@ -17,6 +17,8 @@ namespace Microsoft.Partner.SmartOffice.Data
     using Azure.Documents;
     using Azure.Documents.Client;
     using Azure.Documents.Linq;
+    using Models.Converters;
+    using Newtonsoft.Json;
 
     public class DocumentRepository<TEntity> : IDocumentRepository<TEntity> where TEntity : class
     {
@@ -95,6 +97,19 @@ namespace Microsoft.Partner.SmartOffice.Data
                     documentClient = new DocumentClient(
                         new Uri(serviceEndpoint),
                         authKey,
+                        new JsonSerializerSettings
+                        {
+                            Converters = new List<JsonConverter>
+                            {
+                                {
+                                    new EnumJsonConverter()
+                                }
+                            },
+                            DateFormatHandling = DateFormatHandling.IsoDateFormat,
+                            DateTimeZoneHandling = DateTimeZoneHandling.Utc,
+                            NullValueHandling = NullValueHandling.Ignore,
+                            ReferenceLoopHandling = ReferenceLoopHandling.Serialize
+                        },
                         new ConnectionPolicy
                         {
                             ConnectionMode = ConnectionMode.Direct,
