@@ -7,6 +7,7 @@
 namespace Microsoft.Partner.SmartOffice.Functions.Bindings
 {
     using System;
+    using System.ComponentModel.DataAnnotations;
     using Azure.WebJobs.Description;
 
     [AttributeUsage(AttributeTargets.Parameter, AllowMultiple = false)]
@@ -32,9 +33,11 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
         public string KeyVaultEndpoint { get; set; }
 
         /// <summary>
-        /// Gets or sets the period for the secure score.
+        /// Gets or sets a value indicating number of days of score results to retrieve starting from current date.
         /// </summary>
-        public int Period { get; set; }
+        [AutoResolve]
+        [RegularExpression("^[0-9]*$")]
+        public string Period { get; set; }
 
         /// <summary>
         /// Gets or sets the identifier of the target resource that is the recipient of the token being requested.

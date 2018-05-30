@@ -4,6 +4,7 @@
     <AzureFunctionsVersion>v2</AzureFunctionsVersion>
     <AssemblyName>Microsoft.Partner.SmartOffice.Functions</AssemblyName>
     <RootNamespace>Microsoft.Partner.SmartOffice.Functions</RootNamespace>
+    <Version>0.0.2</Version>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <WarningsAsErrors>NU1605</WarningsAsErrors>

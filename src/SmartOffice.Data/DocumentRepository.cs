@@ -13,6 +13,7 @@ namespace Microsoft.Partner.SmartOffice.Data
     using System.Linq.Expressions;
     using System.Net;
     using System.Reflection;
+    using System.Threading;
     using System.Threading.Tasks;
     using Azure.Documents;
     using Azure.Documents.Client;
@@ -31,6 +32,13 @@ namespace Microsoft.Partner.SmartOffice.Data
         /// Name of the bulk import stored procedure.
         /// </summary>
         private const string BulkImportStoredProcId = "BulkImport";
+
+        /// <summary>
+        /// HTTP status code returned when the collection has exceeded the provisioned
+        /// throughput limit. The request should be retried after the server specified 
+        /// retry after duration.
+        /// </summary>
+        private const int TooManyRequestStatusCode = 429;
 
         /// <summary>
         /// Access key used for authentication purposes.
@@ -152,12 +160,13 @@ namespace Microsoft.Partner.SmartOffice.Data
         /// </returns>
         public async Task AddOrUpdateAsync(IEnumerable<TEntity> items)
         {
-            await Client.ExecuteStoredProcedureAsync<int>(
-                UriFactory.CreateStoredProcedureUri(
-                    databaseId,
-                    collectionId,
-                    BulkImportStoredProcId),
-                items).ConfigureAwait(false);
+            await InvokeRequestAsync(() =>
+                Client.ExecuteStoredProcedureAsync<int>(
+                    UriFactory.CreateStoredProcedureUri(
+                        databaseId,
+                        collectionId,
+                        BulkImportStoredProcId),
+                    items)).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -358,6 +367,36 @@ namespace Microsoft.Partner.SmartOffice.Data
                         Body = storedProc,
                         Id = BulkImportStoredProcId
                     }).ConfigureAwait(false);
+            }
+        }
+
+        /// <summary>
+        /// Invokes the specified request and retries if necessary.
+        /// </summary>
+        /// <typeparam name="T">The type of object to be returned.</typeparam>
+        /// <param name="operation">The operation to be invoked.</param>
+        /// <returns>The results from the invoked operation.</returns>
+        private async Task<T> InvokeRequestAsync<T>(Func<Task<T>> operation)
+        {
+            int statusCode;
+
+            try
+            {
+                return await operation();
+            }
+            catch (DocumentClientException ex)
+            {
+                statusCode = (int)ex.StatusCode;
+
+                if (statusCode == TooManyRequestStatusCode)
+                {
+                    // This request can be attempted again after the server specified retry duration. 
+                    Thread.Sleep(ex.RetryAfter);
+
+                    return await InvokeRequestAsync(operation);
+                }
+
+                throw;
             }
         }
     }

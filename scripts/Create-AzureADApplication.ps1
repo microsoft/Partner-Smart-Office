@@ -112,7 +112,7 @@ $spn = New-AzureADServicePrincipal -AppId $app.AppId -DisplayName $DisplayName
 $password = New-AzureADApplicationPasswordCredential -ObjectId $app.ObjectId
 
 if($ConfigurePreconsent) {
-    $adminAgentsGroup = Get-AzureADGroup | Where-Object {$_.DisplayName -eq 'AdminAgents'}
+    $adminAgentsGroup = Get-AzureADGroup  -Filter "DisplayName eq 'AdminAgents'"
     Add-AzureADGroupMember -ObjectId $adminAgentsGroup.ObjectId -RefObjectId $spn.ObjectId
 }
 
