@@ -96,38 +96,27 @@ namespace Microsoft.Partner.SmartOffice.Data
         /// <summary>
         /// Provides the ability to interact with Cosmos DB.
         /// </summary>
-        private IDocumentClient Client
-        {
-            get
-            {
-                if (documentClient == null)
-                {
-                    documentClient = new DocumentClient(
-                        new Uri(serviceEndpoint),
-                        authKey,
-                        new JsonSerializerSettings
-                        {
-                            Converters = new List<JsonConverter>
-                            {
-                                {
-                                    new EnumJsonConverter()
-                                }
-                            },
-                            DateFormatHandling = DateFormatHandling.IsoDateFormat,
-                            DateTimeZoneHandling = DateTimeZoneHandling.Utc,
-                            NullValueHandling = NullValueHandling.Ignore,
-                            ReferenceLoopHandling = ReferenceLoopHandling.Serialize
-                        },
-                        new ConnectionPolicy
-                        {
-                            ConnectionMode = ConnectionMode.Direct,
-                            ConnectionProtocol = Protocol.Tcp
-                        });
-                }
-
-                return documentClient;
-            }
-        }
+        private IDocumentClient Client => documentClient ?? (documentClient = new DocumentClient(
+                                              new Uri(serviceEndpoint),
+                                              authKey,
+                                              new JsonSerializerSettings
+                                              {
+                                                  Converters = new List<JsonConverter>
+                                                  {
+                                                      {
+                                                          new EnumJsonConverter()
+                                                      }
+                                                  },
+                                                  DateFormatHandling = DateFormatHandling.IsoDateFormat,
+                                                  DateTimeZoneHandling = DateTimeZoneHandling.Utc,
+                                                  NullValueHandling = NullValueHandling.Ignore,
+                                                  ReferenceLoopHandling = ReferenceLoopHandling.Serialize
+                                              },
+                                              new ConnectionPolicy
+                                              {
+                                                  ConnectionMode = ConnectionMode.Direct,
+                                                  ConnectionProtocol = Protocol.Tcp
+                                              }));
 
         /// <summary>
         /// Add or update an item in the repository.
@@ -382,7 +371,7 @@ namespace Microsoft.Partner.SmartOffice.Data
 
             try
             {
-                return await operation();
+                return await operation().ConfigureAwait(false);
             }
             catch (DocumentClientException ex)
             {
@@ -393,7 +382,7 @@ namespace Microsoft.Partner.SmartOffice.Data
                     // This request can be attempted again after the server specified retry duration. 
                     Thread.Sleep(ex.RetryAfter);
 
-                    return await InvokeRequestAsync(operation);
+                    return await InvokeRequestAsync(operation).ConfigureAwait(false);
                 }
 
                 throw;

@@ -28,14 +28,7 @@ namespace Microsoft.Partner.SmartOffice.Services
         /// <summary>
         /// Singleton instance of the <see cref="StorageService" /> class.
         /// </summary>
-        private static Lazy<StorageService> instance = new Lazy<StorageService>(() => new StorageService());
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="StorageService" /> class.
-        /// </summary>
-        public StorageService()
-        {
-        }
+        private static readonly Lazy<StorageService> instance = new Lazy<StorageService>(() => new StorageService());
 
         /// <summary>
         /// Gets an instance of the <see cref="StorageService" /> class.
