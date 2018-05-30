@@ -8,32 +8,9 @@ namespace Microsoft.Partner.SmartOffice.Functions.Converters
 {
     using System.Collections.Generic;
     using System.Reflection;
-    using System.Threading.Tasks;
-    using Services.PartnerCenter;
 
-    public class ResourceConverter
+    public static class ResourceConverter
     {
-        /// <summary>
-        /// Provides the ability to interact with Partner Center.
-        /// </summary>
-        private readonly IPartnerServiceClient client;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ResourceConverter{TInput, TOutput}" /> class.
-        /// </summary>
-        public ResourceConverter()
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ResourceConverter{TInput, TOutput}" /> class.
-        /// </summary>
-        /// <param name="client">Provides the ability to interact with Partner Center.</param>
-        public ResourceConverter(IPartnerServiceClient client)
-        {
-            this.client = client;
-        }
-
         /// <summary>
         /// Converts the resource to the specified output object.
         /// </summary>

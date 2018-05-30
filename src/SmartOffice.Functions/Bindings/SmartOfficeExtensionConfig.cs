@@ -7,7 +7,9 @@
 namespace Microsoft.Partner.SmartOffice.Functions.Bindings
 {
     using System;
+    using System.Collections.Concurrent;
     using System.Collections.Generic;
+    using System.Globalization;
     using System.Threading;
     using System.Threading.Tasks;
     using Azure.WebJobs;
@@ -77,7 +79,12 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
         /// <summary>
         /// Collection of initialized data repositories.
         /// </summary>
-        private static readonly Dictionary<string, object> repos = new Dictionary<string, object>();
+        private static readonly ConcurrentDictionary<string, object> repos = new ConcurrentDictionary<string, object>();
+
+        /// <summary>
+        /// Used to help ensure that data repositories are initialized in a thread safe manner.
+        /// </summary>
+        private static SemaphoreSlim semaphore = new SemaphoreSlim(1, 1);
 
         /// <summary>
         /// Provides the ability to capture log information.
@@ -179,7 +186,7 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
                         input.Resource,
                         input.CustomerId));
 
-                secureScore = await graphService.GetSecureScoreAsync(input.Period).ConfigureAwait(false);
+                secureScore = await graphService.GetSecureScoreAsync(int.Parse(input.Period, CultureInfo.CurrentCulture)).ConfigureAwait(false);
 
                 return secureScore;
             }
@@ -264,6 +271,8 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
 
             try
             {
+                await semaphore.WaitAsync().ConfigureAwait(false);
+
                 if (!repos.ContainsKey(collectionId))
                 {
                     keyVault = new KeyVaultService(keyVaultEndpoint);
@@ -285,6 +294,8 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
             finally
             {
                 keyVault = null;
+
+                semaphore.Release();
             }
         }
     }

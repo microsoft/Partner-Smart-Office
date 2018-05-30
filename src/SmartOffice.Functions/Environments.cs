@@ -8,6 +8,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
 {
     using System;
     using System.Collections.Generic;
+    using System.Globalization;
     using System.Linq;
     using System.Threading.Tasks;
     using Azure.WebJobs;
@@ -66,17 +67,30 @@ namespace Microsoft.Partner.SmartOffice.Functions
             TraceWriter log)
         {
             List<SubscriptionDetail> subscriptions;
+            int period;
 
             try
             {
                 log.Info($"Processing data for {data.Customer.Id}");
 
-                if (data.Customer.LastProcessed == null || (DateTimeOffset.UtcNow - data.Customer.LastProcessed).Value.TotalDays >= 30)
+                // Configure the value indicating the number of days of score results to retrieve starting from current date.
+                period = (data.Customer.LastProcessed == null) ? 30 : (DateTimeOffset.UtcNow - data.Customer.LastProcessed).Value.Days;
+
+                // Ensure that the period is at least 1 or greater. This ensure the request to retrieve data is succesfully. 
+                if (period < 1)
                 {
+                    period = 1;
+                }
+
+                // If the period is greater than, or equal to, 30 then we need to request a complete of subscriptions for the customer.
+                if (period >= 30)
+                {
+                    period = 30;
                     subscriptions = await GetSubscriptionsAsync(partner, data.Customer.Id).ConfigureAwait(false);
                 }
                 else
                 {
+                    // Since the period is less than 30 we can utilize the audit logs to reconstruct any subscriptions that were created.
                     subscriptions = await BuildUsingAuditRecordsAsync(
                         data.AuditRecords,
                         subscriptionRepository,
@@ -90,17 +104,19 @@ namespace Microsoft.Partner.SmartOffice.Functions
                 }
 
                 data.Customer.LastProcessed = DateTimeOffset.UtcNow;
+                // TODO - Right now the exception information is not presisted to the database.
                 data.Customer.ProcessException = null;
-
-                await customerRepository.AddOrUpdateAsync(data.Customer).ConfigureAwait(false);
 
                 await storage.WriteToQueueAsync(
                     OperationConstants.SecurityQueueName,
                     new SecurityDetails
                     {
                         AppEndpoint = data.AppEndpoint,
-                        Customer = data.Customer
+                        Customer = data.Customer,
+                        Period = period.ToString(CultureInfo.InvariantCulture)
                     }).ConfigureAwait(false);
+
+                await customerRepository.AddOrUpdateAsync(data.Customer).ConfigureAwait(false);
 
                 log.Info($"Successfully process data for {data.Customer.Id}");
             }
@@ -243,7 +259,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
                 ApplicationId = "{AppEndpoint.ApplicationId}",
                 CustomerId = "{Customer.Id}",
                 KeyVaultEndpoint = "KeyVaultEndpoint",
-                Period = 1,
+                Period = "{Period}",
                 Resource = "{AppEndpoint.ServiceAddress}",
                 SecretName = "{AppEndpoint.ApplicationSecretId}")]List<SecureScore> scores,
             [SecurityAlerts(
