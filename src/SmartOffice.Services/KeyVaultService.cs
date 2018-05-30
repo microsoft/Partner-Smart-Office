@@ -18,7 +18,7 @@ namespace Microsoft.Partner.SmartOffice.Services
         /// <summary>
         /// Provides the ability to perform HTTP operations. 
         /// </summary>
-        private static HttpClient httpClient = new HttpClient();
+        private static readonly HttpClient httpClient = new HttpClient();
 
         /// <summary>
         /// Name of the MSI endpoint environment variable.
@@ -54,7 +54,7 @@ namespace Microsoft.Partner.SmartOffice.Services
         /// <summary>
         /// Flag indicating whether or not this object has been disposed.
         /// </summary>
-        private bool disposed = false;
+        private bool disposed;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="KeyVaultService"/> class.
@@ -79,18 +79,7 @@ namespace Microsoft.Partner.SmartOffice.Services
             this.keyVaultClient = keyVaultClient;
         }
 
-        private IKeyVaultClient KeyVault
-        {
-            get
-            {
-                if (keyVaultClient == null)
-                {
-                    keyVaultClient = new KeyVaultClient(new KeyVaultClient.AuthenticationCallback(GetKeyVaultAccessTokenAsync));
-                }
-
-                return keyVaultClient;
-            }
-        }
+        private IKeyVaultClient KeyVault => keyVaultClient ?? (keyVaultClient = new KeyVaultClient(GetKeyVaultAccessTokenAsync));
 
         /// <summary>
         /// Gets the secret value from the configured instance of Azure Key Vault.

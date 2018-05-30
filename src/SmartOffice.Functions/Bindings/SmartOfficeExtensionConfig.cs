@@ -79,12 +79,12 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
         /// <summary>
         /// Collection of initialized data repositories.
         /// </summary>
-        private static readonly ConcurrentDictionary<string, object> repos = new ConcurrentDictionary<string, object>();
+        private static readonly ConcurrentDictionary<string, object> Repos = new ConcurrentDictionary<string, object>();
 
         /// <summary>
         /// Used to help ensure that data repositories are initialized in a thread safe manner.
         /// </summary>
-        private static SemaphoreSlim semaphore = new SemaphoreSlim(1, 1);
+        private static readonly SemaphoreSlim Semaphore = new SemaphoreSlim(1, 1);
 
         /// <summary>
         /// Provides the ability to capture log information.
@@ -186,13 +186,13 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
                         input.Resource,
                         input.CustomerId));
 
-                secureScore = await graphService.GetSecureScoreAsync(int.Parse(input.Period, CultureInfo.CurrentCulture)).ConfigureAwait(false);
+                secureScore = await graphService.GetSecureScoreAsync(int.Parse(input.Period, CultureInfo.CurrentCulture), cancellationToken).ConfigureAwait(false);
 
                 return secureScore;
             }
             catch (ServiceClientException ex)
             {
-                log.LogError(ex, $"Encountered {ex.ToString()} when processing {input.CustomerId}");
+                log.LogError(ex, $"Encountered {ex} when processing {input.CustomerId}");
                 return null;
             }
             finally
@@ -219,7 +219,7 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
                         input.Resource,
                         input.CustomerId));
 
-                alerts = await graphService.GetAlertsAsync().ConfigureAwait(false);
+                alerts = await graphService.GetAlertsAsync(cancellationToken).ConfigureAwait(false);
 
                 return alerts;
             }
@@ -271,9 +271,9 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
 
             try
             {
-                await semaphore.WaitAsync().ConfigureAwait(false);
+                await Semaphore.WaitAsync().ConfigureAwait(false);
 
-                if (!repos.ContainsKey(collectionId))
+                if (!Repos.ContainsKey(collectionId))
                 {
                     keyVault = new KeyVaultService(keyVaultEndpoint);
                     authKey = await keyVault.GetSecretAsync(CosmsosDbAccessKey).ConfigureAwait(false);
@@ -286,16 +286,16 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
 
                     await repo.InitializeAsync().ConfigureAwait(false);
 
-                    repos[collectionId] = repo;
+                    Repos[collectionId] = repo;
                 }
 
-                return repos[collectionId] as IDocumentRepository<TEntity>;
+                return Repos[collectionId] as IDocumentRepository<TEntity>;
             }
             finally
             {
                 keyVault = null;
 
-                semaphore.Release();
+                Semaphore.Release();
             }
         }
     }

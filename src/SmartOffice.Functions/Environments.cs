@@ -71,7 +71,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
 
             try
             {
-                log.Info($"Processing data for {data.Customer.Id}");
+                log.Info($"Attempting to process information for {data.Customer.Id}.");
 
                 // Configure the value indicating the number of days of score results to retrieve starting from current date.
                 period = (data.Customer.LastProcessed == null) ? 30 : (DateTimeOffset.UtcNow - data.Customer.LastProcessed).Value.Days;
@@ -82,11 +82,22 @@ namespace Microsoft.Partner.SmartOffice.Functions
                     period = 1;
                 }
 
-                // If the period is greater than, or equal to, 30 then we need to request a complete of subscriptions for the customer.
                 if (period >= 30)
                 {
                     period = 30;
-                    subscriptions = await GetSubscriptionsAsync(partner, data.Customer.Id).ConfigureAwait(false);
+
+                    try
+                    {
+                        data.Customer.ProcessException = null;
+                        subscriptions = await GetSubscriptionsAsync(partner, data.Customer.Id).ConfigureAwait(false);
+                    }
+                    catch (ServiceClientException ex)
+                    {
+                        data.Customer.ProcessException = ex;
+                        subscriptions = null;
+
+                        log.Warning($"Encountered an exception when processing {data.Customer.Id}. Check the customer record for more information.");
+                    }
                 }
                 else
                 {
@@ -98,27 +109,27 @@ namespace Microsoft.Partner.SmartOffice.Functions
                         data.Customer).ConfigureAwait(false);
                 }
 
-                if (subscriptions.Count > 0)
+                if (subscriptions?.Count > 0)
                 {
                     await subscriptionRepository.AddOrUpdateAsync(subscriptions).ConfigureAwait(false);
                 }
 
-                data.Customer.LastProcessed = DateTimeOffset.UtcNow;
-                // TODO - Right now the exception information is not presisted to the database.
-                data.Customer.ProcessException = null;
+                if (data.Customer.ProcessException == null)
+                {
+                    await storage.WriteToQueueAsync(
+                        OperationConstants.SecurityQueueName,
+                        new SecurityDetails
+                        {
+                            AppEndpoint = data.AppEndpoint,
+                            Customer = data.Customer,
+                            Period = period.ToString(CultureInfo.InvariantCulture)
+                        }).ConfigureAwait(false);
 
-                await storage.WriteToQueueAsync(
-                    OperationConstants.SecurityQueueName,
-                    new SecurityDetails
-                    {
-                        AppEndpoint = data.AppEndpoint,
-                        Customer = data.Customer,
-                        Period = period.ToString(CultureInfo.InvariantCulture)
-                    }).ConfigureAwait(false);
+                    data.Customer.LastProcessed = DateTimeOffset.UtcNow;
+                    await customerRepository.AddOrUpdateAsync(data.Customer).ConfigureAwait(false);
 
-                await customerRepository.AddOrUpdateAsync(data.Customer).ConfigureAwait(false);
-
-                log.Info($"Successfully process data for {data.Customer.Id}");
+                    log.Info($"Successfully processed customer {data.Customer.Id}.");
+                }
             }
             finally
             {
@@ -358,7 +369,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
         }
 
         private static async Task<List<CustomerDetail>> BuildUsingAuditRecordsAsync(
-            List<AuditRecord> auditRecords,
+            IEnumerable<AuditRecord> auditRecords,
             IDocumentRepository<CustomerDetail> repository)
         {
             IEnumerable<AuditRecord> filteredRecords;
@@ -402,7 +413,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
         }
 
         private static async Task<List<SubscriptionDetail>> BuildUsingAuditRecordsAsync(
-            List<AuditRecord> auditRecords,
+            IEnumerable<AuditRecord> auditRecords,
             IDocumentRepository<SubscriptionDetail> repository,
             IPartnerServiceClient client,
             CustomerDetail customer)
@@ -467,7 +478,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
             }
         }
 
-        private async static Task<List<SubscriptionDetail>> ConvertToSubscriptionDetailsAsync(
+        private static async Task<List<SubscriptionDetail>> ConvertToSubscriptionDetailsAsync(
             IPartnerServiceClient client,
             CustomerDetail customer,
             Order order)
