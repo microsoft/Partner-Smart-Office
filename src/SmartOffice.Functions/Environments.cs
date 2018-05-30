@@ -100,7 +100,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
                     {
                         AppEndpoint = data.AppEndpoint,
                         Customer = data.Customer
-                    });
+                    }).ConfigureAwait(false);
 
                 log.Info($"Successfully process data for {data.Customer.Id}");
             }
