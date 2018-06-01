@@ -28,7 +28,40 @@ namespace Microsoft.Partner.SmartOffice.Services.PartnerCenter
         /// <param name="endpoint">Address of the resource being accessed.</param>
         /// <param name="credentials">Credentials used when accessing resources.</param>
         /// <param name="handlers">List of handlers from top to bottom (outer handler is the first in the list)</param>
-        public PartnerServiceClient(Uri endpoint, ServiceClientCredentials credentials, params DelegatingHandler[] handlers) : base(handlers)
+        public PartnerServiceClient(Uri endpoint, ServiceClientCredentials credentials, params DelegatingHandler[] handlers)
+            : base(handlers)
+        {
+            Credentials = credentials;
+            Endpoint = endpoint;
+
+            AuditRecords = new AuditRecordCollectionOperations(this);
+            Customers = new CustomerCollectionOperations(this);
+            Offers = new OfferCountrySelector(this);
+
+            DeserializationSettings = new JsonSerializerSettings
+            {
+                ContractResolver = new ReadOnlyJsonContractResolver(),
+                Converters = new List<JsonConverter>
+                {
+                    {
+                        new EnumJsonConverter()
+                    }
+                },
+                DateFormatHandling = DateFormatHandling.IsoDateFormat,
+                DateTimeZoneHandling = DateTimeZoneHandling.Utc,
+                NullValueHandling = NullValueHandling.Ignore,
+                ReferenceLoopHandling = ReferenceLoopHandling.Serialize
+            };
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="PartnerServiceClient" /> class.
+        /// </summary>
+        /// <param name="endpoint">Address of the resource being accessed.</param>
+        /// <param name="credentials">Credentials used when accessing resources.</param>
+        /// <param name="httpClient">The HTTP client to be used.</param>
+        public PartnerServiceClient(Uri endpoint, ServiceClientCredentials credentials, HttpClient httpClient)
+            : base(httpClient, false)
         {
             Credentials = credentials;
             Endpoint = endpoint;

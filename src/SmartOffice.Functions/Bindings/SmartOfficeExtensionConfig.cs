@@ -80,7 +80,7 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
         /// Collection of initialized data repositories.
         /// </summary>
         private static readonly ConcurrentDictionary<string, object> Repos = new ConcurrentDictionary<string, object>();
-
+        
         /// <summary>
         /// Used to help ensure that data repositories are initialized in a thread safe manner.
         /// </summary>
@@ -160,7 +160,8 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
                         input.ApplicationId,
                         await vaultService.GetSecretAsync(input.SecretName).ConfigureAwait(false),
                         input.Resource,
-                        input.ApplicationTenantId));
+                        input.ApplicationTenantId),
+                    new PartnerServiceMessageHandler());
             }
             finally
             {
@@ -250,7 +251,6 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
         /// <param name="context">Context for the extension</param>
         public void Initialize(ExtensionConfigContext context)
         {
-
             log = context.Config.LoggerFactory.CreateLogger(LogCategories.CreateFunctionCategory("SmartOffice"));
 
             context.AddBindingRule<DataRepositoryAttribute>().BindToInput<object>(this);
