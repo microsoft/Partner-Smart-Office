@@ -206,11 +206,12 @@ namespace Microsoft.Partner.SmartOffice.Functions
 
                 if (days >= 30)
                 {
-                    customers = await GetCustomersAsync(partner).ConfigureAwait(false);
+                    customers = await GetCustomersAsync(partner, environment).ConfigureAwait(false);
                 }
                 else
                 {
                     customers = await BuildUsingAuditRecordsAsync(
+                        environment,
                         auditRecords,
                         customerRepository).ConfigureAwait(false);
                 }
@@ -370,6 +371,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
         }
 
         private static async Task<List<CustomerDetail>> BuildUsingAuditRecordsAsync(
+            EnvironmentDetail environment,
             IEnumerable<AuditRecord> auditRecords,
             IDocumentRepository<CustomerDetail> repository)
         {
@@ -399,7 +401,10 @@ namespace Microsoft.Partner.SmartOffice.Functions
                             resources.Remove(control);
                         }
 
-                        resources.Add(ResourceConverter.Convert<Customer, CustomerDetail>(resource));
+                        resources.Add(
+                            ResourceConverter.Convert<Customer, CustomerDetail>(
+                                resource,
+                                new Dictionary<string, string> { { "EnvironmentId", environment.Id } }));
                     }
                 }
 
@@ -526,7 +531,8 @@ namespace Microsoft.Partner.SmartOffice.Functions
                         AutoRenewEnabled = offer.IsAutoRenewable,
                         BillingCycle = order.BillingCycle,
                         BillingType = offer.Billing,
-                        CommitmentEndDate = effectiveStartDate.AddYears(1),
+                        CommitmentEndDate = (offer.Billing == BillingType.License) ? 
+                            effectiveStartDate.AddYears(1) : DateTime.Parse("9999-12-14T00:00:00Z", CultureInfo.CurrentCulture),
                         CreationDate = creationDate.UtcDateTime,
                         EffectiveStartDate = effectiveStartDate,
                         FriendlyName = lineItem.FriendlyName,
@@ -552,8 +558,8 @@ namespace Microsoft.Partner.SmartOffice.Functions
         }
 
         private static async Task<List<AuditRecord>> GetAuditRecordsAsyc(
-            IPartnerServiceClient client, 
-            DateTime startDate, 
+            IPartnerServiceClient client,
+            DateTime startDate,
             DateTime endDate)
         {
             List<AuditRecord> auditRecords;
@@ -561,7 +567,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
 
             try
             {
-                auditRecords = new List<AuditRecord>(); 
+                auditRecords = new List<AuditRecord>();
 
                 foreach (DateTime date in ChunkDate(startDate, endDate, 30))
                 {
@@ -591,8 +597,9 @@ namespace Microsoft.Partner.SmartOffice.Functions
         /// Gets a complete list of customers associated with the partner. 
         /// </summary>
         /// <param name="client">Provides the ability to interact with Partner Center.</param>
+        /// <param name="environment">The environment that owns the customers be requesteed.</param>
         /// <returns>A list of customers associated with the partner.</returns>
-        private static async Task<List<CustomerDetail>> GetCustomersAsync(IPartnerServiceClient client)
+        private static async Task<List<CustomerDetail>> GetCustomersAsync(IPartnerServiceClient client, EnvironmentDetail environment)
         {
             Customer customer;
             List<CustomerDetail> customers;
@@ -620,6 +627,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
                     {
                         customer = await client.Customers[c.Id].GetAsync().ConfigureAwait(false);
                         c.BillingProfile = customer.BillingProfile;
+                        c.EnvironmentId = environment.Id;
                     }
                     catch (ServiceClientException ex)
                     {
