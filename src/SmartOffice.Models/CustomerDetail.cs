@@ -25,6 +25,12 @@ namespace Microsoft.Partner.SmartOffice.Models
         public CustomerCompanyProfile CompanyProfile { get; set; }
 
         /// <summary>
+        /// Gets or sets the environment identifier.
+        /// </summary>
+        [JsonProperty("environmentId")]
+        public string EnvironmentId { get; set; }
+
+        /// <summary>
         /// Gets or sets the identifier for the customer.
         /// </summary>
         [JsonProperty("id")]
