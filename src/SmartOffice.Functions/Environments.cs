@@ -177,32 +177,34 @@ namespace Microsoft.Partner.SmartOffice.Functions
         {
             List<AuditRecord> auditRecords;
             List<CustomerDetail> customers;
-            SeekBasedResourceCollection<AuditRecord> seekAuditRecords;
+            int days;
 
             try
             {
                 log.Info($"Starting to process the {environment.FriendlyName} CSP environment.");
 
-                // Request the audit records for the previous day from the Partner Center API.
-                seekAuditRecords = await partner.AuditRecords.QueryAsync(DateTime.Now.AddDays(-1)).ConfigureAwait(false);
+                // Calculate the number of days that have gone by, since the last successful synchronization.
+                days = (environment.LastProcessed == null) ? 30 : (DateTimeOffset.UtcNow - environment.LastProcessed).Days;
 
-                auditRecords = new List<AuditRecord>(seekAuditRecords.Items);
-
-                while (seekAuditRecords.Links.Next != null)
+                if (days >= 90)
                 {
-                    // Request the next page of audit records from the Partner Center API.
-                    seekAuditRecords = await partner.AuditRecords.QueryAsync(seekAuditRecords.Links.Next).ConfigureAwait(false);
-
-                    auditRecords.AddRange(seekAuditRecords.Items);
+                    // Only audit records for the past 90 days are available from Partner Center.
+                    days = 89;
                 }
+
+                auditRecords = await GetAuditRecordsAsyc(
+                    partner,
+                    DateTime.UtcNow.AddDays(-days),
+                    DateTime.UtcNow).ConfigureAwait(false);
 
                 if (auditRecords.Count > 0)
                 {
+                    log.Info($"Importing {auditRecords.Count} audit records from the past {days} days.");
                     // Add, or update, each audit record to the database.
                     await auditRecordRepository.AddOrUpdateAsync(auditRecords).ConfigureAwait(false);
                 }
 
-                if ((DateTimeOffset.UtcNow - environment?.LastProcessed).Value.TotalDays >= 30)
+                if (days >= 30)
                 {
                     customers = await GetCustomersAsync(partner).ConfigureAwait(false);
                 }
@@ -241,7 +243,6 @@ namespace Microsoft.Partner.SmartOffice.Functions
             {
                 auditRecords = null;
                 customers = null;
-                seekAuditRecords = null;
             }
         }
 
@@ -478,6 +479,16 @@ namespace Microsoft.Partner.SmartOffice.Functions
             }
         }
 
+        public static IEnumerable<DateTime> ChunkDate(DateTime startDate, DateTime endDate, int size)
+        {
+            while (startDate < endDate)
+            {
+                yield return startDate;
+
+                startDate = startDate.AddDays(size);
+            }
+        }
+
         private static async Task<List<SubscriptionDetail>> ConvertToSubscriptionDetailsAsync(
             IPartnerServiceClient client,
             CustomerDetail customer,
@@ -537,6 +548,42 @@ namespace Microsoft.Partner.SmartOffice.Functions
             finally
             {
                 offer = null;
+            }
+        }
+
+        private static async Task<List<AuditRecord>> GetAuditRecordsAsyc(
+            IPartnerServiceClient client, 
+            DateTime startDate, 
+            DateTime endDate)
+        {
+            List<AuditRecord> auditRecords;
+            SeekBasedResourceCollection<AuditRecord> seekAuditRecords;
+
+            try
+            {
+                auditRecords = new List<AuditRecord>(); 
+
+                foreach (DateTime date in ChunkDate(startDate, endDate, 30))
+                {
+                    // Request the audit records for the previous day from Partner Center.
+                    seekAuditRecords = await client.AuditRecords.QueryAsync(date).ConfigureAwait(false);
+
+                    auditRecords.AddRange(seekAuditRecords.Items);
+
+                    while (seekAuditRecords.Links.Next != null)
+                    {
+                        // Request the next page of audit records from Partner Center.
+                        seekAuditRecords = await client.AuditRecords.QueryAsync(seekAuditRecords.Links.Next).ConfigureAwait(false);
+
+                        auditRecords.AddRange(seekAuditRecords.Items);
+                    }
+                }
+
+                return auditRecords;
+            }
+            finally
+            {
+                seekAuditRecords = null;
             }
         }
 

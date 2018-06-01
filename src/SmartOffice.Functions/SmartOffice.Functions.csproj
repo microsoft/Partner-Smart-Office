@@ -4,7 +4,13 @@
     <AzureFunctionsVersion>v2</AzureFunctionsVersion>
     <AssemblyName>Microsoft.Partner.SmartOffice.Functions</AssemblyName>
     <RootNamespace>Microsoft.Partner.SmartOffice.Functions</RootNamespace>
-    <Version>0.0.2</Version>
+    <Version>0.0.3</Version>
+    <Company>Microsoft</Company>
+    <Authors>One Commercial Partner</Authors>
+    <Product>Partner Smart Office</Product>
+    <PackageProjectUrl>https://github.com/Microsoft/Partner-Smart-Office/</PackageProjectUrl>
+    <PackageLicenseUrl>https://github.com/Microsoft/Partner-Smart-Office/blob/master/LICENSE</PackageLicenseUrl>
+    <RepositoryUrl>https://github.com/Microsoft/Partner-Smart-Office/</RepositoryUrl>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <WarningsAsErrors>NU1605</WarningsAsErrors>
