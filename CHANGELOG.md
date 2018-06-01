@@ -1,5 +1,16 @@
 # Partner Smart Office Changelog
 
+## 0.0.3 (2018-06-01)
+
+* Added the ability to seed audit logs for CSP environments that are new to this platform.
+* Added the ability to seed Secure Score information from the past 30 days for customers that are new to this platform.
+* Added the ability to track exceptions when processing a customer. If an exception is encountered when processing a customer the entire exception will be written to the ProcessException property of the customer details object.
+* Added the environment identifier to the customer details. If you existing customer details without this property, you will need to delete the LastProcessed property from the environment collection to get the property added to the existing records.
+* Each request to the Partner Center API now includes the MS-CorrelationId, MS-PartnerCenter-ApplicationName, and MS-RequestId header
+* Fixed issue [#11](https://github.com/Microsoft/Partner-Smart-Office/issues/12)
+* Fixed issue [#12](https://github.com/Microsoft/Partner-Smart-Office/issues/12)
+* Fixed issue [#13](https://github.com/Microsoft/Partner-Smart-Office/issues/13)
+
 ## 0.0.2 (2018-05-29)
 
 * Added the ability to synchronize data from multiple environments. This change makes it possible for partners with more than one Cloud Solution Provider reseller tenant to aggregate data for all customers.
