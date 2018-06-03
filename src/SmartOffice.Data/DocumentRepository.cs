@@ -159,6 +159,19 @@ namespace Microsoft.Partner.SmartOffice.Data
         }
 
         /// <summary>
+        /// Deletes the document associated with the specified identifier.
+        /// </summary>
+        /// <param name="id">Identifier of the document.</param>
+        /// <returns>
+        /// An instance of the <see cref="Task" /> class that represents the asynchronous operation.
+        /// </returns>
+        public async Task DeleteAsync(string id)
+        {
+            await Client.DeleteDocumentAsync(
+                UriFactory.CreateDocumentUri(databaseId, collectionId, id)).ConfigureAwait(false);
+        }
+
+        /// <summary>
         /// Gets an item from the repository.
         /// </summary>
         /// <param name="id">Identifier of the item.</param>
@@ -262,6 +275,28 @@ namespace Microsoft.Partner.SmartOffice.Data
             await CreateDatabaseIfNotExistsAsync().ConfigureAwait(false);
             await CreateCollectionIfNotExistsAsync().ConfigureAwait(false);
             await CreateStoredProcedureIfNotExistsAsync().ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Updates an item in the repository.
+        /// </summary>
+        /// <param name="item">The item to be updated.</param>
+        /// <returns>The entity that updated.</returns>
+        public async Task<TEntity> UpdateAsync(TEntity item)
+        {
+            ResourceResponse<Document> response;
+
+            try
+            {
+                response = await Client.UpsertDocumentAsync(
+                    UriFactory.CreateDocumentCollectionUri(databaseId, collectionId), item).ConfigureAwait(false);
+
+                return (TEntity)(dynamic)response.Resource;
+            }
+            finally
+            {
+                response = null;
+            }
         }
 
         /// <summary>

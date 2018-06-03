@@ -77,10 +77,15 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
         private const string SubscriptionsCollectionId = "Subscriptions";
 
         /// <summary>
+        /// Identifier for the utilization collection.
+        /// </summary>
+        private const string UtilizationCollectId = "Utilization";
+
+        /// <summary>
         /// Collection of initialized data repositories.
         /// </summary>
         private static readonly ConcurrentDictionary<string, object> Repos = new ConcurrentDictionary<string, object>();
-        
+
         /// <summary>
         /// Used to help ensure that data repositories are initialized in a thread safe manner.
         /// </summary>
@@ -139,6 +144,13 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
             {
                 return await GetRepoAsync<SubscriptionDetail>(
                     SubscriptionsCollectionId,
+                    input.CosmosDbEndpoint,
+                    input.KeyVaultEndpoint).ConfigureAwait(false);
+            }
+            else if (input.DataType == typeof(UtilizationDetail))
+            {
+                return await GetRepoAsync<UtilizationDetail>(
+                    UtilizationCollectId,
                     input.CosmosDbEndpoint,
                     input.KeyVaultEndpoint).ConfigureAwait(false);
             }

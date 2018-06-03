@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <UserSecretsId>aspnet-SmartOffice-FCBDE9D2-2E9F-4FC0-A2F4-1C1D6B72FDF0</UserSecretsId>
+    <WebProject_DirectoryAccessLevelKey>0</WebProject_DirectoryAccessLevelKey>
+    <AssemblyName>Microsoft.Partner.SmartOffice</AssemblyName>
+    <RootNamespace>Microsoft.Partner.SmartOffice</RootNamespace>
+    <Company>Microsoft</Company>
+    <Product>Partner Smart Office</Product>
+    <Version>0.1.0</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.3.0" />
+    <PackageReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.AzureAD.UI" Version="2.1.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.AzureKeyVault" Version="2.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SmartOffice.Data\SmartOffice.Data.csproj" />
+    <ProjectReference Include="..\SmartOffice.Models\SmartOffice.Models.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -25,5 +25,10 @@ namespace Microsoft.Partner.SmartOffice.Functions
         /// Name of the security storage queue.
         /// </summary>
         public const string SecurityQueueName = "security";
+
+        /// <summary>
+        /// Name of the utilization storage queue.
+        /// </summary>
+        public const string UtilizationQueueName = "utilization";
     }
 }
