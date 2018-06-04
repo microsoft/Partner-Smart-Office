@@ -228,7 +228,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
                         {
                             AppEndpoint = environment.AppEndpoint,
                             AuditRecords = auditRecords
-                                .Where(r => r.CustomerId.Equals(customer.Id, StringComparison.InvariantCultureIgnoreCase))
+                                .Where(r => r.CustomerId?.Equals(customer.Id, StringComparison.InvariantCultureIgnoreCase) ?? false)
                                 .ToList(),
                             Customer = customer,
                             PartnerCenterEndpoint = environment.PartnerCenterEndpoint
