@@ -41,11 +41,16 @@ namespace Microsoft.Partner.SmartOffice.Models
         public string Id { get; set; }
 
         /// <summary>
-        /// Gets or sets the time the environment was last processed.
+        /// Gets or sets the date and time the environment was last processed.
         /// </summary>
         [Display(Name = "Last Processed")]
         [Required]
         public DateTimeOffset LastProcessed { get; set; }
+
+        /// <summary>
+        /// Gets or sets the date and time the environment was last modified.
+        /// </summary>
+        public DateTimeOffset Modified { get; set; }
 
         /// <summary>
         /// Gets or sets the Microsoft Partner Center endpoint details for the environment.
@@ -57,6 +62,7 @@ namespace Microsoft.Partner.SmartOffice.Models
         /// <summary>
         /// Gets or sets a flag indicating whether or not to synchronize Azure utilization records.
         /// </summary>
+        [Display(Name = "Process usage records")]
         [Required]
         public bool ProcessAzureUsage { get; set; }
     }

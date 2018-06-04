@@ -6,6 +6,7 @@
 
 namespace Microsoft.Partner.SmartOffice.Controllers
 {
+    using System;
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Threading.Tasks;
@@ -13,6 +14,7 @@ namespace Microsoft.Partner.SmartOffice.Controllers
     using AspNetCore.Mvc;
     using Data;
     using Models;
+    using Services;
 
     [Authorize]
     public class HomeController : Controller
@@ -23,12 +25,19 @@ namespace Microsoft.Partner.SmartOffice.Controllers
         private readonly IDocumentRepository<EnvironmentDetail> repository;
 
         /// <summary>
+        /// Provides access to an instance of Azure Key Vault.
+        /// </summary>
+        private readonly IVaultService vault;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="HomeController" /> class.
         /// </summary>
         /// <param name="repository">Data repository used to manage envrionment details.</param>
-        public HomeController(IDocumentRepository<EnvironmentDetail> repository)
+        /// <param name="vault">Provides access to an instance of Azure Key Vault.</param>
+        public HomeController(IDocumentRepository<EnvironmentDetail> repository, IVaultService vault)
         {
             this.repository = repository;
+            this.vault = vault;
         }
 
         public IActionResult AddNew()
@@ -43,6 +52,18 @@ namespace Microsoft.Partner.SmartOffice.Controllers
         {
             if (ModelState.IsValid)
             {
+                environment.Modified = DateTimeOffset.Now;
+
+                if (!string.IsNullOrEmpty(environment.AppEndpoint?.ApplicationSecret))
+                {
+                    await SetSecretAsync(Guid.NewGuid().ToString(), environment.AppEndpoint).ConfigureAwait(false);
+                }
+
+                if (!string.IsNullOrEmpty(environment.PartnerCenterEndpoint?.ApplicationSecret))
+                {
+                    await SetSecretAsync(Guid.NewGuid().ToString(), environment.PartnerCenterEndpoint).ConfigureAwait(false);
+                }
+
                 await repository.AddOrUpdateAsync(environment).ConfigureAwait(false);
 
                 return RedirectToAction("Index");
@@ -53,7 +74,7 @@ namespace Microsoft.Partner.SmartOffice.Controllers
 
         public async Task<IActionResult> Delete(string id)
         {
-            EnvironmentDetail environment; 
+            EnvironmentDetail environment;
 
             try
             {
@@ -73,7 +94,7 @@ namespace Microsoft.Partner.SmartOffice.Controllers
             }
             finally
             {
-                environment = null; 
+                environment = null;
             }
         }
 
@@ -81,8 +102,32 @@ namespace Microsoft.Partner.SmartOffice.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(string id)
         {
-            await repository.DeleteAsync(id).ConfigureAwait(false); 
-            return RedirectToAction("Index");
+            EnvironmentDetail environment;
+
+            try
+            {
+                environment = await repository.GetAsync(id).ConfigureAwait(false);
+
+                if (!string.IsNullOrEmpty(environment.AppEndpoint?.ApplicationSecretId))
+                {
+                    // Remove the secret associated with the Azure AD application from key vault.
+                    await vault.DeleteSecretAsync(environment.AppEndpoint.ApplicationSecretId).ConfigureAwait(false);
+                }
+
+                if (!string.IsNullOrEmpty(environment.PartnerCenterEndpoint?.ApplicationSecretId))
+                {
+                    // Remove the secret associated with the Partner Center application from key vault.
+                    await vault.DeleteSecretAsync(environment.PartnerCenterEndpoint.ApplicationSecretId).ConfigureAwait(false);
+                }
+
+                await repository.DeleteAsync(id).ConfigureAwait(false);
+
+                return RedirectToAction("Index");
+            }
+            finally
+            {
+                environment = null;
+            }
         }
 
         public async Task<IActionResult> Edit(string id)
@@ -138,7 +183,22 @@ namespace Microsoft.Partner.SmartOffice.Controllers
                     current.AppEndpoint = environment.AppEndpoint;
                     current.EnvironmentType = environment.EnvironmentType;
                     current.FriendlyName = environment.FriendlyName;
+                    current.Modified = DateTimeOffset.UtcNow;
                     current.PartnerCenterEndpoint = environment.PartnerCenterEndpoint;
+
+                    if (!string.IsNullOrEmpty(current.AppEndpoint?.ApplicationSecret))
+                    {
+                        await SetSecretAsync(
+                            current.AppEndpoint.ApplicationSecretId,
+                            current.AppEndpoint).ConfigureAwait(false);
+                    }
+
+                    if (!string.IsNullOrEmpty(current.PartnerCenterEndpoint?.ApplicationSecret))
+                    {
+                        await SetSecretAsync(
+                            current.PartnerCenterEndpoint.ApplicationSecretId,
+                            current.PartnerCenterEndpoint).ConfigureAwait(false);
+                    }
 
                     await repository.UpdateAsync(current).ConfigureAwait(false);
 
@@ -181,6 +241,23 @@ namespace Microsoft.Partner.SmartOffice.Controllers
         public IActionResult Error()
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+        }
+
+        private async Task SetSecretAsync(string secretName, EndpointDetail endpoint)
+        {
+            if (string.IsNullOrEmpty(secretName))
+            {
+                secretName = Guid.NewGuid().ToString();
+            }
+
+            endpoint.ApplicationSecretId = secretName;
+
+            await vault.SetSecretAsync(
+                endpoint.ApplicationSecretId,
+                endpoint.ApplicationSecret,
+                "text/plain").ConfigureAwait(false);
+
+            endpoint.ApplicationSecret = null;
         }
     }
 }

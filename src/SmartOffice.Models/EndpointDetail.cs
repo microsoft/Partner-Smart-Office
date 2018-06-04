@@ -19,15 +19,24 @@ namespace Microsoft.Partner.SmartOffice.Models
         public string ApplicationId { get; set; }
 
         /// <summary>
+        /// Gets or sets the application secret.
+        /// </summary>
+        /// <remarks>
+        /// This property is only used during the creation of a new environment.
+        /// </remarks>
+        [Display(Name = "Application Secret")]
+        [Required]
+        public string ApplicationSecret { get; set; }
+
+        /// <summary>
         /// Gets or sets the identifier of the application secret.
         /// </summary>
-        [Display(Name = "Secret Identifier")]
-        [Required]
         public string ApplicationSecretId { get; set; }
 
         /// <summary>
         /// Gets or sets the service address.
         /// </summary>
+        [DataType(DataType.Url)]
         [Display(Name = "Service Address")]
         [Required]
         public string ServiceAddress { get; set; }

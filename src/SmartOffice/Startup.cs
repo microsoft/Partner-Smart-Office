@@ -6,8 +6,6 @@
 
 namespace Microsoft.Partner.SmartOffice
 {
-    using System.Threading;
-    using System.Threading.Tasks;
     using AspNetCore.Authentication;
     using AspNetCore.Authentication.AzureAD.UI;
     using AspNetCore.Authorization;
@@ -20,6 +18,7 @@ namespace Microsoft.Partner.SmartOffice
     using Extensions.Configuration;
     using Extensions.DependencyInjection;
     using Models;
+    using Services;
 
     public class Startup
     {
@@ -40,6 +39,8 @@ namespace Microsoft.Partner.SmartOffice
                 options.MinimumSameSitePolicy = SameSiteMode.None;
             });
 
+            services.AddApplicationInsightsTelemetry();
+
             services.AddAuthentication(AzureADDefaults.AuthenticationScheme)
                 .AddAzureAD(options => Configuration.Bind("AzureAd", options));
 
@@ -49,6 +50,10 @@ namespace Microsoft.Partner.SmartOffice
                     Configuration["CosmosDbAccessKey"],
                     "SmartOffice",
                     "Environments"));
+
+            services.AddSingleton<IVaultService>(
+                new KeyVaultService(
+                    Configuration["KeyVaultEndpoint"]));
 
             services.AddMvc(options =>
             {
