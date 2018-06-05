@@ -37,7 +37,7 @@ namespace Microsoft.Partner.SmartOffice.Models
         /// </summary>
         [JsonProperty("id")]
         [RegularExpression(@"^(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}$")]
-        [Required]
+        [Required(ErrorMessage = "This value must be a valid GUID. Please ensure it is configured to the Azure AD tenant identifier.")]
         public string Id { get; set; }
 
         /// <summary>
@@ -55,14 +55,13 @@ namespace Microsoft.Partner.SmartOffice.Models
         /// <summary>
         /// Gets or sets the Microsoft Partner Center endpoint details for the environment.
         /// </summary>
-        [Display(Name = "Partner Center")]
         [Required]
         public EndpointDetail PartnerCenterEndpoint { get; set; }
 
         /// <summary>
         /// Gets or sets a flag indicating whether or not to synchronize Azure utilization records.
         /// </summary>
-        [Display(Name = "Process usage records")]
+        [Display(Name = "Process Usage Records")]
         [Required]
         public bool ProcessAzureUsage { get; set; }
     }

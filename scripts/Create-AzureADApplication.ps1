@@ -109,10 +109,9 @@ $graphAppAccess = [Microsoft.Open.AzureAD.Model.RequiredResourceAccess]@{
 Write-Host -ForegroundColor Green "Creating the Azure AD application and related resources..."
 
 $app = New-AzureADApplication -AvailableToOtherTenants $true -DisplayName $DisplayName -IdentifierUris "https://$($sessionInfo.TenantDomain)/$((New-Guid).ToString())" -RequiredResourceAccess $adAppAccess, $graphAppAccess
-
-$spn = New-AzureADServicePrincipal -AppId $app.AppId -DisplayName $DisplayName
-
+$detail = Get-AzureADTenantDetail
 $password = New-AzureADApplicationPasswordCredential -ObjectId $app.ObjectId
+$spn = New-AzureADServicePrincipal -AppId $app.AppId -DisplayName $DisplayName
 
 if($ConfigurePreconsent) {
     $adminAgentsGroup = Get-AzureADGroup -Filter "DisplayName eq 'AdminAgents'"
@@ -121,3 +120,4 @@ if($ConfigurePreconsent) {
 
 Write-Host "ApplicationId       = $($app.AppId)"
 Write-Host "ApplicationSecret   = $($password.Value)"
+Write-Host "TenantId            = $($sessionInfo.TenantId)"
