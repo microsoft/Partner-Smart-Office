@@ -422,6 +422,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
             TraceWriter log)
         {
             IEnumerable<EnvironmentDetail> environments;
+            int period;
 
             try
             {
@@ -445,17 +446,32 @@ namespace Microsoft.Partner.SmartOffice.Functions
                     }
                     else
                     {
+                        // Configure the value indicating the number of days of score results to retrieve starting from current date.
+                        period = (env.LastProcessed == null) ? 30 : (DateTimeOffset.UtcNow - env.LastProcessed).Days;
+
+                        // Ensure that the period is at least 1 or greater. This ensure the request to retrieve data is succesfully. 
+                        if (period < 1)
+                        {
+                            period = 1;
+                        }
+
+                        if (period >= 30)
+                        {
+                            period = 30;
+                        }
+
                         // Write the event details to the security storage queue.
                         await storage.WriteToQueueAsync(
-                            OperationConstants.SecurityQueueName,
-                            new SecurityDetail
+                        OperationConstants.SecurityQueueName,
+                        new SecurityDetail
+                        {
+                            AppEndpoint = env.AppEndpoint,
+                            Customer = new CustomerDetail
                             {
-                                AppEndpoint = env.AppEndpoint,
-                                Customer = new CustomerDetail
-                                {
-                                    Id = env.Id
-                                }
-                            }).ConfigureAwait(false);
+                                Id = env.Id
+                            },
+                            Period = period.ToString(CultureInfo.InvariantCulture)
+                        }).ConfigureAwait(false);
                     }
                 }
             }

@@ -1,5 +1,21 @@
 # Partner Smart Office Changelog
 
+## 0.5.0 (2018-06-05)
+
+The following enhancements were made with this release
+
+* Added a portal to manage the creation and settings for an environment.
+* Added the ability to synchronize Azure utilization records for Azure CSP subscriptions. This ability is controlled using the ProcessAzureUsage flag configured on each instance. The default vaule is false for all environments.
+
+The following bugs were fixed with this release
+
+* A null reference exception was thrown when processing audit records that did not have a customer identifier. This has been fixed through [#19](https://github.com/Microsoft/Partner-Smart-Office/pull/19)
+* A format exception was thrown when processing security information for an EA environment. This was fixed through [#20](https://github.com/Microsoft/Partner-Smart-Office/pull/20)
+
+The following changes should be made to existing deployments, so that the portal will function as excepted
+
+* Add the _Read Directory Data_ application permission to the application you created using the [Create-AzureADApplication.ps1](https://raw.githubusercontent.com/Microsoft/Partner-Smart-Office/master/scripts/Create-AzureADApplication.ps1) script
+
 ## 0.0.3 (2018-06-01)
 
 * Added the ability to seed audit logs for CSP environments that are new to this platform.

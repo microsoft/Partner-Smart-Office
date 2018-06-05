@@ -12,6 +12,8 @@
         <hr />
         <div asp-validation-summary="ModelOnly" class="text-danger"></div>
         <input type="hidden" asp-for="Id" />
+        <input type="hidden" asp-for="AppEndpoint.ApplicationSecretId" />
+        <input type="hidden" asp-for="PartnerCenterEndpoint.ApplicationSecretId" />
         <div class="form-group">
             <label asp-for="FriendlyName" class="col-md-2 control-label"></label>
             <div class="col-md-10">

@@ -8,13 +8,14 @@ Partner Smart Office is an opensource project that demonstrates how a partner ca
 
 This solution utilizes an Azure Function App to request and store Secure Score information into an instance of Azure Cosmos DB. That database can be leveraged to construct detailed reports and provide insights into your customer's security posture with respect to Office 365. After deploying this project you will have an Azure Function with the following functions defined
 
-| Function Name      | Trigger                 | Description |
-| ------------------ | ----------------------- | ----------- |
-| ImportDataControls | Timer (once a day)      | Imports the Secure Score control list entries. These entries define the various actions that can and should be taken, to improve a customer's security posture. |
-| ProcessCustomer    | Customers Storage Queue | Adds or update the customer information and any CSP subscription that the customer has through the partner to the appropriate collect in the instance of Azure Cosmos DB. |
-| ProcessPartner   | Partners Storage Queue    | Adds or updates audit records and customers that are returned from the the [Partner Center API](https://docs.microsoft.com/en-us/partner-center/develop/scenarios) to the appropriate collection in the instance of Azure Cosmos DB. Customers returned from the API are also written to the Customers storage queue, so the respective security information will be imported. |
-| ProcessSecurity    | Security Storage Queue  | Imports the security information for the defined customer. Currently this function will import [Office 365 Secure Score](https://support.office.com/article/introducing-the-office-365-secure-score-c9e7160f-2c34-4bd0-a548-5ddcc862eaef) information and details from the [Microsoft Graph Security API](https://www.microsoft.com/security/intelligence-security-api) |
-| PullEnviornments   | Timer (once a day)      | Pulls environments from the Enviornments collection, found in the instance of Azure Cosmos DB, and writes each environment to the appropriate storage queue. |
+| Function Name      | Trigger                   | Description |
+| ------------------ | ------------------------- | ----------- |
+| ImportDataControls | Timer (once a day)        | Imports the Secure Score control list entries. These entries define the various actions that can and should be taken, to improve a customer's security posture. |
+| ProcessCustomer    | Customers Storage Queue   | Adds or update the customer information and any CSP subscription that the customer has through the partner to the appropriate collect in the instance of Azure Cosmos DB. |
+| ProcessPartner   | Partners Storage Queue      | Adds or updates audit records and customers that are returned from the the [Partner Center API](https://docs.microsoft.com/en-us/partner-center/develop/scenarios) to the appropriate collection in the instance of Azure Cosmos DB. Customers returned from the API are also written to the Customers storage queue, so the respective security information will be imported. |
+| ProcessSecurity    | Security Storage Queue    | Imports the security information for the defined customer. Currently this function will import [Office 365 Secure Score](https://support.office.com/article/introducing-the-office-365-secure-score-c9e7160f-2c34-4bd0-a548-5ddcc862eaef) information and details from the [Microsoft Graph Security API](https://www.microsoft.com/security/intelligence-security-api) |
+| ProcessUtilization | Utilization Storage Queue | Import Azure utilization records for Azure subscriptions when the process Azure usage flag is enable for the environment. |
+| PullEnviornments   | Timer (once a day)        | Pulls environments from the Enviornments collection, found in the instance of Azure Cosmos DB, and writes each environment to the appropriate storage queue. |
 
 ## Deployment
 

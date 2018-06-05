@@ -139,7 +139,7 @@ namespace Microsoft.Partner.SmartOffice.Services
         /// </returns>
         public async Task SetSecretAsync(string secretName, string value, string contentType)
         {
-            await KeyVault.SetSecretAsync(endpoint, secretName, value).ConfigureAwait(false);
+            await KeyVault.SetSecretAsync(endpoint, secretName, value, null, contentType).ConfigureAwait(false);
         }
 
         public void Dispose()

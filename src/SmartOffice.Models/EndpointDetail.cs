@@ -25,7 +25,6 @@ namespace Microsoft.Partner.SmartOffice.Models
         /// This property is only used during the creation of a new environment.
         /// </remarks>
         [Display(Name = "Application Secret")]
-        [Required]
         public string ApplicationSecret { get; set; }
 
         /// <summary>

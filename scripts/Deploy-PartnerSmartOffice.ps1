@@ -18,23 +18,6 @@
  * DEALINGS IN THE SOFTWARE.
  #>
 
-<#
-    .SYNOPSIS
-        This script will create the require Azure AD application. 
-    .EXAMPLE
-        .\Create-AzureADApplication.ps1 -ConfigurePreconsent $true -DisplayName "Partner Smart Office" 
-        
-        .\Create-AzureADApplication.ps1 -ConfigurePreconsent $true -DisplayName "Partner Smart Office" -TenantId eb210c1e-b697-4c06-b4e3-8b104c226b9a
-
-        .\Create-AzureADApplication.ps1 -ConfigurePreconsent $true -DisplayName "Partner Smart Office" -TenantId tenant01.onmicrosoft.com
-    .PARAMETER ConfigurePreconsent
-        Flag indicating whether or not the Azure AD application should be configured for preconsent.
-    .PARAMETER DisplayName
-        Display name for the Azure AD application that will be created.
-    .PARAMETER TenantId
-        [OPTIONAL] The domain or tenant identifier for the Azure AD tenant that should be utilized to create the various resources. 
-#>
-
 Param
 (
     [Parameter(Mandatory = $true)]
@@ -44,45 +27,34 @@ Param
     [Parameter(Mandatory = $false)]
     [string]$TenantId
 )
-
+ 
 $ErrorActionPreference = "Stop"
-
+ 
 # Check if the Azure AD PowerShell module has already been loaded. 
 if ( ! ( Get-Module AzureAD ) ) {
-    # Check if the Azure AD PowerShell module is installed.
-    if ( Get-Module -ListAvailable -Name AzureAD ) {
-        # The Azure AD PowerShell module is not load and it is installed. This module 
-        # must be loaded for other operations performed by this script.
-        Write-Host -ForegroundColor Green "Loading the Azure AD PowerShell module..."
-        Import-Module AzureAD
-    } else {
-        Install-Module AzureAD
-    }
+     # Check if the Azure AD PowerShell module is installed.
+     if ( Get-Module -ListAvailable -Name AzureAD ) {
+         # The Azure AD PowerShell module is not load and it is installed. This module 
+         # must be loaded for other operations performed by this script.
+         Write-Host -ForegroundColor Green "Loading the Azure AD PowerShell module..."
+         Import-Module AzureAD
+     } else {
+         Install-Module AzureAD
+     }
 }
 
-$credential = Get-Credential -Message "Please specify credentials that have Global Admin privileges..."
-
-try {
-    Write-Host -ForegroundColor Green "When prompted please enter the appropriate credentials..."
-   
-    if([string]::IsNullOrEmpty($TenantId)) {
-        Connect-AzureAD -Credential $credential
-
-        $TenantId = $(Get-AzureADTenantDetail).ObjectId
-    } else {
-        Connect-AzureAD -Credential $credential -TenantId $TenantId
-    }
-} catch [Microsoft.Azure.Common.Authentication.AadAuthenticationCanceledException] {
-    # The authentication attempt was canceled by the end-user. Execution of the script should be halted.
-    Write-Host -ForegroundColor Yellow "The authentication attempt was canceled. Execution of the script will be halted..."
-    Exit 
-} catch {
-    # An unexpected error has occurred. The end-user should be notified so that the appropriate action can be taken. 
-    Write-Error "An unexpected error has occurred. Please review the following error message and try again." `
-        "$($Error[0].Exception)"
+# Check if the Azure PowerShell module has already been loaded. 
+if ( ! ( Get-Module AzureRM ) ) {
+     # Check if the Azure PowerShell module is installed.
+     if ( Get-Module -ListAvailable -Name AzureRM ) {
+         # The Azure PowerShell module is not load and it is installed. This module 
+         # must be loaded for other operations performed by this script.
+         Write-Host -ForegroundColor Green "Loading the Azure PowerShell module..."
+         Import-Module AzureRM
+     } else {
+         Install-Module AzureRM
+     }
 }
-
-$sessionInfo = Get-AzureADCurrentSessionInfo
 
 $adAppAccess = [Microsoft.Open.AzureAD.Model.RequiredResourceAccess]@{
     ResourceAppId = "00000002-0000-0000-c000-000000000000";
@@ -109,15 +81,17 @@ $graphAppAccess = [Microsoft.Open.AzureAD.Model.RequiredResourceAccess]@{
 Write-Host -ForegroundColor Green "Creating the Azure AD application and related resources..."
 
 $app = New-AzureADApplication -AvailableToOtherTenants $true -DisplayName $DisplayName -IdentifierUris "https://$($sessionInfo.TenantDomain)/$((New-Guid).ToString())" -RequiredResourceAccess $adAppAccess, $graphAppAccess
-
-$spn = New-AzureADServicePrincipal -AppId $app.AppId -DisplayName $DisplayName
-
 $password = New-AzureADApplicationPasswordCredential -ObjectId $app.ObjectId
 
 if($ConfigurePreconsent) {
     $adminAgentsGroup = Get-AzureADGroup -Filter "DisplayName eq 'AdminAgents'"
+    $spn = New-AzureADServicePrincipal -AppId $app.AppId -DisplayName $DisplayName
+
     Add-AzureADGroupMember -ObjectId $adminAgentsGroup.ObjectId -RefObjectId $spn.ObjectId
 }
 
-Write-Host "ApplicationId       = $($app.AppId)"
-Write-Host "ApplicationSecret   = $($password.Value)"
+$AppName = Read-Host -Prompt "Specify name for the function app with no spaces"
+$ResourceGroup = Read-Host -Prompt "Specify a resource group name"
+
+New-AzureRmResourceGroup -Location southcentralus -Name $ResourceGroup
+New-AzureRmResourceGroupDeployment -Name $(New-Guid).ToString() -ResourceGroupName $ResourceGroup -TemplateUri https://raw.githubusercontent.com/Microsoft/Partner-Smart-Office/master/azuredeploy.json -appName $appName

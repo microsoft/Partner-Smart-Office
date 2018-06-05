@@ -16,7 +16,7 @@ namespace Microsoft.Partner.SmartOffice.Controllers
     using Models;
     using Services;
 
-    [Authorize]
+    [Authorize(Policy = "PartnerAdmin")]
     public class HomeController : Controller
     {
         /// <summary>
@@ -160,7 +160,7 @@ namespace Microsoft.Partner.SmartOffice.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
             string id,
-            [Bind("AppEndpoint,EnvironmentType,FriendlyName,Id,PartnerCenterEndpoint")] EnvironmentDetail environment)
+            [Bind("AppEndpoint,EnvironmentType,FriendlyName,Id,PartnerCenterEndpoint,ProcessAzureUsage")] EnvironmentDetail environment)
         {
             EnvironmentDetail current;
 

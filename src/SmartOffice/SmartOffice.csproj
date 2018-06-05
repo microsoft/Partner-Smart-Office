@@ -8,7 +8,12 @@
     <RootNamespace>Microsoft.Partner.SmartOffice</RootNamespace>
     <Company>Microsoft</Company>
     <Product>Partner Smart Office</Product>
-    <Version>0.1.0</Version>
+    <Version>0.5.0</Version>
+    <PackageLicenseUrl>https://github.com/Microsoft/Partner-Smart-Office/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/Microsoft/Partner-Smart-Office/</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Microsoft/Partner-Smart-Office.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <Authors>One Commercial Partner</Authors>
   </PropertyGroup>
 
   <ItemGroup>
@@ -16,6 +21,7 @@
     <PackageReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.AzureAD.UI" Version="2.1.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.AzureKeyVault" Version="2.1.0" />
+    <PackageReference Include="Microsoft.Graph" Version="1.9.0" />
   </ItemGroup>
 
   <ItemGroup>

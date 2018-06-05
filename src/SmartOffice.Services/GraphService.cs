@@ -24,7 +24,8 @@ namespace Microsoft.Partner.SmartOffice.Services
         /// </summary>
         /// <param name="credentials">Credentials used when accessing resources.</param>
         /// <param name="handlers">List of handlers from top to bottom (outer handler is the first in the list)</param>
-        public GraphService(ServiceClientCredentials credentials, params DelegatingHandler[] handlers) : base(handlers)
+        public GraphService(ServiceClientCredentials credentials, params DelegatingHandler[] handlers)
+            : base(handlers)
         {
             Credentials = credentials;
         }
@@ -35,7 +36,21 @@ namespace Microsoft.Partner.SmartOffice.Services
         /// <param name="endpoint">Address of the resource being accessed.</param>
         /// <param name="credentials">Credentials used when accessing resources.</param>
         /// <param name="handlers">List of handlers from top to bottom (outer handler is the first in the list)</param>
-        public GraphService(Uri endpoint, ServiceClientCredentials credentials, params DelegatingHandler[] handlers) : base(handlers)
+        public GraphService(Uri endpoint, ServiceClientCredentials credentials, params DelegatingHandler[] handlers)
+            : base(handlers)
+        {
+            Credentials = credentials;
+            Endpoint = endpoint;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="GraphService" /> class.
+        /// </summary>
+        /// <param name="endpoint">Address of the resource being accessed.</param>
+        /// <param name="credentials">Credentials used when accessing resources.</param>
+        /// <param name="httpClient">The HTTP client to be used.</param>
+        public GraphService(Uri endpoint, ServiceClientCredentials credentials, HttpClient httpClient)
+            : base(httpClient, false)
         {
             Credentials = credentials;
             Endpoint = endpoint;

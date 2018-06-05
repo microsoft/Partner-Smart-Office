@@ -6,18 +6,25 @@
 
 namespace Microsoft.Partner.SmartOffice
 {
-    using AspNetCore.Authentication;
-    using AspNetCore.Authentication.AzureAD.UI;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Security.Claims;
+    using AspNetCore.Authentication.Cookies;
+    using AspNetCore.Authentication.OpenIdConnect;
     using AspNetCore.Authorization;
     using AspNetCore.Builder;
     using AspNetCore.Hosting;
     using AspNetCore.Http;
     using AspNetCore.Mvc;
     using AspNetCore.Mvc.Authorization;
+    using Authorization;
     using Data;
     using Extensions.Configuration;
     using Extensions.DependencyInjection;
+    using IdentityModel.Tokens;
     using Models;
+    using Providers;
     using Services;
 
     public class Startup
@@ -41,8 +48,55 @@ namespace Microsoft.Partner.SmartOffice
 
             services.AddApplicationInsightsTelemetry();
 
-            services.AddAuthentication(AzureADDefaults.AuthenticationScheme)
-                .AddAzureAD(options => Configuration.Bind("AzureAd", options));
+            services.AddAuthentication(options =>
+            {
+                options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
+            })
+            .AddCookie()
+            .AddOpenIdConnect(options =>
+            {
+                Configuration.Bind("Authentication", options);
+
+                options.Events = new OpenIdConnectEvents
+                {
+                    OnTokenValidated = async context =>
+                    {
+                        string signedInUserObjectId = context.Principal.FindFirst("http://schemas.microsoft.com/identity/claims/objectidentifier").Value;
+                        string userTenantId = context.Principal.FindFirst("http://schemas.microsoft.com/identity/claims/tenantid").Value;
+
+                        IGraphProvider graph = new GraphProvider(
+                            Configuration["Authority"],
+                            Configuration["ApplicationId"],
+                            Configuration["ApplicationSecret"],
+                            userTenantId);
+
+                        IList<Role> roles = await graph.GetRolesAsync(signedInUserObjectId).ConfigureAwait(false);
+                        IList<Claim> claims = roles?.Select(r => new Claim(ClaimTypes.Role, r.DisplayName)).ToList();
+
+                        if (userTenantId.Equals(Configuration["TenantId"], StringComparison.InvariantCultureIgnoreCase))
+                        {
+                            claims.Add(new Claim("IsPartner", "true"));
+                        }
+
+                        context.Principal.AddIdentity(new ClaimsIdentity(claims));
+                    }
+                };
+
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    SaveSigninToken = true,
+                    ValidateIssuer = false
+                };
+            });
+
+            services.AddAuthorization(options =>
+            {
+                options.AddPolicy("PartnerAdmin", policy =>
+                    policy.AddRequirements(new PartnerAdminRequirement()));
+            });
+
+            services.AddSingleton<IAuthorizationHandler, PartnerAdminHandler>();
 
             services.AddSingleton<IDocumentRepository<EnvironmentDetail>>(
                 new DocumentRepository<EnvironmentDetail>(
