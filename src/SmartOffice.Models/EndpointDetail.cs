@@ -15,7 +15,7 @@ namespace Microsoft.Partner.SmartOffice.Models
         /// </summary>
         [Display(Name = "Application Identifier")]
         [RegularExpression(@"^(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}$")]
-        [Required]
+        [Required(ErrorMessage = "Must be a valid GUID.")]
         public string ApplicationId { get; set; }
 
         /// <summary>
@@ -45,7 +45,7 @@ namespace Microsoft.Partner.SmartOffice.Models
         /// </summary>
         [Display(Name = "Tenant Identifier")]
         [RegularExpression(@"^(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}$")]
-        [Required]
+        [Required(ErrorMessage = "Must be a valid GUID.")]
         public string TenantId { get; set; }
     }
 }
