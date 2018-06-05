@@ -19,25 +19,7 @@ This solution utilizes an Azure Function App to request and store Secure Score i
 
 ## Deployment
 
-Perform one of the following tasks to deploy this solution.
-
-### Azure Cloud Shell
-
-Azure Cloud Shell is an interactive, browser-accessible shell for managing Azure resources. Using this shell you can invoke commands to  button below and invoke the following PowerShell cmdlets to deploy Partner Smart Office.
-
-[![Launch Cloud Shell](https://shell.azure.com/images/launchcloudshell.png "Launch Azure Cloud Shell")](https://shell.azure.com)
-
-```powershell
-$AppName = Read-Host -Prompt "Specify name for the function app with no spaces"
-$ResourceGroup = Read-Host -Prompt "Specify a resource group name"
-
-New-AzureRmResourceGroup -Location southcentralus -Name $ResourceGroup
-New-AzureRmResourceGroupDeployment -Name $(New-Guid).ToString() -ResourceGroupName $ResourceGroup -TemplateUri https://raw.githubusercontent.com/Microsoft/Partner-Smart-Office/master/azuredeploy.json -appName $appName
-```
-
-More information about Azure Cloud Shell can be found at [Overivew of Azure Cloud Shell](https://docs.microsoft.com/en-us/azure/cloud-shell/overview).
-
-### Azure Resource Manager (ARM) Template
+Execute the [Create-AzureADApplication.ps1](https://raw.githubusercontent.com/Microsoft/Partner-Smart-Office/master/scripts/Create-AzureADApplication.ps1) script to create the required Azure AD application. The output from this script will provide you with the values fro the applicationId, applicationSecret, and tenantId parameters. Then click the _Deploy to Azure_ button found below.
 
 [![Deploy to Azure](https://azuredeploy.net/deploybutton.png)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FMicrosoft%2FPartner-Smart-Office%2Fmaster%2Fazuredeploy.json)
 [![Visualize](http://armviz.io/visualizebutton.png)](http://armviz.io/#/?load=https%3A%2F%2Fraw.githubusercontent.com%2FMicrosoft%2FPartner-Smart-Office%2Fmaster%2Fazuredeploy.json)
