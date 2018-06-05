@@ -10,6 +10,7 @@ namespace Microsoft.Partner.SmartOffice.Services.PartnerCenter.Subscriptions
     using System.Threading;
     using System.Threading.Tasks;
     using Models.PartnerCenter.Subscriptions;
+    using Utilization;
 
     public class SubscriptionOperations : ISubscriptionOperations
     {
@@ -29,6 +30,11 @@ namespace Microsoft.Partner.SmartOffice.Services.PartnerCenter.Subscriptions
         private readonly string subscriptionId;
 
         /// <summary>
+        /// Provides access to the subscription utilization records.
+        /// </summary>
+        private Lazy<IUtilizationCollectionOperations> subscriptionUtilizationOperations;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="SubscriptionOperations" /> class.
         /// </summary>
         /// <param name="client">Provides the ability to interact with Partner Center.</param>
@@ -39,7 +45,15 @@ namespace Microsoft.Partner.SmartOffice.Services.PartnerCenter.Subscriptions
             this.client = client;
             this.customerId = customerId;
             this.subscriptionId = subscriptionId;
+
+            subscriptionUtilizationOperations = new Lazy<IUtilizationCollectionOperations>(
+                () => new UtilizationCollectionOperations(client, customerId, subscriptionId));
         }
+
+        /// <summary>
+        /// Gets the subscription utilization operations.
+        /// </summary>
+        public IUtilizationCollectionOperations Utilization => subscriptionUtilizationOperations.Value;
 
         /// <summary>
         /// Gets the subscription innformation.

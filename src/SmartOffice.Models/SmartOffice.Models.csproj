@@ -4,10 +4,18 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <AssemblyName>Microsoft.Partner.SmartOffice.Models</AssemblyName>
     <RootNamespace>Microsoft.Partner.SmartOffice.Models</RootNamespace>
+    <RepositoryUrl>https://github.com/Microsoft/Partner-Smart-Office.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <Version>0.5.0</Version>
+    <Authors>One Commercial Partner</Authors>
+    <Company>Microsoft</Company>
+    <PackageLicenseUrl>https://github.com/Microsoft/Partner-Smart-Office/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/Microsoft/Partner-Smart-Office/</PackageProjectUrl>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
+    <PackageReference Include="System.ComponentModel.Annotations" Version="4.5.0" />
   </ItemGroup>
 
 </Project>

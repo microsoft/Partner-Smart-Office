@@ -30,6 +30,15 @@ namespace Microsoft.Partner.SmartOffice.Data
         Task AddOrUpdateAsync(IEnumerable<TEntity> items);
 
         /// <summary>
+        /// Deletes the document associated with the specified identifier.
+        /// </summary>
+        /// <param name="id">Identifier of the document.</param>
+        /// <returns>
+        /// An instance of the <see cref="Task" /> class that represents the asynchronous operation.
+        /// </returns>
+        Task DeleteAsync(string id);
+
+        /// <summary>
         /// Gets an item from the repository.
         /// </summary>
         /// <param name="id">Identifier of the item.</param>
@@ -62,5 +71,12 @@ namespace Microsoft.Partner.SmartOffice.Data
         /// An instance of the <see cref="Task" /> class that represents the asynchronous operation.
         /// </returns>
         Task InitializeAsync();
+
+        /// <summary>
+        /// Updates an item in the repository.
+        /// </summary>
+        /// <param name="item">The item to be updated.</param>
+        /// <returns>The entity that updated.</returns>
+         Task<TEntity> UpdateAsync(TEntity item);
     }
 }

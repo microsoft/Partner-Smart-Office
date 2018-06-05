@@ -12,7 +12,7 @@ namespace Microsoft.Partner.SmartOffice.Models
     using PartnerCenter.Offers;
     using PartnerCenter.Subscriptions;
 
-    public class SubscriptionDetail
+    public sealed class SubscriptionDetail
     {
         /// <summary>
         /// Gets or sets a value indicating whether automatic renew is enabled or not.

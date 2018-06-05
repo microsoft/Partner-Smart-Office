@@ -1,0 +1,117 @@
+﻿@model Microsoft.Partner.SmartOffice.Models.EnvironmentDetail
+
+@{
+    ViewData["Title"] = "Edit Environment";
+}
+
+<h2>Edit</h2>
+
+<form asp-action="Edit">
+    <div class="form-horizontal">
+        <h4>Environment</h4>
+        <hr />
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        <input type="hidden" asp-for="Id" />
+        <input type="hidden" asp-for="AppEndpoint.ApplicationSecretId" />
+        <input type="hidden" asp-for="PartnerCenterEndpoint.ApplicationSecretId" />
+        <div class="form-group">
+            <label asp-for="FriendlyName" class="col-md-2 control-label"></label>
+            <div class="col-md-10">
+                <input asp-for="FriendlyName" class="form-control" />
+                <span asp-validation-for="FriendlyName" class="text-danger"></span>
+            </div>
+        </div>
+        <div class="form-group">
+            <label asp-for="EnvironmentType" class="col-md-2 control-label"></label>
+            <div class="col-md-10">
+                <input asp-for="EnvironmentType" class="form-control" />
+                <span asp-validation-for="EnvironmentType" class="text-danger"></span>
+            </div>
+        </div>
+        <br />
+        <h4>Azure AD Application Configurations</h4>
+        <br />
+        <div class="form-group">
+            <label asp-for="AppEndpoint.ApplicationId" class="col-md-2 control-label"></label>
+            <div class="col-md-10">
+                <input asp-for="AppEndpoint.ApplicationId" class="form-control" />
+                <span asp-validation-for="AppEndpoint.ApplicationId" class="text-danger"></span>
+            </div>
+        </div>
+        <div class="form-group">
+            <label asp-for="AppEndpoint.ApplicationSecret" class="col-md-2 control-label"></label>
+            <div class="col-md-10">
+                <input asp-for="AppEndpoint.ApplicationSecret" class="form-control" />
+                <span asp-validation-for="AppEndpoint.ApplicationSecret" class="text-danger"></span>
+            </div>
+        </div>
+        <div class="form-group">
+            <label asp-for="AppEndpoint.ServiceAddress" class="col-md-2 control-label"></label>
+            <div class="col-md-10">
+                <input asp-for="AppEndpoint.ServiceAddress" class="form-control" />
+                <span asp-validation-for="AppEndpoint.ServiceAddress" class="text-danger"></span>
+            </div>
+        </div>
+        <div class="form-group">
+            <label asp-for="AppEndpoint.TenantId" class="col-md-2 control-label"></label>
+            <div class="col-md-10">
+                <input asp-for="AppEndpoint.TenantId" class="form-control" />
+                <span asp-validation-for="AppEndpoint.TenantId" class="text-danger"></span>
+            </div>
+        </div>
+        <br />
+        <h4>Partner Center Configurations</h4>
+        <br />
+        <div class="form-group">
+            <label asp-for="PartnerCenterEndpoint.ApplicationId" class="col-md-2 control-label"></label>
+            <div class="col-md-10">
+                <input asp-for="PartnerCenterEndpoint.ApplicationId" class="form-control" />
+                <span asp-validation-for="PartnerCenterEndpoint.ApplicationId" class="text-danger"></span>
+            </div>
+        </div>
+        <div class="form-group">
+            <label asp-for="PartnerCenterEndpoint.ApplicationSecret" class="col-md-2 control-label"></label>
+            <div class="col-md-10">
+                <input asp-for="PartnerCenterEndpoint.ApplicationSecret" class="form-control" />
+                <span asp-validation-for="PartnerCenterEndpoint.ApplicationSecret" class="text-danger"></span>
+            </div>
+        </div>
+        <div class="form-group">
+            <label asp-for="PartnerCenterEndpoint.ServiceAddress" class="col-md-2 control-label"></label>
+            <div class="col-md-10">
+                <input asp-for="PartnerCenterEndpoint.ServiceAddress" class="form-control" />
+                <span asp-validation-for="PartnerCenterEndpoint.ServiceAddress" class="text-danger"></span>
+            </div>
+        </div>
+        <div class="form-group">
+            <label asp-for="PartnerCenterEndpoint.TenantId" class="col-md-2 control-label"></label>
+            <div class="col-md-10">
+                <input asp-for="PartnerCenterEndpoint.TenantId" class="form-control" />
+                <span asp-validation-for="PartnerCenterEndpoint.TenantId" class="text-danger"></span>
+            </div>
+        </div>
+        <br />
+        <h4>Additional Configurations</h4>
+        <br />
+        <div class="form-group">
+            <label asp-for="ProcessAzureUsage" class="col-md-2 control-label"></label>
+            <div class="col-md-10">
+                <input asp-for="ProcessAzureUsage" class="form-control" type="checkbox" />
+                <span asp-validation-for="ProcessAzureUsage" class="text-danger"></span>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-md-offset-2 col-md-10">
+                <input type="submit" value="Save" class="btn btn-default" />
+            </div>
+        </div>
+    </div>
+</form>
+
+<div>
+    <a asp-action="Index">Back to List</a>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

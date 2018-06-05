@@ -1,4 +1,4 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // <copyright file="Environments.cs" company="Microsoft">
 //     Copyright (c) Microsoft Corporation. All rights reserved.
 // </copyright>
@@ -24,6 +24,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
     using Models.PartnerCenter.Offers;
     using Models.PartnerCenter.Orders;
     using Models.PartnerCenter.Subscriptions;
+    using Models.PartnerCenter.Utilizations;
     using Newtonsoft.Json;
     using Services;
     using Services.PartnerCenter;
@@ -36,7 +37,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
         /// <summary>
         /// Azure function that process customers that are written to the customers storage queue.
         /// </summary>
-        /// <param name="data">Customer event details that were written to the customers storage queue.</param>
+        /// <param name="customerDetail">Customer event details that were written to the customers storage queue.</param>
         /// <param name="customerRepository">A data repository linked to the subscriptions collection.</param>
         /// <param name="subscriptionRepository">A data repository linked to the subscriptions collection.</param>
         /// <param name="partner">Provides the ability to interact with Partner Center.</param>
@@ -45,7 +46,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
         /// <returns>An instance of the <see cref="Task" /> that represents an asynchronous operation.</returns>
         [FunctionName("ProcessCustomer")]
         public static async Task ProcessCustomerAsync(
-            [QueueTrigger(OperationConstants.CustomersQueueName, Connection = "StorageConnectionString")]XEvent data,
+            [QueueTrigger(OperationConstants.CustomersQueueName, Connection = "StorageConnectionString")]ProcessCustomerDetail customerDetail,
             [DataRepository(
                 CosmosDbEndpoint = "CosmosDbEndpoint",
                 DataType = typeof(CustomerDetail),
@@ -71,10 +72,10 @@ namespace Microsoft.Partner.SmartOffice.Functions
 
             try
             {
-                log.Info($"Attempting to process information for {data.Customer.Id}.");
+                log.Info($"Attempting to process information for {customerDetail.Customer.Id}.");
 
                 // Configure the value indicating the number of days of score results to retrieve starting from current date.
-                period = (data.Customer.LastProcessed == null) ? 30 : (DateTimeOffset.UtcNow - data.Customer.LastProcessed).Value.Days;
+                period = (customerDetail.Customer.LastProcessed == null) ? 30 : (DateTimeOffset.UtcNow - customerDetail.Customer.LastProcessed).Value.Days;
 
                 // Ensure that the period is at least 1 or greater. This ensure the request to retrieve data is succesfully. 
                 if (period < 1)
@@ -88,25 +89,25 @@ namespace Microsoft.Partner.SmartOffice.Functions
 
                     try
                     {
-                        data.Customer.ProcessException = null;
-                        subscriptions = await GetSubscriptionsAsync(partner, data.Customer.Id).ConfigureAwait(false);
+                        customerDetail.Customer.ProcessException = null;
+                        subscriptions = await GetSubscriptionsAsync(partner, customerDetail.Customer.Id).ConfigureAwait(false);
                     }
                     catch (ServiceClientException ex)
                     {
-                        data.Customer.ProcessException = ex;
+                        customerDetail.Customer.ProcessException = ex;
                         subscriptions = null;
 
-                        log.Warning($"Encountered an exception when processing {data.Customer.Id}. Check the customer record for more information.");
+                        log.Warning($"Encountered an exception when processing {customerDetail.Customer.Id}. Check the customer record for more information.");
                     }
                 }
                 else
                 {
                     // Since the period is less than 30 we can utilize the audit logs to reconstruct any subscriptions that were created.
                     subscriptions = await BuildUsingAuditRecordsAsync(
-                        data.AuditRecords,
+                        customerDetail.AuditRecords,
                         subscriptionRepository,
                         partner,
-                        data.Customer).ConfigureAwait(false);
+                        customerDetail.Customer).ConfigureAwait(false);
                 }
 
                 if (subscriptions?.Count > 0)
@@ -114,21 +115,35 @@ namespace Microsoft.Partner.SmartOffice.Functions
                     await subscriptionRepository.AddOrUpdateAsync(subscriptions).ConfigureAwait(false);
                 }
 
-                if (data.Customer.ProcessException == null)
+                if (customerDetail.Customer.ProcessException == null)
                 {
                     await storage.WriteToQueueAsync(
                         OperationConstants.SecurityQueueName,
-                        new SecurityDetails
+                        new SecurityDetail
                         {
-                            AppEndpoint = data.AppEndpoint,
-                            Customer = data.Customer,
+                            AppEndpoint = customerDetail.AppEndpoint,
+                            Customer = customerDetail.Customer,
                             Period = period.ToString(CultureInfo.InvariantCulture)
                         }).ConfigureAwait(false);
 
-                    data.Customer.LastProcessed = DateTimeOffset.UtcNow;
-                    await customerRepository.AddOrUpdateAsync(data.Customer).ConfigureAwait(false);
+                    if (customerDetail.ProcessAzureUsage)
+                    {
+                        foreach (SubscriptionDetail subscription in subscriptions.Where(s => s.BillingType == BillingType.Usage))
+                        {
+                            await storage.WriteToQueueAsync(
+                                OperationConstants.UtilizationQueueName,
+                                new ProcessSubscriptionDetail
+                                {
+                                    PartnerCenterEndpoint = customerDetail.PartnerCenterEndpoint,
+                                    Subscription = subscription
+                                }).ConfigureAwait(false);
+                        }
+                    }
 
-                    log.Info($"Successfully processed customer {data.Customer.Id}.");
+                    customerDetail.Customer.LastProcessed = DateTimeOffset.UtcNow;
+                    await customerRepository.AddOrUpdateAsync(customerDetail.Customer).ConfigureAwait(false);
+
+                    log.Info($"Successfully processed customer {customerDetail.Customer.Id}.");
                 }
             }
             finally
@@ -224,14 +239,14 @@ namespace Microsoft.Partner.SmartOffice.Functions
                     // Write the customer to the customers queue to start processing the customer.
                     await storage.WriteToQueueAsync(
                         OperationConstants.CustomersQueueName,
-                        new XEvent
+                        new ProcessCustomerDetail(
+                            auditRecords.Where(
+                                r => r.CustomerId?.Equals(customer.Id, StringComparison.InvariantCultureIgnoreCase) ?? false))
                         {
                             AppEndpoint = environment.AppEndpoint,
-                            AuditRecords = auditRecords
-                                .Where(r => r.CustomerId?.Equals(customer.Id, StringComparison.InvariantCultureIgnoreCase) ?? false)
-                                .ToList(),
                             Customer = customer,
-                            PartnerCenterEndpoint = environment.PartnerCenterEndpoint
+                            PartnerCenterEndpoint = environment.PartnerCenterEndpoint,
+                            ProcessAzureUsage = environment.ProcessAzureUsage
                         }).ConfigureAwait(false);
                 }
 
@@ -259,7 +274,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
         /// <returns>An instance of the <see cref="Task" /> that represents an asynchronous operation.</returns>
         [FunctionName("ProcessSecurity")]
         public static async Task ProcessSecurityAsync(
-            [QueueTrigger(OperationConstants.SecurityQueueName, Connection = "StorageConnectionString")]SecurityDetails data,
+            [QueueTrigger(OperationConstants.SecurityQueueName, Connection = "StorageConnectionString")]SecurityDetail data,
             [DataRepository(
                 CosmosDbEndpoint = "CosmosDbEndpoint",
                 DataType = typeof(Alert),
@@ -306,6 +321,86 @@ namespace Microsoft.Partner.SmartOffice.Functions
             log.Info($"Successfully process data for {data.Customer.Id}");
         }
 
+        [FunctionName("ProcessUtilization")]
+        public static async Task ProcessUsageAsync(
+            [QueueTrigger(OperationConstants.UtilizationQueueName, Connection = "StorageConnectionString")]ProcessSubscriptionDetail subscriptionDetail,
+            [DataRepository(
+                CosmosDbEndpoint = "CosmosDbEndpoint",
+                DataType = typeof(UtilizationDetail),
+                KeyVaultEndpoint = "KeyVaultEndpoint")]IDocumentRepository<UtilizationDetail> repository,
+            [PartnerService(
+                ApplicationId = "{PartnerCenterEndpoint.ApplicationId}",
+                Endpoint = "{PartnerCenterEndpoint.ServiceAddress}",
+                SecretName = "{PartnerCenterEndpoint.ApplicationSecretId}",
+                ApplicationTenantId = "{PartnerCenterEndpoint.TenantId}",
+                KeyVaultEndpoint = "KeyVaultEndpoint",
+                Resource = "https://graph.windows.net")]IPartnerServiceClient client,
+            TraceWriter log
+            )
+        {
+            // Subscriptions with a billing type of usage are the only ones that have utilization records.
+            if (subscriptionDetail.Subscription.BillingType != BillingType.Usage)
+            {
+                return;
+            }
+
+            log.Info($"Requesting utilization records for {subscriptionDetail.Subscription.Id}");
+
+            List<UtilizationDetail> records;
+            ResourceCollection<AzureUtilizationRecord> utilizationRecords;
+
+            try
+            {
+                utilizationRecords = await client
+                    .Customers[subscriptionDetail.Subscription.TenantId]
+                    .Subscriptions[subscriptionDetail.Subscription.Id]
+                    .Utilization
+                    .Azure
+                    .QueryAsync(DateTimeOffset.UtcNow.AddDays(-1), DateTimeOffset.UtcNow).ConfigureAwait(false);
+
+                records = new List<UtilizationDetail>(utilizationRecords.Items
+                    .Select(r => ResourceConverter.Convert<AzureUtilizationRecord, UtilizationDetail>(
+                        r,
+                        new Dictionary<string, string>
+                        {
+                            { "SubscriptionId", subscriptionDetail.Subscription.Id },
+                            { "TenantId", subscriptionDetail.Subscription.TenantId }
+                        })));
+
+                while (utilizationRecords.Links.Next != null)
+                {
+                    utilizationRecords = await client
+                        .Customers[subscriptionDetail.Subscription.TenantId]
+                        .Subscriptions[subscriptionDetail.Subscription.Id]
+                        .Utilization
+                        .Azure
+                        .QueryAsync(utilizationRecords.Links.Next).ConfigureAwait(false);
+
+                    records.AddRange(utilizationRecords.Items
+                        .Select(r => ResourceConverter.Convert<AzureUtilizationRecord, UtilizationDetail>(
+                            r,
+                            new Dictionary<string, string>
+                            {
+                                { "Id", $"{r.Resource.Id}--{r.UsageStartTime}" },
+                                { "SubscriptionId", subscriptionDetail.Subscription.Id },
+                                { "TenantId", subscriptionDetail.Subscription.TenantId }
+                            })));
+                }
+
+                if (records.Count > 0)
+                {
+                    log.Info($"Writing {records.Count} utilization records to the repository.");
+
+                    await repository.AddOrUpdateAsync(records).ConfigureAwait(false);
+                }
+            }
+            finally
+            {
+                records = null;
+                utilizationRecords = null;
+            }
+        }
+
         /// <summary>
         /// Azure function that pulls environments from the configured collection and writes them to the appropriate storage queue.
         /// </summary>
@@ -327,6 +422,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
             TraceWriter log)
         {
             IEnumerable<EnvironmentDetail> environments;
+            int period;
 
             try
             {
@@ -350,17 +446,32 @@ namespace Microsoft.Partner.SmartOffice.Functions
                     }
                     else
                     {
+                        // Configure the value indicating the number of days of score results to retrieve starting from current date.
+                        period = (env.LastProcessed == null) ? 30 : (DateTimeOffset.UtcNow - env.LastProcessed).Days;
+
+                        // Ensure that the period is at least 1 or greater. This ensure the request to retrieve data is succesfully. 
+                        if (period < 1)
+                        {
+                            period = 1;
+                        }
+
+                        if (period >= 30)
+                        {
+                            period = 30;
+                        }
+
                         // Write the event details to the security storage queue.
                         await storage.WriteToQueueAsync(
-                            OperationConstants.SecurityQueueName,
-                            new SecurityDetails
+                        OperationConstants.SecurityQueueName,
+                        new SecurityDetail
+                        {
+                            AppEndpoint = env.AppEndpoint,
+                            Customer = new CustomerDetail
                             {
-                                AppEndpoint = env.AppEndpoint,
-                                Customer = new CustomerDetail
-                                {
-                                    Id = env.Id
-                                }
-                            }).ConfigureAwait(false);
+                                Id = env.Id
+                            },
+                            Period = period.ToString(CultureInfo.InvariantCulture)
+                        }).ConfigureAwait(false);
                     }
                 }
             }
@@ -531,7 +642,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
                         AutoRenewEnabled = offer.IsAutoRenewable,
                         BillingCycle = order.BillingCycle,
                         BillingType = offer.Billing,
-                        CommitmentEndDate = (offer.Billing == BillingType.License) ? 
+                        CommitmentEndDate = (offer.Billing == BillingType.License) ?
                             effectiveStartDate.AddYears(1) : DateTime.Parse("9999-12-14T00:00:00Z", CultureInfo.CurrentCulture),
                         CreationDate = creationDate.UtcDateTime,
                         EffectiveStartDate = effectiveStartDate,

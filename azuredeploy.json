@@ -5,7 +5,28 @@
     "appName": {
       "type": "string",
       "metadata": {
-        "description": "The name of the function app that you wish to create."
+        "description": "Name of the instance of Azure App services to be created. This value should contain any spaces."
+      }
+    },
+    "skuName": {
+      "type": "string",
+      "defaultValue": "F1",
+      "allowedValues": [
+        "F1",
+        "D1",
+        "B1",
+        "B2",
+        "B3",
+        "S1",
+        "S2",
+        "S3",
+        "P1",
+        "P2",
+        "P3",
+        "P4"
+      ],
+      "metadata": {
+        "description": "Describes plan's pricing tier and instance size. Check details at https://azure.microsoft.com/en-us/pricing/details/app-service/"
       }
     },
     "appInsightsLocation": {
@@ -19,6 +40,24 @@
       ],
       "metadata": {
         "description": "Enter the application location."
+      }
+    },
+    "applicationId": {
+      "type": "string",
+      "metadata": {
+        "description": "Identifier of the Azure AD application configured for the Partner Smart Office solutuion."
+      }
+    },
+    "applicationSecret": {
+      "type": "string",
+      "metadata": {
+        "description": "Secret associated with the Azure AD application configured for the Partner Smart Office solutuion."
+      }
+    },
+    "tenantId": {
+      "type": "string",
+      "metadata": {
+        "description": "Identifier of the tenant where the Azure AD application configured for the Partner Smart Office solutuion exists."
       }
     },
     "repoUrl": {
@@ -50,12 +89,14 @@
   },
   "variables": {
     "databaseAccountName": "[concat(uniquestring(resourceGroup().id), 'cosmosdb')]",
-    "functionAppName": "[parameters('appName')]",
-    "hostingPlanName": "[parameters('appName')]",
-    "identityResourceId": "[concat(resourceId('Microsoft.Web/sites', parameters('appName')),'/providers/Microsoft.ManagedIdentity/Identities/default')]",
+    "functionAppName": "[concat(uniquestring(resourceGroup().id), 'functions')]",
+    "functionIdentityResourceId": "[concat(resourceId('Microsoft.Web/sites', variables('functionAppName')),'/providers/Microsoft.ManagedIdentity/Identities/default')]",
+    "functionHostingPlanName": "[concat(uniquestring(resourceGroup().id), 'functions')]",
     "keyVaultName": "[concat(uniquestring(resourceGroup().id), 'vault')]",
     "storageAccountName": "[concat(uniquestring(resourceGroup().id), 'azfunctions')]",
-    "storageAccountid": "[concat(resourceGroup().id,'/providers/','Microsoft.Storage/storageAccounts/', variables('storageAccountName'))]"
+    "storageAccountid": "[concat(resourceGroup().id,'/providers/','Microsoft.Storage/storageAccounts/', variables('storageAccountName'))]",
+    "webAppIdentityResourceId": "[concat(resourceId('Microsoft.Web/sites', parameters('appName')),'/providers/Microsoft.ManagedIdentity/Identities/default')]",
+    "webHostingPlanName": "[uniqueString(resourceGroup().id)]"
   },
   "resources": [
     {
@@ -104,12 +145,100 @@
     {
       "type": "Microsoft.Web/serverfarms",
       "apiVersion": "2015-04-01",
-      "name": "[variables('hostingPlanName')]",
+      "name": "[variables('functionHostingPlanName')]",
       "location": "[resourceGroup().location]",
       "properties": {
-        "name": "[variables('hostingPlanName')]",
+        "name": "[variables('functionHostingPlanName')]",
         "computeMode": "Dynamic",
         "sku": "Dynamic"
+      }
+    },
+    {
+      "apiVersion": "2016-08-01",
+      "type": "Microsoft.Web/sites",
+      "name": "[parameters('appName')]",
+      "location": "[resourceGroup().location]",
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "kind": "web",
+      "dependsOn": [
+        "[concat('Microsoft.Insights/components/', parameters('appName'))]",
+        "[resourceId('Microsoft.Web/serverfarms', variables('webHostingPlanName'))]"
+      ],
+      "properties": {
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('webHostingPlanName'))]",
+        "siteConfig": {
+          "appSettings": [
+            {
+              "name": "ActiveDirectoryEndpoint",
+              "value": "https://login.microsoftonline.com"
+            },
+            {
+              "name": "ApplicationId",
+              "value": "[parameters('applicationId')]"
+            },
+            {
+              "name": "ApplicationInsights:InstrumentationKey",
+              "value": "[reference(concat('Microsoft.Insights/components/', parameters('appName'))).InstrumentationKey]"
+            },
+            {
+              "name": "Authentication:ClientId",
+              "value": "[parameters('applicationId')]"
+            },
+            {
+              "name": "CosmosDbEndpoint",
+              "value": "[reference(concat('Microsoft.DocumentDb/databaseAccounts/', variables('databaseAccountName'))).documentEndpoint]"
+            },
+            {
+              "name": "KeyVaultEndpoint",
+              "value": "[concat('https://', variables('keyVaultName'), '.vault.azure.net')]"
+            },
+            {
+              "name": "PROJECT",
+              "value": "src\\SmartOffice\\SmartOffice.csproj"
+            },
+            {
+              "name": "TenantId",
+              "value": "[parameters('tenantId')]"
+            },
+            {
+              "name": "WEBSITE_NODE_DEFAULT_VERSION",
+              "value": "6.9.1"
+            }
+          ]
+        }
+      },
+      "resources": [
+        {
+          "apiVersion": "2015-08-01",
+          "name": "web",
+          "type": "sourcecontrols",
+          "dependsOn": [
+            "[resourceId('Microsoft.Web/Sites', parameters('appName'))]"
+          ],
+          "properties": {
+            "RepoUrl": "[parameters('repoURL')]",
+            "branch": "[parameters('branch')]",
+            "IsManualIntegration": true
+          }
+        }
+      ]
+    },
+    {
+      "apiVersion": "2016-09-01",
+      "name": "[variables('webHostingPlanName')]",
+      "type": "Microsoft.Web/serverfarms",
+      "location": "[resourceGroup().location]",
+      "tags": {
+        "displayName": "HostingPlan"
+      },
+      "sku": {
+        "name": "[parameters('skuName')]",
+        "capacity": 1
+      },
+      "properties": {
+        "name": "[variables('webHostingPlanName')]"
       }
     },
     {
@@ -123,11 +252,11 @@
       "kind": "functionapp",
       "dependsOn": [
         "[concat('Microsoft.Insights/components/', parameters('appName'))]",
-        "[resourceId('Microsoft.Web/serverfarms', variables('hostingPlanName'))]",
+        "[resourceId('Microsoft.Web/serverfarms', variables('functionHostingPlanName'))]",
         "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
       ],
       "properties": {
-        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('hostingPlanName'))]",
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('functionHostingPlanName'))]",
         "siteConfig": {
           "appSettings": [
             {
@@ -148,7 +277,7 @@
             },
             {
               "name": "WEBSITE_NODE_DEFAULT_VERSION",
-              "value": "6.5.0"
+              "value": "6.9.1"
             },
             {
               "name": "ActiveDirectoryEndpoint",
@@ -183,7 +312,7 @@
           "name": "web",
           "type": "sourcecontrols",
           "dependsOn": [
-            "[resourceId('Microsoft.Web/Sites', parameters('appName'))]"
+            "[resourceId('Microsoft.Web/Sites', variables('functionAppName'))]"
           ],
           "properties": {
             "RepoUrl": "[parameters('repoURL')]",
@@ -204,14 +333,25 @@
           "family": "A",
           "name": "premium"
         },
-        "tenantId": "[reference(variables('identityResourceId'), '2015-08-31-PREVIEW').tenantId]",
+        "tenantId": "[reference(variables('functionIdentityResourceId'), '2015-08-31-PREVIEW').tenantId]",
         "accessPolicies": [
           {
-            "tenantId": "[reference(variables('identityResourceId'), '2015-08-31-PREVIEW').tenantId]",
-            "objectId": "[reference(variables('identityResourceId'), '2015-08-31-PREVIEW').principalId]",
+            "tenantId": "[reference(variables('functionIdentityResourceId'), '2015-08-31-PREVIEW').tenantId]",
+            "objectId": "[reference(variables('functionIdentityResourceId'), '2015-08-31-PREVIEW').principalId]",
             "permissions": {
               "secrets": [
                 "get"
+              ]
+            }
+          },
+          {
+            "tenantId": "[reference(variables('webAppIdentityResourceId'), '2015-08-31-PREVIEW').tenantId]",
+            "objectId": "[reference(variables('webAppIdentityResourceId'), '2015-08-31-PREVIEW').principalId]",
+            "permissions": {
+              "secrets": [
+                "delete",
+                "get",
+                "set"
               ]
             }
           }
@@ -219,7 +359,19 @@
         "enabledForDeployment": false
       },
       "dependsOn": [
-        "[concat('Microsoft.Web/sites/', parameters('appName'))]"
+        "[concat('Microsoft.Web/sites/', variables('functionAppName'))]"
+      ]
+    },
+    {
+      "apiVersion": "2015-06-01",
+      "type": "Microsoft.KeyVault/vaults/secrets",
+      "name": "[concat(variables('keyVaultName'), '/', 'ApplicationSecret')]",
+      "properties": {
+        "contentType": "text/plain",
+        "value": "[parameters('applicationSecret')]"
+      },
+      "dependsOn": [
+        "[concat('Microsoft.KeyVault/vaults/', variables('keyVaultName'))]"
       ]
     },
     {

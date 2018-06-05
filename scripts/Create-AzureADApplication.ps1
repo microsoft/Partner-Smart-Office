@@ -20,7 +20,7 @@
 
 <#
     .SYNOPSIS
-        This script will apply the supported service policy restriction for the specified Azure subscription. 
+        This script will create the require Azure AD application. 
     .EXAMPLE
         .\Create-AzureADApplication.ps1 -ConfigurePreconsent $true -DisplayName "Partner Smart Office" 
         
@@ -53,7 +53,7 @@ if ( ! ( Get-Module AzureAD ) ) {
     if ( Get-Module -ListAvailable -Name AzureAD ) {
         # The Azure AD PowerShell module is not load and it is installed. This module 
         # must be loaded for other operations performed by this script.
-        Write-Host -ForegroundColor Green "Loading the AzureAD PowerShell module..."
+        Write-Host -ForegroundColor Green "Loading the Azure AD PowerShell module..."
         Import-Module AzureAD
     } else {
         Install-Module AzureAD
@@ -100,6 +100,9 @@ $graphAppAccess = [Microsoft.Open.AzureAD.Model.RequiredResourceAccess]@{
             Type = "Role"},
         [Microsoft.Open.AzureAD.Model.ResourceAccess]@{
             Id = "bf394140-e372-4bf9-a898-299cfc7564e5";
+            Type = "Role"}, 
+        [Microsoft.Open.AzureAD.Model.ResourceAccess]@{
+            Id = "7ab1d382-f21e-4acd-a863-ba3e13f7da61";
             Type = "Role"}
 }
 
@@ -112,7 +115,7 @@ $spn = New-AzureADServicePrincipal -AppId $app.AppId -DisplayName $DisplayName
 $password = New-AzureADApplicationPasswordCredential -ObjectId $app.ObjectId
 
 if($ConfigurePreconsent) {
-    $adminAgentsGroup = Get-AzureADGroup  -Filter "DisplayName eq 'AdminAgents'"
+    $adminAgentsGroup = Get-AzureADGroup -Filter "DisplayName eq 'AdminAgents'"
     Add-AzureADGroupMember -ObjectId $adminAgentsGroup.ObjectId -RefObjectId $spn.ObjectId
 }
 
