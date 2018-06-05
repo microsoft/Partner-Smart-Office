@@ -434,6 +434,12 @@ namespace Microsoft.Partner.SmartOffice.Functions
                 // Obtain a complete list of all configured environments. 
                 environments = await repository.GetAsync().ConfigureAwait(false);
 
+                if (environments.Count() == 0)
+                {
+                    log.Warning("No environment have been configured. Ensure that an envrionment has been created using the portal.");
+                    return;
+                }
+
                 foreach (EnvironmentDetail env in environments)
                 {
 

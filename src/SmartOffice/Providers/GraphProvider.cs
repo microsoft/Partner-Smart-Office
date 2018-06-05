@@ -80,10 +80,6 @@ namespace Microsoft.Partner.SmartOffice.Providers
 
                 return roles;
             }
-            //catch (Exception)
-            //{
-            //    return null;
-            //}
             finally
             {
                 directoryGroups = null;
