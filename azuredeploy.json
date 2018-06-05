@@ -172,7 +172,7 @@
           "appSettings": [
             {
               "name": "ActiveDirectoryEndpoint",
-              "value": "https://login.microsoftonline.com"
+              "value": "https://login.microsoftonline.com/"
             },
             {
               "name": "ApplicationId",
@@ -181,6 +181,10 @@
             {
               "name": "ApplicationInsights:InstrumentationKey",
               "value": "[reference(concat('Microsoft.Insights/components/', parameters('appName'))).InstrumentationKey]"
+            },
+            {
+              "name": "Authentication:Authority",
+              "value": "https://login.microsoftonline.com/common"
             },
             {
               "name": "Authentication:ClientId",

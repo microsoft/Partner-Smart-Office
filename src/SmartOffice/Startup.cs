@@ -66,7 +66,7 @@ namespace Microsoft.Partner.SmartOffice
                         string userTenantId = context.Principal.FindFirst("http://schemas.microsoft.com/identity/claims/tenantid").Value;
 
                         IGraphProvider graph = new GraphProvider(
-                            Configuration["Authority"],
+                            $"{Configuration["ActiveDirectoryEndpoint"]}",
                             Configuration["ApplicationId"],
                             Configuration["ApplicationSecret"],
                             userTenantId);
