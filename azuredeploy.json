@@ -92,7 +92,7 @@
     "functionAppName": "[concat(uniquestring(resourceGroup().id), 'functions')]",
     "functionIdentityResourceId": "[concat(resourceId('Microsoft.Web/sites', variables('functionAppName')),'/providers/Microsoft.ManagedIdentity/Identities/default')]",
     "functionHostingPlanName": "[concat(uniquestring(resourceGroup().id), 'functions')]",
-    "keyVaultName": "[concat(uniquestring(resourceGroup().id), 'vault')]",
+    "keyVaultName": "[concat('vault', uniquestring(resourceGroup().id))]",
     "storageAccountName": "[concat(uniquestring(resourceGroup().id), 'azfunctions')]",
     "storageAccountid": "[concat(resourceGroup().id,'/providers/','Microsoft.Storage/storageAccounts/', variables('storageAccountName'))]",
     "webAppIdentityResourceId": "[concat(resourceId('Microsoft.Web/sites', parameters('appName')),'/providers/Microsoft.ManagedIdentity/Identities/default')]",
