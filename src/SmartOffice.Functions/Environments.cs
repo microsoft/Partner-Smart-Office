@@ -240,8 +240,8 @@ namespace Microsoft.Partner.SmartOffice.Functions
                     await storage.WriteToQueueAsync(
                         OperationConstants.CustomersQueueName,
                         new ProcessCustomerDetail(
-                            auditRecords
-                            .Where(r => r.CustomerId.Equals(customer.Id, StringComparison.InvariantCultureIgnoreCase)))
+                            auditRecords.Where(
+                                r => r.CustomerId?.Equals(customer.Id, StringComparison.InvariantCultureIgnoreCase) ?? false))
                         {
                             AppEndpoint = environment.AppEndpoint,
                             Customer = customer,
