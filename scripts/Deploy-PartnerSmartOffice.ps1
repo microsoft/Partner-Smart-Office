@@ -126,6 +126,15 @@ $adAppAccess = [Microsoft.Open.AzureAD.Model.RequiredResourceAccess]@{
         Type = "Scope"}
 }
 
+$adminAppRole = [Microsoft.Open.AzureAD.Model.AppRole]@{
+    AllowedMemberTypes = @("User");
+    Description = "Administrative users the have the ability to perform all Smart Office operations."; 
+    DisplayName = "Partner Smart Office Admins";
+    IsEnabled = $true; 
+    Id = New-Guid; 
+    Value = "Admins";
+}
+
 $graphAppAccess = [Microsoft.Open.AzureAD.Model.RequiredResourceAccess]@{
     ResourceAppId = "00000003-0000-0000-c000-000000000000";
     ResourceAccess = 
@@ -142,8 +151,8 @@ $graphAppAccess = [Microsoft.Open.AzureAD.Model.RequiredResourceAccess]@{
 
 Write-Host -ForegroundColor Green "Creating the Azure AD application and related resources..."
 
-$app = New-AzureADApplication -AvailableToOtherTenants $true -DisplayName $DisplayName -IdentifierUris "https://$($sessionInfo.TenantDomain)/$((New-Guid).ToString())" -RequiredResourceAccess $adAppAccess, $graphAppAccess
-$password = New-AzureADApplicationPasswordCredential -ObjectId $app.ObjectId
+$app = New-AzureADApplication -AvailableToOtherTenants $true -DisplayName $DisplayName -IdentifierUris "https://$($sessionInfo.TenantDomain)/$((New-Guid).ToString())" -RequiredResourceAccess $adAppAccess, $graphAppAccess -AppRoles @($adminAppRole)
+New-AzureADApplicationPasswordCredential -ObjectId $app.ObjectId
 $spn = New-AzureADServicePrincipal -AppId $app.AppId -DisplayName $DisplayName
 
 if($ConfigurePreconsent) {
@@ -158,4 +167,4 @@ $ResourceGroup = Read-Host -Prompt "Specify a resource group name"
 Write-Host -ForegroundColor Green "Deploying Partner Smart Office. Please note this process can take several minutes."
 
 New-AzureRmResourceGroup -Location southcentralus -Name $ResourceGroup
-New-AzureRmResourceGroupDeployment -Name $(New-Guid).ToString() -ResourceGroupName $ResourceGroup -TemplateUri https://raw.githubusercontent.com/Microsoft/Partner-Smart-Office/master/azuredeploy.json -appName $appName -applicationId $app.Id -applicationSecret $password -tenantId $sessionInfo.TenantId
+New-AzureRmResourceGroupDeployment -Name $(New-Guid).ToString() -ResourceGroupName $ResourceGroup -TemplateUri https://raw.githubusercontent.com/Microsoft/Partner-Smart-Office/master/azuredeploy.json -appName $appName -applicationId $app.Id

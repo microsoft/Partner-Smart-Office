@@ -1,18 +1,54 @@
 # Partner Smart Office Changelog
 
+## 0.6.0 (2018-06-06)
+
+As of this release, we are introducing a code freeze. This means no new configurations or features will be added until after version 1.0 has been released. This code freeze will allow us to focus on addressing issues and simplifying the deployment. If there is a new feature you would like to see added please log a request using the [issue tracker](https://github.com/Microsoft/Partner-Smart-Office/issues), and we will prioritize it accordingly for a future release. 
+
+The following enhancements were made with this release
+
+* Added logic to the *ProcessEnvironments* function to write a warning to the console if no environments have been created.
+* Modified the authentication configuration for the portal to utilize Azure AD app roles over Azure AD directory roles. This change will make it easier for organizations that are using separate Azure AD tenants for authentication to deploy the solution.
+
+The following issues were addressed with this release
+
+* Deployment may fail with error an stating the key vault name is invalid. Pull request [#24](https://github.com/Microsoft/Partner-Smart-Office/pull/24) introduced the solution for this issue.
+
+This update will require an Azure AD application role be defined and assigned to users that will be managing environments using the portal. Users who are not assigned to this role will receive an access denied error when attempting to access the portal. If you have an existing Azure AD application that you would like to use for the portal then it is recommended that you run the following PowerShell script to create the application role
+
+```powershell
+Connect-AzureAD
+
+$adminAppRole = [Microsoft.Open.AzureAD.Model.AppRole]@{
+    AllowedMemberTypes = @("User");
+    Description = "Administrative users the have the ability to perform all Smart Office operations.";
+    DisplayName = "Smart Office Admins";
+    IsEnabled = $true;
+    Id = New-Guid;
+    Value = "SmartOfficeAdmins";
+}
+
+# Note the following value can be found in the Azure management portal. Also, it should be a GUID with no trailing spaces.
+$appId = Read-Host -Prompt "What is the application identifier for the application you would like to configure?"
+$app = Get-AzureADApplication -Filter "AppId eq '$($appId)'"
+
+Set-AzureADApplication -ObjectId $app.ObjectId -AppRoles @($appRoles)
+```
+
+If you need information on how to assign users to Azure AD application roles please refer to [How to assign users and groups to an application](https://docs.microsoft.com/en-us/azure/active-directory/application-access-assignment-how-to-add-assignment). Please see the [wiki](https://github.com/Microsoft/Partner-Smart-Office/wiki) for more information on to deploy this solution and create new environments using the portal.
+
 ## 0.5.0 (2018-06-05)
 
 The following enhancements were made with this release
 
 * Added a portal to manage the creation and settings for an environment.
-* Added the ability to synchronize Azure utilization records for Azure CSP subscriptions. This ability is controlled using the ProcessAzureUsage flag configured on each instance. The default vaule is false for all environments.
+* Added the ability to synchronize Azure utilization records for Azure CSP subscriptions. This ability is controlled using the ProcessAzureUsage flag configured on each instance. The default value is false for all environments.
 
 The following bugs were fixed with this release
 
 * A null reference exception was thrown when processing audit records that did not have a customer identifier. This has been fixed through [#19](https://github.com/Microsoft/Partner-Smart-Office/pull/19)
 * A format exception was thrown when processing security information for an EA environment. This was fixed through [#20](https://github.com/Microsoft/Partner-Smart-Office/pull/20)
 
-The following changes should be made to existing deployments, so that the portal will function as excepted
+The following changes should be made to existing deployments so that the portal will function as excepted
 
 * Add the _Read Directory Data_ application permission to the application you created using the [Create-AzureADApplication.ps1](https://raw.githubusercontent.com/Microsoft/Partner-Smart-Office/master/scripts/Create-AzureADApplication.ps1) script
 
@@ -39,7 +75,7 @@ The following changes should be made to existing deployments, so that the portal
 
 The following breaking changes were made with this release.
 
-With this release environments need to be defined in a collection named Environments. This collection can contain the configuration information for CSP and EA environments. The following is an example of what the configuration should look like for a CSP environment.
+With this release, environments need to be defined in a collection named Environments. This collection can contain the configuration information for CSP and EA environments. The following is an example of what the configuration should look like for a CSP environment.
 
 ```json
 {
@@ -77,7 +113,7 @@ The following is an example of what the configuration should look like for an EA
 }
 ```
 
-In a future release there will be a portal to manage environments and review exceptions.
+In a future release, there will be a portal to manage environments and review exceptions.
 
 ## 0.0.1 (2018-05-07)
 

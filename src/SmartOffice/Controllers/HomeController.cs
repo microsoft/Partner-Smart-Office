@@ -16,7 +16,7 @@ namespace Microsoft.Partner.SmartOffice.Controllers
     using Models;
     using Services;
 
-    [Authorize(Policy = "PartnerAdmin")]
+    [Authorize(Policy = "RequireAdmin")]
     public class HomeController : Controller
     {
         /// <summary>
