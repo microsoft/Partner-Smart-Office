@@ -1,8 +1,17 @@
 # Partner Smart Office Changelog
 
+## 0.8.0 (2018-06-07)
+
+The following issues were addressed with this release
+
+* Added the missing properties from the Azure utilization record class.
+* Addressed issue where Azure utilization records were not getting imported correct. See issue [#27](https://github.com/Microsoft/Partner-Smart-Office/issues/27) for more information
+* Addressed issue where an exception stating messages cannot be larger than 65536 bytes might occurr. See issue [#28](https://github.com/Microsoft/Partner-Smart-Office/issues/28) for more information
+* Service address values will now default to https://graph.microsoft.com and https://api.partnercenter.microsoft.com
+
 ## 0.6.0 (2018-06-06)
 
-As of this release, we are introducing a code freeze. This means no new configurations or features will be added until after version 1.0 has been released. This code freeze will allow us to focus on addressing issues and simplifying the deployment. If there is a new feature you would like to see added please log a request using the [issue tracker](https://github.com/Microsoft/Partner-Smart-Office/issues), and we will prioritize it accordingly for a future release. 
+As of this release, we are introducing a code freeze. This means no new configurations or features will be added until after version 1.0 has been released. This code freeze will allow us to focus on addressing issues and simplifying the deployment. If there is a new feature you would like to see added please log a request using the [issue tracker](https://github.com/Microsoft/Partner-Smart-Office/issues), and we will prioritize it accordingly for a future release.
 
 The following enhancements were made with this release
 
