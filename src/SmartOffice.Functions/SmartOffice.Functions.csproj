@@ -4,7 +4,7 @@
     <AzureFunctionsVersion>v2</AzureFunctionsVersion>
     <AssemblyName>Microsoft.Partner.SmartOffice.Functions</AssemblyName>
     <RootNamespace>Microsoft.Partner.SmartOffice.Functions</RootNamespace>
-    <Version>0.6.0</Version>
+    <Version>0.8.0</Version>
     <Company>Microsoft</Company>
     <Authors>One Commercial Partner</Authors>
     <Product>Partner Smart Office</Product>
@@ -25,7 +25,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="CsvHelper" Version="7.1.0" />
-    <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.6.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.6.1" />
     <PackageReference Include="Microsoft.NET.Sdk.Functions" Version="1.0.13" />
   </ItemGroup>
   <ItemGroup>

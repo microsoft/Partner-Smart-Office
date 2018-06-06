@@ -49,6 +49,10 @@ namespace Microsoft.Partner.SmartOffice.Functions
             [QueueTrigger(OperationConstants.CustomersQueueName, Connection = "StorageConnectionString")]ProcessCustomerDetail customerDetail,
             [DataRepository(
                 CosmosDbEndpoint = "CosmosDbEndpoint",
+                DataType = typeof(AuditRecord),
+                KeyVaultEndpoint = "KeyVaultEndpoint")]IDocumentRepository<AuditRecord> auditRecordRepository,
+            [DataRepository(
+                CosmosDbEndpoint = "CosmosDbEndpoint",
                 DataType = typeof(CustomerDetail),
                 KeyVaultEndpoint = "KeyVaultEndpoint")]IDocumentRepository<CustomerDetail> customerRepository,
             [DataRepository(
@@ -67,6 +71,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
                 KeyVaultEndpoint = "KeyVaultEndpoint")]IStorageService storage,
             TraceWriter log)
         {
+            IEnumerable<AuditRecord> auditRecords;
             List<SubscriptionDetail> subscriptions;
             int period;
 
@@ -102,9 +107,13 @@ namespace Microsoft.Partner.SmartOffice.Functions
                 }
                 else
                 {
+                    // Obtain a list of audit records for the specified customer that happened since the customer was last processed.
+                    auditRecords = await auditRecordRepository.GetAsync(r => r.CustomerId == customerDetail.Customer.Id
+                        && r.OperationDate >= customerDetail.Customer.LastProcessed).ConfigureAwait(false);
+
                     // Since the period is less than 30 we can utilize the audit logs to reconstruct any subscriptions that were created.
                     subscriptions = await BuildUsingAuditRecordsAsync(
-                        customerDetail.AuditRecords,
+                        auditRecords,
                         subscriptionRepository,
                         partner,
                         customerDetail.Customer).ConfigureAwait(false);
@@ -148,6 +157,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
             }
             finally
             {
+                auditRecords = null;
                 subscriptions = null;
             }
         }
@@ -239,9 +249,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
                     // Write the customer to the customers queue to start processing the customer.
                     await storage.WriteToQueueAsync(
                         OperationConstants.CustomersQueueName,
-                        new ProcessCustomerDetail(
-                            auditRecords.Where(
-                                r => r.CustomerId?.Equals(customer.Id, StringComparison.InvariantCultureIgnoreCase) ?? false))
+                        new ProcessCustomerDetail
                         {
                             AppEndpoint = environment.AppEndpoint,
                             Customer = customer,
@@ -363,6 +371,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
                         r,
                         new Dictionary<string, string>
                         {
+                            { "Id", $"{r.Resource.Id}--{r.UsageStartTime}" },
                             { "SubscriptionId", subscriptionDetail.Subscription.Id },
                             { "TenantId", subscriptionDetail.Subscription.TenantId }
                         })));
