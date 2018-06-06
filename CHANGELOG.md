@@ -24,14 +24,14 @@ $adminAppRole = [Microsoft.Open.AzureAD.Model.AppRole]@{
     DisplayName = "Smart Office Admins";
     IsEnabled = $true;
     Id = New-Guid;
-    Value = "SmartOfficeAdmins";
+    Value = "Admins";
 }
 
 # Note the following value can be found in the Azure management portal. Also, it should be a GUID with no trailing spaces.
 $appId = Read-Host -Prompt "What is the application identifier for the application you would like to configure?"
 $app = Get-AzureADApplication -Filter "AppId eq '$($appId)'"
 
-Set-AzureADApplication -ObjectId $app.ObjectId -AppRoles @($appRoles)
+Set-AzureADApplication -ObjectId $app.ObjectId -AppRoles @($adminAppRole)
 ```
 
 If you need information on how to assign users to Azure AD application roles please refer to [How to assign users and groups to an application](https://docs.microsoft.com/en-us/azure/active-directory/application-access-assignment-how-to-add-assignment). Please see the [wiki](https://github.com/Microsoft/Partner-Smart-Office/wiki) for more information on to deploy this solution and create new environments using the portal.
