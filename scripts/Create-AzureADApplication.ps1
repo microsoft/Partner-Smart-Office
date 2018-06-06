@@ -82,14 +82,21 @@ try {
         "$($Error[0].Exception)"
 }
 
-$sessionInfo = Get-AzureADCurrentSessionInfo
-
 $adAppAccess = [Microsoft.Open.AzureAD.Model.RequiredResourceAccess]@{
     ResourceAppId = "00000002-0000-0000-c000-000000000000";
     ResourceAccess = 
     [Microsoft.Open.AzureAD.Model.ResourceAccess]@{
         Id = "311a71cc-e848-46a1-bdf8-97ff7156d8e6";
         Type = "Scope"}
+}
+
+$adminAppRole = [Microsoft.Open.AzureAD.Model.AppRole]@{
+    AllowedMemberTypes = @("User");
+    Description = "Administrative users the have the ability to perform all Smart Office operations."; 
+    DisplayName = "Partner Smart Office Admins";
+    IsEnabled = $true; 
+    Id = New-Guid; 
+    Value = "Admins";
 }
 
 $graphAppAccess = [Microsoft.Open.AzureAD.Model.RequiredResourceAccess]@{
@@ -106,10 +113,12 @@ $graphAppAccess = [Microsoft.Open.AzureAD.Model.RequiredResourceAccess]@{
             Type = "Role"}
 }
 
+$SessionInfo = Get-AzureADCurrentSessionInfo
+$AppAddress = Read-Host -Prompt "What is the address for the portal (e.g. https://smartoffice.azurewebsites.net)"
+
 Write-Host -ForegroundColor Green "Creating the Azure AD application and related resources..."
 
-$app = New-AzureADApplication -AvailableToOtherTenants $true -DisplayName $DisplayName -IdentifierUris "https://$($sessionInfo.TenantDomain)/$((New-Guid).ToString())" -RequiredResourceAccess $adAppAccess, $graphAppAccess
-$detail = Get-AzureADTenantDetail
+$app = New-AzureADApplication -AvailableToOtherTenants $true -DisplayName $DisplayName -IdentifierUris "https://$($SessionInfo.TenantDomain)/$((New-Guid).ToString())" -RequiredResourceAccess $adAppAccess, $graphAppAccess -AppRoles @($adminAppRole) -ReplyUrls @("$($AppAddress)/signin-oidc")
 $password = New-AzureADApplicationPasswordCredential -ObjectId $app.ObjectId
 $spn = New-AzureADServicePrincipal -AppId $app.AppId -DisplayName $DisplayName
 
@@ -120,4 +129,3 @@ if($ConfigurePreconsent) {
 
 Write-Host "ApplicationId       = $($app.AppId)"
 Write-Host "ApplicationSecret   = $($password.Value)"
-Write-Host "TenantId            = $($sessionInfo.TenantId)"

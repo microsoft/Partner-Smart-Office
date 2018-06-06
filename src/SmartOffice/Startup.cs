@@ -58,31 +58,6 @@ namespace Microsoft.Partner.SmartOffice
             {
                 Configuration.Bind("Authentication", options);
 
-                options.Events = new OpenIdConnectEvents
-                {
-                    OnTokenValidated = async context =>
-                    {
-                        string signedInUserObjectId = context.Principal.FindFirst("http://schemas.microsoft.com/identity/claims/objectidentifier").Value;
-                        string userTenantId = context.Principal.FindFirst("http://schemas.microsoft.com/identity/claims/tenantid").Value;
-
-                        IGraphProvider graph = new GraphProvider(
-                            $"{Configuration["ActiveDirectoryEndpoint"]}",
-                            Configuration["ApplicationId"],
-                            Configuration["ApplicationSecret"],
-                            userTenantId);
-
-                        IList<Role> roles = await graph.GetRolesAsync(signedInUserObjectId).ConfigureAwait(false);
-                        IList<Claim> claims = roles?.Select(r => new Claim(ClaimTypes.Role, r.DisplayName)).ToList();
-
-                        if (userTenantId.Equals(Configuration["TenantId"], StringComparison.InvariantCultureIgnoreCase))
-                        {
-                            claims.Add(new Claim("IsPartner", "true"));
-                        }
-
-                        context.Principal.AddIdentity(new ClaimsIdentity(claims));
-                    }
-                };
-
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     SaveSigninToken = true,
@@ -92,11 +67,11 @@ namespace Microsoft.Partner.SmartOffice
 
             services.AddAuthorization(options =>
             {
-                options.AddPolicy("PartnerAdmin", policy =>
-                    policy.AddRequirements(new PartnerAdminRequirement()));
+                options.AddPolicy("RequireAdmin", policy =>
+                    policy.AddRequirements(new SmartOfficeAdminRequirement()));
             });
 
-            services.AddSingleton<IAuthorizationHandler, PartnerAdminHandler>();
+            services.AddSingleton<IAuthorizationHandler, SmartOfficeAdminHandler>();
 
             services.AddSingleton<IDocumentRepository<EnvironmentDetail>>(
                 new DocumentRepository<EnvironmentDetail>(

@@ -1,29 +1,23 @@
 ﻿// -----------------------------------------------------------------------
-// <copyright file="PartnerAdminHandler.cs" company="Microsoft">
+// <copyright file="SmartOfficeAdminHandler.cs" company="Microsoft">
 //     Copyright (c) Microsoft Corporation. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
 
 namespace Microsoft.Partner.SmartOffice.Authorization
 {
-    using System;
-    using System.Security.Claims;
     using System.Threading.Tasks;
     using AspNetCore.Authorization;
 
-    public class PartnerAdminHandler : AuthorizationHandler<PartnerAdminRequirement>
+    public class SmartOfficeAdminHandler : AuthorizationHandler<SmartOfficeAdminRequirement>
     {
         protected override Task HandleRequirementAsync(
             AuthorizationHandlerContext context,
-            PartnerAdminRequirement requirement)
+            SmartOfficeAdminRequirement requirement)
         {
-
-            if (context.User.IsInRole("Company Administrator"))
+            if (context.User.IsInRole("Admins"))
             {
-                if (context.User.HasClaim("IsPartner", "true"))
-                {
-                    context.Succeed(requirement);
-                }
+                context.Succeed(requirement);
             }
 
             return Task.CompletedTask;

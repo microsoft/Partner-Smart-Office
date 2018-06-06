@@ -48,16 +48,11 @@
         "description": "Identifier of the Azure AD application configured for the Partner Smart Office solutuion."
       }
     },
-    "applicationSecret": {
+    "authority": {
       "type": "string",
+      "defaultValue": "https://login.microsoftonline.com/common",
       "metadata": {
-        "description": "Secret associated with the Azure AD application configured for the Partner Smart Office solutuion."
-      }
-    },
-    "tenantId": {
-      "type": "string",
-      "metadata": {
-        "description": "Identifier of the tenant where the Azure AD application configured for the Partner Smart Office solutuion exists."
+        "description": "Address of the Azure AD authority used for portal authentication."
       }
     },
     "repoUrl": {
@@ -92,7 +87,7 @@
     "functionAppName": "[concat(uniquestring(resourceGroup().id), 'functions')]",
     "functionIdentityResourceId": "[concat(resourceId('Microsoft.Web/sites', variables('functionAppName')),'/providers/Microsoft.ManagedIdentity/Identities/default')]",
     "functionHostingPlanName": "[concat(uniquestring(resourceGroup().id), 'functions')]",
-    "keyVaultName": "[concat('vault', uniquestring(resourceGroup().id))]",
+    "keyVaultName": "[concat('vault', uniquestring(resourceGroup().id))]", 
     "storageAccountName": "[concat(uniquestring(resourceGroup().id), 'azfunctions')]",
     "storageAccountid": "[concat(resourceGroup().id,'/providers/','Microsoft.Storage/storageAccounts/', variables('storageAccountName'))]",
     "webAppIdentityResourceId": "[concat(resourceId('Microsoft.Web/sites', parameters('appName')),'/providers/Microsoft.ManagedIdentity/Identities/default')]",
@@ -171,20 +166,12 @@
         "siteConfig": {
           "appSettings": [
             {
-              "name": "ActiveDirectoryEndpoint",
-              "value": "https://login.microsoftonline.com/"
-            },
-            {
-              "name": "ApplicationId",
-              "value": "[parameters('applicationId')]"
-            },
-            {
               "name": "ApplicationInsights:InstrumentationKey",
               "value": "[reference(concat('Microsoft.Insights/components/', parameters('appName'))).InstrumentationKey]"
             },
             {
               "name": "Authentication:Authority",
-              "value": "https://login.microsoftonline.com/common"
+              "value": "[parameters('authority')]"
             },
             {
               "name": "Authentication:ClientId",
@@ -201,10 +188,6 @@
             {
               "name": "PROJECT",
               "value": "src\\SmartOffice\\SmartOffice.csproj"
-            },
-            {
-              "name": "TenantId",
-              "value": "[parameters('tenantId')]"
             },
             {
               "name": "WEBSITE_NODE_DEFAULT_VERSION",
@@ -364,18 +347,6 @@
       },
       "dependsOn": [
         "[concat('Microsoft.Web/sites/', variables('functionAppName'))]"
-      ]
-    },
-    {
-      "apiVersion": "2015-06-01",
-      "type": "Microsoft.KeyVault/vaults/secrets",
-      "name": "[concat(variables('keyVaultName'), '/', 'ApplicationSecret')]",
-      "properties": {
-        "contentType": "text/plain",
-        "value": "[parameters('applicationSecret')]"
-      },
-      "dependsOn": [
-        "[concat('Microsoft.KeyVault/vaults/', variables('keyVaultName'))]"
       ]
     },
     {

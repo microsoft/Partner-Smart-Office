@@ -4,7 +4,7 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <AssemblyName>Microsoft.Partner.SmartOffice.Data</AssemblyName>
     <RootNamespace>Microsoft.Partner.SmartOffice.Data</RootNamespace>
-    <Version>0.5.0</Version>
+    <Version>0.6.0</Version>
     <Authors>One Commercial Partner</Authors>
     <Company>Microsoft</Company>
     <PackageLicenseUrl>https://github.com/Microsoft/Partner-Smart-Office/blob/master/LICENSE</PackageLicenseUrl>
