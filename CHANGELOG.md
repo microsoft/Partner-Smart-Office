@@ -21,7 +21,7 @@ Connect-AzureAD
 $adminAppRole = [Microsoft.Open.AzureAD.Model.AppRole]@{
     AllowedMemberTypes = @("User");
     Description = "Administrative users the have the ability to perform all Smart Office operations.";
-    DisplayName = "Smart Office Admins";
+    DisplayName = "Partner Smart Office Admins";
     IsEnabled = $true;
     Id = New-Guid;
     Value = "Admins";

@@ -6,7 +6,7 @@
     <RootNamespace>Microsoft.Partner.SmartOffice.Models</RootNamespace>
     <RepositoryUrl>https://github.com/Microsoft/Partner-Smart-Office.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <Version>0.6.0</Version>
+    <Version>0.8.0</Version>
     <Authors>One Commercial Partner</Authors>
     <Company>Microsoft</Company>
     <PackageLicenseUrl>https://github.com/Microsoft/Partner-Smart-Office/blob/master/LICENSE</PackageLicenseUrl>
@@ -14,6 +14,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.6.1" />
     <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
     <PackageReference Include="System.ComponentModel.Annotations" Version="4.5.0" />
   </ItemGroup>

@@ -52,7 +52,7 @@
         <div class="form-group">
             <label asp-for="AppEndpoint.ServiceAddress" class="col-md-2 control-label"></label>
             <div class="col-md-10">
-                <input asp-for="AppEndpoint.ServiceAddress" class="form-control" placeholder="https://graph.microsoft.com" />
+                <input asp-for="AppEndpoint.ServiceAddress" class="form-control" value="https://graph.microsoft.com" />
                 <span asp-validation-for="AppEndpoint.ServiceAddress" class="text-danger"></span>
             </div>
         </div>
@@ -83,7 +83,7 @@
         <div class="form-group">
             <label asp-for="PartnerCenterEndpoint.ServiceAddress" class="col-md-2 control-label"></label>
             <div class="col-md-10">
-                <input asp-for="PartnerCenterEndpoint.ServiceAddress" class="form-control" placeholder="https://api.partnercenter.microsoft.com" />
+                <input asp-for="PartnerCenterEndpoint.ServiceAddress" class="form-control" value="https://api.partnercenter.microsoft.com" />
                 <span asp-validation-for="PartnerCenterEndpoint.ServiceAddress" class="text-danger"></span>
             </div>
         </div>

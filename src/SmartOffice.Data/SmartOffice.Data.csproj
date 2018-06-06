@@ -4,7 +4,7 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <AssemblyName>Microsoft.Partner.SmartOffice.Data</AssemblyName>
     <RootNamespace>Microsoft.Partner.SmartOffice.Data</RootNamespace>
-    <Version>0.6.0</Version>
+    <Version>0.8.0</Version>
     <Authors>One Commercial Partner</Authors>
     <Company>Microsoft</Company>
     <PackageLicenseUrl>https://github.com/Microsoft/Partner-Smart-Office/blob/master/LICENSE</PackageLicenseUrl>
@@ -23,7 +23,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Azure.DocumentDB.Core" Version="1.10.0" />
-    <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.6.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.6.1" />
   </ItemGroup>
 
   <ItemGroup>

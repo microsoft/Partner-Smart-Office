@@ -15,6 +15,14 @@ namespace Microsoft.Partner.SmartOffice.Models.Graph
     public class ControlListEntry
     {
         /// <summary>
+        /// Initializes a new instance of the <see cref="ControlListEntry" /> class.
+        /// </summary>
+        public ControlListEntry()
+        {
+            Threats = new List<string>();
+        }
+
+        /// <summary>
         /// Gets or sets the action category for the entry.
         /// </summary>
         [JsonProperty(PropertyName = "actionCategory")]
@@ -90,7 +98,7 @@ namespace Microsoft.Partner.SmartOffice.Models.Graph
         /// Gets or sets the list of threats associated with the entry.
         /// </summary>
         [JsonProperty(PropertyName = "threats")]
-        public List<string> Threats { get; set; }
+        public List<string> Threats { get; }
 
         /// <summary>
         /// Gets or sets the tier for the entry.

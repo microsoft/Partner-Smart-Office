@@ -12,6 +12,15 @@ namespace Microsoft.Partner.SmartOffice.Models.Graph
     public class SecureScore
     {
         /// <summary>
+        /// Initializes a new instance of the <see cref="SecureScore" /> class.
+        /// </summary>
+        public SecureScore()
+        {
+            ControlScores = new List<ControlScore>();
+            EnabledServices = new List<string>();
+        }
+
+        /// <summary>
         /// Gets or sets the secure score for account controls.
         /// </summary>
         [JsonProperty(PropertyName = "accountScore")]
@@ -57,7 +66,7 @@ namespace Microsoft.Partner.SmartOffice.Models.Graph
         /// Gets or sets the collection of control scores.
         /// </summary>
         [JsonProperty(PropertyName = "controlScores")]
-        public List<ControlScore> ControlScores { get; set; }
+        public List<ControlScore> ControlScores { get; }
 
         /// <summary>
         /// Gets or sets the created date.
@@ -81,7 +90,7 @@ namespace Microsoft.Partner.SmartOffice.Models.Graph
         /// Gets or sets the list of services enabled for the tenant.
         /// </summary>
         [JsonProperty(PropertyName = "enabledServices")]
-        public List<string> EnabledServices { get; set; }
+        public List<string> EnabledServices { get; }
 
         [JsonProperty(PropertyName = "id")]
         public string Id => $"{CreatedDate.Month}-{CreatedDate.Day}-{CreatedDate.Year}-{TenantId}";

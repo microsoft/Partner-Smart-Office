@@ -8,7 +8,7 @@ namespace Microsoft.Partner.SmartOffice.Models
 {
     using System;
     using System.Collections.Generic;
-    using Newtonsoft.Json; 
+    using Newtonsoft.Json;
     using PartnerCenter.Utilizations;
 
     public sealed class UtilizationDetail
@@ -43,6 +43,11 @@ namespace Microsoft.Partner.SmartOffice.Models
         /// Gets or sets the identifier of the subscription that owns the usage.
         /// </summary>
         public string SubscriptionId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the tenant identifier that owns the subscription.
+        /// </summary>
+        public string TenantId { get; set; }
 
         /// <summary>
         /// Gets or sets the type of quantity (hours, bytes, etc...).
