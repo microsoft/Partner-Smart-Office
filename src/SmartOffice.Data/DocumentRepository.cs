@@ -158,7 +158,7 @@ namespace Microsoft.Partner.SmartOffice.Data
                         databaseId,
                         collectionId,
                         BulkImportStoredProcId),
-                    items)).ConfigureAwait(false);
+                    batch)).ConfigureAwait(false);
             }
         }
 
