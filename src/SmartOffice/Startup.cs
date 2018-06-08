@@ -6,10 +6,6 @@
 
 namespace Microsoft.Partner.SmartOffice
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Security.Claims;
     using AspNetCore.Authentication.Cookies;
     using AspNetCore.Authentication.OpenIdConnect;
     using AspNetCore.Authorization;
@@ -24,7 +20,6 @@ namespace Microsoft.Partner.SmartOffice
     using Extensions.DependencyInjection;
     using IdentityModel.Tokens;
     using Models;
-    using Providers;
     using Services;
 
     public class Startup
