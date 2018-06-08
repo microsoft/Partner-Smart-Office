@@ -22,7 +22,7 @@ namespace Microsoft.Partner.SmartOffice.Services.PartnerCenter
         /// <summary>
         /// Name of the application to be sent with each request.
         /// </summary>
-        private const string ApplicationName = "Partner Smart Office v0.6.0";
+        private const string ApplicationName = "Partner Smart Office v1.0.0";
 
         /// <summary>
         /// Name of the application name header. 

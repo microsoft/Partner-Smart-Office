@@ -216,6 +216,11 @@ namespace Microsoft.Partner.SmartOffice.Functions
                     // Only audit records for the past 90 days are available from Partner Center.
                     days = 89;
                 }
+                else if (days <= 0)
+                {
+                    // Ensure that in all circumstances at least one day of records will be returned.
+                    days = 1;
+                }
 
                 auditRecords = await GetAuditRecordsAsyc(
                     partner,
@@ -225,6 +230,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
                 if (auditRecords.Count > 0)
                 {
                     log.Info($"Importing {auditRecords.Count} audit records from the past {days} days.");
+
                     // Add, or update, each audit record to the database.
                     await auditRecordRepository.AddOrUpdateAsync(auditRecords).ConfigureAwait(false);
                 }
@@ -532,6 +538,11 @@ namespace Microsoft.Partner.SmartOffice.Functions
                                 resource,
                                 new Dictionary<string, string> { { "EnvironmentId", environment.Id } }));
                     }
+                    else if (record.OperationType == OperationType.UpdateCustomerBillingProfile)
+                    {
+                        control = resources.Single(c => c.Id == record.CustomerId);
+                        control.BillingProfile = JsonConvert.DeserializeObject<CustomerBillingProfile>(record.ResourceNewValue);
+                    }
                 }
 
                 return resources;
@@ -610,7 +621,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
             }
         }
 
-        public static IEnumerable<DateTime> ChunkDate(DateTime startDate, DateTime endDate, int size)
+        private static IEnumerable<DateTime> ChunkDate(DateTime startDate, DateTime endDate, int size)
         {
             while (startDate < endDate)
             {
