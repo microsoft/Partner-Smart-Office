@@ -18,7 +18,6 @@ namespace Microsoft.Partner.SmartOffice.Data
     using Azure.Documents;
     using Azure.Documents.Client;
     using Azure.Documents.Linq;
-    using Extensions;
     using Models.Converters;
     using Newtonsoft.Json;
 
@@ -150,15 +149,18 @@ namespace Microsoft.Partner.SmartOffice.Data
         /// </returns>
         public async Task AddOrUpdateAsync(IEnumerable<TEntity> items)
         {
-            foreach (IEnumerable<TEntity> batch in items.Batch(500))
+            foreach (IEnumerable<TEntity> batch in Batch(items, 500))
             {
-                await InvokeRequestAsync(() =>
-                    Client.ExecuteStoredProcedureAsync<int>(
-                        UriFactory.CreateStoredProcedureUri(
-                        databaseId,
-                        collectionId,
-                        BulkImportStoredProcId),
-                    batch)).ConfigureAwait(false);
+                if (batch.Any())
+                {
+                    await InvokeRequestAsync(() =>
+                        Client.ExecuteStoredProcedureAsync<int>(
+                            UriFactory.CreateStoredProcedureUri(
+                            databaseId,
+                            collectionId,
+                            BulkImportStoredProcId),
+                        batch)).ConfigureAwait(false);
+                }
             }
         }
 
@@ -300,6 +302,17 @@ namespace Microsoft.Partner.SmartOffice.Data
             finally
             {
                 response = null;
+            }
+        }
+
+        private static IEnumerable<IEnumerable<T>> Batch<T>(IEnumerable<T> entities, int batchSize)
+        {
+            int size = 0;
+
+            while (size < entities.Count())
+            {
+                yield return entities.Skip(size).Take(batchSize);
+                size += batchSize;
             }
         }
 
