@@ -24,7 +24,7 @@
     <EmbeddedResource Include="Assets\SecureScoreControlsList.csv" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="CsvHelper" Version="7.1.0" />
+    <PackageReference Include="CsvHelper" Version="7.1.1" />
     <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.6.1" />
     <PackageReference Include="Microsoft.NET.Sdk.Functions" Version="1.0.13" />
   </ItemGroup>

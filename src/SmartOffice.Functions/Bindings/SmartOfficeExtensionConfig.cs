@@ -110,7 +110,8 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
                 return await GetRepoAsync<AuditRecord>(
                     AuditRecordsCollectionId,
                     input.CosmosDbEndpoint,
-                    input.KeyVaultEndpoint).ConfigureAwait(false);
+                    input.KeyVaultEndpoint,
+                    "/PartnerId").ConfigureAwait(false);
             }
             else if (input.DataType == typeof(ControlListEntry))
             {
@@ -138,21 +139,24 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
                 return await GetRepoAsync<SecureScore>(
                     SecureScoreCollectionId,
                     input.CosmosDbEndpoint,
-                    input.KeyVaultEndpoint).ConfigureAwait(false);
+                    input.KeyVaultEndpoint,
+                    "/tenantId").ConfigureAwait(false);
             }
             else if (input.DataType == typeof(SubscriptionDetail))
             {
                 return await GetRepoAsync<SubscriptionDetail>(
                     SubscriptionsCollectionId,
                     input.CosmosDbEndpoint,
-                    input.KeyVaultEndpoint).ConfigureAwait(false);
+                    input.KeyVaultEndpoint,
+                    "/tenantId").ConfigureAwait(false);
             }
             else if (input.DataType == typeof(UtilizationDetail))
             {
                 return await GetRepoAsync<UtilizationDetail>(
                     UtilizationCollectId,
                     input.CosmosDbEndpoint,
-                    input.KeyVaultEndpoint).ConfigureAwait(false);
+                    input.KeyVaultEndpoint,
+                    "/subscriptionId").ConfigureAwait(false);
             }
 
             throw new Exception($"Invalid data type of {input.DataType} specified.");
@@ -275,7 +279,8 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
         private static async Task<IDocumentRepository<TEntity>> GetRepoAsync<TEntity>(
             string collectionId,
             string cosmosDbEndpoint,
-            string keyVaultEndpoint) where TEntity : class
+            string keyVaultEndpoint,
+            string partitionKey = null) where TEntity : class
         {
             DocumentRepository<TEntity> repo;
             KeyVaultService keyVault;
@@ -294,7 +299,8 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
                         cosmosDbEndpoint,
                         authKey,
                         DatabaseId,
-                        collectionId);
+                        collectionId,
+                        partitionKey);
 
                     await repo.InitializeAsync().ConfigureAwait(false);
 
