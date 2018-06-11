@@ -230,12 +230,12 @@ namespace Microsoft.Partner.SmartOffice.Functions
 
                 auditRecords = await GetAuditRecordsAsyc(
                     partner,
-                    DateTime.UtcNow.AddDays(-days),
+                    DateTime.UtcNow.AddDays(-1),
                     DateTime.UtcNow).ConfigureAwait(false);
 
                 if (auditRecords.Count > 0)
                 {
-                    log.Info($"Importing {auditRecords.Count} audit records from the past {days} days.");
+                    log.Info($"Importing {auditRecords.Count} audit records available between now and the pervious day.");
 
                     // Add, or update, each audit record to the database.
                     await auditRecordRepository.AddOrUpdateAsync(

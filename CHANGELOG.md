@@ -1,13 +1,15 @@
 # Partner Smart Office Changelog
 
-## 1.0.0 (2018-06-08)
+## 1.0.0 (2018-06-11)
 
 The following issues were addressed with this release
 
+- Added partitioning to select collections. Please note that this change is a **breaking** change. If you have an existing deployment you will need to delete all collections excepted for the *Environments* collection.
 - Modified the processing restrictions
   - Maximum dequeue count is now configured to 3
   - Maximum number of records dequeued is now configured to 14
   - Threshold for the number of messages fetched is now configured to 7
+- Only audit records from the pervious day will be imported for now.
 - When inserting a collection of records, they will be inserted in chunks. This change ensures that all records will be inserted in a timely manner.
 - When inserting a large collection of records, the request unit (RU) throughput for the collection will be dynamically increased from 500 to either 1000 or 2000. Once the collection of records has been inserted, the RUs for the collection will be reset to 500.
 
