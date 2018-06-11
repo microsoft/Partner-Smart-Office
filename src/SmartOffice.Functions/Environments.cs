@@ -95,7 +95,9 @@ namespace Microsoft.Partner.SmartOffice.Functions
                     try
                     {
                         customerDetail.Customer.ProcessException = null;
-                        subscriptions = await GetSubscriptionsAsync(partner, customerDetail.Customer.Id).ConfigureAwait(false);
+                        subscriptions = await GetSubscriptionsAsync(
+                            partner,
+                            customerDetail.Customer.Id).ConfigureAwait(false);
                     }
                     catch (ServiceClientException ex)
                     {
@@ -108,8 +110,10 @@ namespace Microsoft.Partner.SmartOffice.Functions
                 else
                 {
                     // Obtain a list of audit records for the specified customer that happened since the customer was last processed.
-                    auditRecords = await auditRecordRepository.GetAsync(r => r.CustomerId == customerDetail.Customer.Id
-                        && r.OperationDate >= customerDetail.Customer.LastProcessed).ConfigureAwait(false);
+                    auditRecords = await auditRecordRepository.GetAsync(
+                        r => r.CustomerId == customerDetail.Customer.Id
+                            && r.OperationDate >= customerDetail.Customer.LastProcessed,
+                        customerDetail.Customer.EnvironmentId).ConfigureAwait(false);
 
                     // Since the period is less than 30 we can utilize the audit logs to reconstruct any subscriptions that were created.
                     subscriptions = await BuildUsingAuditRecordsAsync(
@@ -121,7 +125,9 @@ namespace Microsoft.Partner.SmartOffice.Functions
 
                 if (subscriptions?.Count > 0)
                 {
-                    await subscriptionRepository.AddOrUpdateAsync(subscriptions).ConfigureAwait(false);
+                    await subscriptionRepository.AddOrUpdateAsync(
+                        subscriptions,
+                        customerDetail.Customer.Id).ConfigureAwait(false);
                 }
 
                 if (customerDetail.Customer.ProcessException == null)
@@ -224,15 +230,17 @@ namespace Microsoft.Partner.SmartOffice.Functions
 
                 auditRecords = await GetAuditRecordsAsyc(
                     partner,
-                    DateTime.UtcNow.AddDays(-days),
+                    DateTime.UtcNow.AddDays(-1),
                     DateTime.UtcNow).ConfigureAwait(false);
 
                 if (auditRecords.Count > 0)
                 {
-                    log.Info($"Importing {auditRecords.Count} audit records from the past {days} days.");
+                    log.Info($"Importing {auditRecords.Count} audit records available between now and the pervious day.");
 
                     // Add, or update, each audit record to the database.
-                    await auditRecordRepository.AddOrUpdateAsync(auditRecords).ConfigureAwait(false);
+                    await auditRecordRepository.AddOrUpdateAsync(
+                        auditRecords,
+                        environment.Id).ConfigureAwait(false);
                 }
 
                 if (days >= 30)
@@ -323,13 +331,17 @@ namespace Microsoft.Partner.SmartOffice.Functions
             if (scores?.Count > 0)
             {
                 log.Info($"Importing {scores.Count} Secure Score entries for {data.Customer.Id}");
-                await secureScoreRepository.AddOrUpdateAsync(scores).ConfigureAwait(false);
+                await secureScoreRepository.AddOrUpdateAsync(
+                    scores,
+                    data.Customer.Id).ConfigureAwait(false);
             }
 
             if (alerts?.Count > 0)
             {
                 log.Info($"Importing {alerts.Count} security alert entries for {data.Customer.Id}");
-                await securityAlertRepository.AddOrUpdateAsync(alerts).ConfigureAwait(false);
+                await securityAlertRepository.AddOrUpdateAsync(
+                    alerts,
+                    data.Customer.Id).ConfigureAwait(false);
             }
 
             log.Info($"Successfully process data for {data.Customer.Id}");
@@ -406,7 +418,9 @@ namespace Microsoft.Partner.SmartOffice.Functions
                 {
                     log.Info($"Writing {records.Count} utilization records to the repository.");
 
-                    await repository.AddOrUpdateAsync(records).ConfigureAwait(false);
+                    await repository.AddOrUpdateAsync(
+                        records,
+                        subscriptionDetail.Subscription.Id).ConfigureAwait(false);
                 }
             }
             finally
@@ -576,7 +590,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
                     .OrderBy(r => r.OperationDate);
 
                 resources = await repository
-                    .GetAsync(r => r.TenantId == customer.Id)
+                    .GetAsync(r => r.TenantId == customer.Id, customer.Id)
                     .ConfigureAwait(false);
 
                 foreach (AuditRecord record in filteredRecords)
