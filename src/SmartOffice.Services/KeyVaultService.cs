@@ -7,7 +7,9 @@
 namespace Microsoft.Partner.SmartOffice.Services
 {
     using System;
+    using System.Collections.Concurrent;
     using System.Net.Http;
+    using System.Threading;
     using System.Threading.Tasks;
     using Azure.KeyVault;
     using Azure.KeyVault.Models;
@@ -16,9 +18,19 @@ namespace Microsoft.Partner.SmartOffice.Services
     public class KeyVaultService : IVaultService, IDisposable
     {
         /// <summary>
+        /// Provides a collection of secret values.
+        /// </summary>
+        private static readonly ConcurrentDictionary<string, string> secrets = new ConcurrentDictionary<string, string>();
+
+        /// <summary>
         /// Provides the ability to perform HTTP operations. 
         /// </summary>
         private static readonly HttpClient httpClient = new HttpClient();
+
+        /// <summary>
+        /// Used to help ensure that data secrets are initialized in a thread safe manner.
+        /// </summary>
+        private static readonly SemaphoreSlim semaphore = new SemaphoreSlim(1, 1);
 
         /// <summary>
         /// Name of the MSI endpoint environment variable.
@@ -104,27 +116,36 @@ namespace Microsoft.Partner.SmartOffice.Services
 
             try
             {
-                try
+                await semaphore.WaitAsync().ConfigureAwait(false);
+
+                if (!secrets.ContainsKey(secretName))
                 {
-                    bundle = await KeyVault.GetSecretAsync(endpoint, secretName).ConfigureAwait(false);
-                }
-                catch (KeyVaultErrorException ex)
-                {
-                    if (ex.Body.Error.Code.Equals(NotFoundErrorCode, StringComparison.CurrentCultureIgnoreCase))
+                    try
                     {
-                        bundle = null;
+                        bundle = await KeyVault.GetSecretAsync(endpoint, secretName).ConfigureAwait(false);
                     }
-                    else
+                    catch (KeyVaultErrorException ex)
                     {
-                        throw;
+                        if (ex.Body.Error.Code.Equals(NotFoundErrorCode, StringComparison.CurrentCultureIgnoreCase))
+                        {
+                            bundle = null;
+                        }
+                        else
+                        {
+                            throw;
+                        }
                     }
+
+                    secrets[secretName] = bundle?.Value;
                 }
 
-                return bundle?.Value;
+                return secrets[secretName];
             }
             finally
             {
                 bundle = null;
+
+                semaphore.Release();
             }
         }
 

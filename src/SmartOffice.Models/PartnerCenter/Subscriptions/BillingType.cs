@@ -6,6 +6,10 @@
 
 namespace Microsoft.Partner.SmartOffice.Models.PartnerCenter.Subscriptions
 {
+    using Converters;
+    using Newtonsoft.Json; 
+
+    [JsonConverter(typeof(EnumJsonConverter))]
     public enum BillingType
     {
         None,
