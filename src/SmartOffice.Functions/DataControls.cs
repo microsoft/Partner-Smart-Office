@@ -8,6 +8,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
 {
     using System.Collections.Generic;
     using System.IO;
+    using System.Linq; 
     using System.Reflection;
     using System.Threading.Tasks;
     using Azure.WebJobs;
@@ -38,12 +39,10 @@ namespace Microsoft.Partner.SmartOffice.Functions
             TraceWriter log)
         {
             CsvReader reader = null;
-            IEnumerable<ControlListEntry> entries;
+            List<ControlListEntry> entries;
 
             try
             {
-                log.Info("Importing Office 365 Secure Score controls details...");
-
                 if (timerInfo.IsPastDue)
                 {
                     log.Info("Execution of the function is starting behind schedule.");
@@ -55,7 +54,9 @@ namespace Microsoft.Partner.SmartOffice.Functions
                     reader = new CsvReader(streamReader);
                     reader.Configuration.RegisterClassMap<ControlListEntryClassMap>();
 
-                    entries = reader.GetRecords<ControlListEntry>();
+                    entries = reader.GetRecords<ControlListEntry>().ToList();
+
+                    log.Info($"Importing {entries.Count} Office 365 Secure Score controls details...");
 
                     await repository.AddOrUpdateAsync(entries).ConfigureAwait(false);
                 }

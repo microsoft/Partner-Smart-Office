@@ -185,17 +185,14 @@ namespace Microsoft.Partner.SmartOffice.Data
 
                 foreach (IEnumerable<TEntity> batch in Batch(items, 500))
                 {
-                    if (batch.Any())
-                    {
-                        await InvokeRequestAsync(() =>
-                            Client.ExecuteStoredProcedureAsync<int>(
-                                UriFactory.CreateStoredProcedureUri(
-                                databaseId,
-                                collectionId,
-                                BulkImportStoredProcId),
-                            requestOptions,
-                            batch)).ConfigureAwait(false);
-                    }
+                    await InvokeRequestAsync(() =>
+                        Client.ExecuteStoredProcedureAsync<int>(
+                            UriFactory.CreateStoredProcedureUri(
+                            databaseId,
+                            collectionId,
+                            BulkImportStoredProcId),
+                        requestOptions,
+                        batch)).ConfigureAwait(false);
                 }
 
                 if (resetThroughput == true)
