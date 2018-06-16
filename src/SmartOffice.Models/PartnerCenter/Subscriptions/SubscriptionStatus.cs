@@ -6,9 +6,13 @@
 
 namespace Microsoft.Partner.SmartOffice.Models.PartnerCenter.Subscriptions
 {
+    using Converters;
+    using Newtonsoft.Json;
+
     /// <summary>
     /// Lists the available states for a subscription.
     /// </summary>
+    [JsonConverter(typeof(EnumJsonConverter))]
     public enum SubscriptionStatus
     {
         /// <summary>

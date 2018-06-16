@@ -2,24 +2,12 @@
 
 ![Build status](https://usocp.visualstudio.com/_apis/public/build/definitions/24f32206-cfd5-40e6-940d-0b99368492b0/11/badge)
 
-Partner Smart Office is an opensource project that demonstrates how a partner can aggregate security information into a single repository for all customers. Secure Score is a numerical summary of a given customer’s security posture within Office 365 based on system configurations, user behavior, and other security-related measurements. It represents the extent to which the customer has adopted security controls available in Office 365, which can help offset the risk of being breached. No online service is completely immune from security breaches; Secure Score should not be interpreted as a guarantee against security breach in any manner.
+**Security is a primary concern for Microsoft, and its partners and customers.**
 
-## Architecture
+Office 365 customers are provided with many tools to help improve their security practices, however many do not take advantage of these tools. To assist their customers, Microsoft partners looking to manage security threats need a way to streamline and aggregate security information across their entire customer base. To facilitate partners aggregating this information for customers either with subscriptions obtained through an Enterprise Agreement or the Cloud Solution Provider program, an opensource solution called Partner Smart Office has been introduced.
 
-This solution utilizes an Azure Function App to request and store Secure Score information into an instance of Azure Cosmos DB. That database can be leveraged to construct detailed reports and provide insights into your customer's security posture with respect to Office 365. After deploying this project you will have an Azure Function with the following functions defined
+Partner Smart Office imports and aggregates information obtained using the Intelligent Security Graph and Office 366 Secure Score, enabling partners to take advantage of advanced analytics. These analytics can link threat intelligence and security data to provide insights that can strengthen a customer’s organization security. Partners can now also view security data across all customers at once.  
 
-| Function Name      | Trigger                   | Description |
-| ------------------ | ------------------------- | ----------- |
-| ImportDataControls | Timer (once a day)        | Imports the Secure Score control list entries. These entries define the various actions that can and should be taken, to improve a customer's security posture. |
-| ProcessCustomer    | Customers Storage Queue   | Adds or update the customer information and any CSP subscription that the customer has through the partner to the appropriate collect in the instance of Azure Cosmos DB. |
-| ProcessPartner   | Partners Storage Queue      | Adds or updates audit records and customers that are returned from the the [Partner Center API](https://docs.microsoft.com/en-us/partner-center/develop/scenarios) to the appropriate collection in the instance of Azure Cosmos DB. Customers returned from the API are also written to the Customers storage queue, so the respective security information will be imported. |
-| ProcessSecurity    | Security Storage Queue    | Imports the security information for the defined customer. Currently this function will import [Office 365 Secure Score](https://support.office.com/article/introducing-the-office-365-secure-score-c9e7160f-2c34-4bd0-a548-5ddcc862eaef) information and details from the [Microsoft Graph Security API](https://www.microsoft.com/security/intelligence-security-api) |
-| ProcessUtilization | Utilization Storage Queue | Import Azure utilization records for Azure subscriptions when the process Azure usage flag is enable for the environment. |
-| PullEnviornments   | Timer (once a day)        | Pulls environments from the Enviornments collection, found in the instance of Azure Cosmos DB, and writes each environment to the appropriate storage queue. |
+Secure Score is a numerical summary of a given customer’s security posture within Office 365 based on system configurations, user behavior, and other security-related measurements. It represents the extent to which the customer has adopted security controls available in Office 365, which can help offset the risk of being breached. No online service is completely immune from security breaches; Secure Score should not be interpreted as a guarantee against security breach in any manner.
 
-## Deployment
-
-Execute the [Create-AzureADApplication.ps1](https://raw.githubusercontent.com/Microsoft/Partner-Smart-Office/master/scripts/Create-AzureADApplication.ps1) script to create the required Azure AD application. The output from this script will provide you with the values fro the applicationId, applicationSecret, and tenantId parameters. Then click the _Deploy to Azure_ button found below.
-
-[![Deploy to Azure](https://azuredeploy.net/deploybutton.png)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FMicrosoft%2FPartner-Smart-Office%2Fmaster%2Fazuredeploy.json)
-[![Visualize](http://armviz.io/visualizebutton.png)](http://armviz.io/#/?load=https%3A%2F%2Fraw.githubusercontent.com%2FMicrosoft%2FPartner-Smart-Office%2Fmaster%2Fazuredeploy.json)
+If you are interested in gaining additional security insights for your customers, that allow you to craft targeted offers the we would like to encourage you to deploy Partner Smart Office. To learn more about deploying this solution visit the [wiki](https://github.com/Microsoft/Partner-Smart-Office/wiki).
