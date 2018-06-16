@@ -91,7 +91,7 @@ namespace Microsoft.Partner.SmartOffice.Services
             this.keyVaultClient = keyVaultClient;
         }
 
-        private IKeyVaultClient KeyVault => keyVaultClient ?? (keyVaultClient = new KeyVaultClient(GetKeyVaultAccessTokenAsync));
+        private IKeyVaultClient KeyVault => keyVaultClient ?? (keyVaultClient = new KeyVaultClient(GetKeyVaultAccessTokenAsync, httpClient));
 
         /// <summary>
         /// Deletes the specified secret from the configured key vault.
