@@ -10,6 +10,7 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
     using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Globalization;
+    using System.Net.Http;
     using System.Threading;
     using System.Threading.Tasks;
     using Azure.WebJobs;
@@ -85,6 +86,22 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
         /// Collection of initialized data repositories.
         /// </summary>
         private static readonly ConcurrentDictionary<string, object> Repos = new ConcurrentDictionary<string, object>();
+
+        /// <summary>
+        /// Client used to perform HTTP operations.
+        /// </summary>
+        private static readonly HttpClient httpClient = new HttpClient();
+
+        /// <summary>
+        /// Client used to perform partner HTTP operations.
+        /// </summary>
+        private static readonly HttpClient partnerHttpClient = new HttpClient(
+            new PartnerServiceMessageHandler
+            {
+
+                InnerHandler = new HttpClientHandler()
+
+            });
 
         /// <summary>
         /// Used to help ensure that data repositories are initialized in a thread safe manner.
@@ -177,7 +194,7 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
                         await vaultService.GetSecretAsync(input.SecretName).ConfigureAwait(false),
                         input.Resource,
                         input.ApplicationTenantId),
-                    new PartnerServiceMessageHandler());
+                    partnerHttpClient);
             }
             finally
             {
@@ -201,7 +218,8 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
                         input.ApplicationId,
                         await vaultService.GetSecretAsync(input.SecretName).ConfigureAwait(false),
                         input.Resource,
-                        input.CustomerId));
+                        input.CustomerId),
+                    httpClient);
 
                 secureScore = await graphService.GetSecureScoreAsync(int.Parse(input.Period, CultureInfo.CurrentCulture), cancellationToken).ConfigureAwait(false);
 
@@ -234,7 +252,8 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
                         input.ApplicationId,
                         await vaultService.GetSecretAsync(input.SecretName).ConfigureAwait(false),
                         input.Resource,
-                        input.CustomerId));
+                        input.CustomerId),
+                    httpClient);
 
                 alerts = await graphService.GetAlertsAsync(cancellationToken).ConfigureAwait(false);
 

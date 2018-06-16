@@ -11,6 +11,9 @@ namespace Microsoft.Partner.SmartOffice.Models.Converters
     using System.Text;
     using Newtonsoft.Json;
 
+    /// <summary>
+    /// Formats the Enum values to the format that is utilized by Partner Center.
+    /// </summary>
     public class EnumJsonConverter : JsonConverter
     {
         /// <summary>
@@ -28,6 +31,14 @@ namespace Microsoft.Partner.SmartOffice.Models.Converters
             return false;
         }
 
+        /// <summary>
+        /// Reads the JSON representation of the object.
+        /// </summary>
+        /// <param name="reader">The reader object to be read.</param>
+        /// <param name="objectType">Type of the object.</param>
+        /// <param name="existingValue">The existing value of object being read.</param>
+        /// <param name="serializer">The calling serializer.</param>
+        /// <returns>The object that represents the serialized JSON.</returns>
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
             if (reader.TokenType == JsonToken.String)
@@ -42,6 +53,12 @@ namespace Microsoft.Partner.SmartOffice.Models.Converters
             throw new NotImplementedException();
         }
 
+        /// <summary>
+        /// Writes the JSON representation of the object.
+        /// </summary>
+        /// <param name="writer">The object to be used when writing.</param>
+        /// <param name="value">The object to be written to JSON.</param>
+        /// <param name="serializer">The calling serializer.</param>
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
             writer.WriteValue(value.ToString());

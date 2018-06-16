@@ -15,11 +15,23 @@ namespace Microsoft.Partner.SmartOffice.Services
     public class ServiceClientException : Exception
     {
         /// <summary>
+        /// HTTP status code associated with the exception.
+        /// </summary>
+        [NonSerialized]
+        private readonly HttpStatusCode httpStatusCode;
+
+        /// <summary>
+        /// Identifier of the customer associated with the exception.
+        /// </summary>
+        [NonSerialized]
+        private readonly string customerId;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="ServiceClientException" /> class.
         /// </summary>
         public ServiceClientException()
         {
-            HttpStatusCode = HttpStatusCode.InternalServerError;
+            httpStatusCode = HttpStatusCode.InternalServerError;
         }
 
         /// <summary>
@@ -28,7 +40,7 @@ namespace Microsoft.Partner.SmartOffice.Services
         /// <param name="message">The message that describes the error.</param>
         public ServiceClientException(string message) : base(message)
         {
-            HttpStatusCode = HttpStatusCode.BadRequest;
+            httpStatusCode = HttpStatusCode.BadRequest;
         }
 
         /// <summary>
@@ -38,7 +50,7 @@ namespace Microsoft.Partner.SmartOffice.Services
         /// <param name="innerException">The exception that is the cause of the current exception, or a null reference (Nothing in Visual Basic) if no inner exception is specified.</param>
         public ServiceClientException(string message, Exception innerException) : base(message, innerException)
         {
-            HttpStatusCode = HttpStatusCode.BadRequest;
+            httpStatusCode = HttpStatusCode.BadRequest;
         }
 
         /// <summary>
@@ -48,7 +60,7 @@ namespace Microsoft.Partner.SmartOffice.Services
         /// <param name="httpStatusCode">The HTTP status code that was encountered with the error.</param>
         public ServiceClientException(string message, HttpStatusCode httpStatusCode) : base(message)
         {
-            HttpStatusCode = httpStatusCode;
+            this.httpStatusCode = httpStatusCode;
         }
 
         /// <summary>
@@ -59,8 +71,8 @@ namespace Microsoft.Partner.SmartOffice.Services
         /// <param name="httpStatusCode">The HTTP status code that was encountered with the error.</param>
         public ServiceClientException(string message, string customerId, HttpStatusCode httpStatusCode) : base(message)
         {
-            CustomerId = customerId;
-            HttpStatusCode = httpStatusCode;
+            this.customerId = customerId;
+            this.httpStatusCode = httpStatusCode;
         }
 
         /// <summary>
@@ -70,19 +82,9 @@ namespace Microsoft.Partner.SmartOffice.Services
         /// <param name="context">The context that contains contextual information about the source or destination.</param>
         protected ServiceClientException(SerializationInfo serializationInfo, StreamingContext streamingContext) : base(serializationInfo, streamingContext)
         {
-            CustomerId = serializationInfo.GetString("CustomerId");
-            HttpStatusCode = (HttpStatusCode)serializationInfo.GetValue("HttpStatusCode", typeof(HttpStatusCode));
+            customerId = serializationInfo.GetString("customerId");
+            httpStatusCode = (HttpStatusCode)serializationInfo.GetValue("httpStatusCode", typeof(HttpStatusCode));
         }
-
-        /// <summary>
-        /// Gets the identifier of the customer for the exception.
-        /// </summary>
-        public string CustomerId { get; private set; }
-
-        /// <summary>
-        /// Gets the HTTP status code for the exception.
-        /// </summary>
-        public HttpStatusCode HttpStatusCode { get; private set; }
 
         /// <summary>
         /// When overridden in a derived class, sets the serialization information with information about the exception.
@@ -101,8 +103,8 @@ namespace Microsoft.Partner.SmartOffice.Services
                 throw new ArgumentNullException(nameof(info));
             }
 
-            info.AddValue("CustomerId", CustomerId);
-            info.AddValue("HttpStatusCode", (int)HttpStatusCode);
+            info.AddValue("CustomerId", customerId);
+            info.AddValue("HttpStatusCode", (int)httpStatusCode);
 
             base.GetObjectData(info, context);
         }
