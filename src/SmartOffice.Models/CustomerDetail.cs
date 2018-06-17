@@ -47,5 +47,11 @@ namespace Microsoft.Partner.SmartOffice.Models
         /// </summary>
         [JsonProperty("processException")]
         public Exception ProcessException { get; set; }
+
+        /// <summary>
+        /// Gets or sets a flag indicating whether or not the customer was removed from Partner Center.
+        /// </summary>
+        [JsonProperty("removedFromPartnerCenter")]
+        public bool RemovedFromPartnerCenter { get; set; }
     }
 }

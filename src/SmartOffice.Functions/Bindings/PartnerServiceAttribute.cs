@@ -32,12 +32,6 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
         public string Endpoint { get; set; }
 
         /// <summary>
-        /// Gets or sets the Azure Key Vault endpoint address.
-        /// </summary>
-        [AppSetting(Default = "KeyVaultEndpoint")]
-        public string KeyVaultEndpoint { get; set; }
-
-        /// <summary>
         /// Gets or sets the identifier of the target resource that is the recipient of the token being requested.
         /// </summary>
         public string Resource { get; set; }

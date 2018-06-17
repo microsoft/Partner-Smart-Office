@@ -109,6 +109,11 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
         private static readonly SemaphoreSlim Semaphore = new SemaphoreSlim(1, 1);
 
         /// <summary>
+        /// Provides the ability to acecss configuration settings.
+        /// </summary>
+        private INameResolver nameResolver;
+
+        /// <summary>
         /// Provides the ability to capture log information.
         /// </summary>
         private ILogger log;
@@ -118,61 +123,45 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
             if (input.DataType == typeof(Alert))
             {
                 return await GetRepoAsync<Alert>(
-                    SecurityAlertsCollectionId,
-                    input.CosmosDbEndpoint,
-                    input.KeyVaultEndpoint).ConfigureAwait(false);
+                    SecurityAlertsCollectionId).ConfigureAwait(false);
             }
             else if (input.DataType == typeof(AuditRecord))
             {
                 return await GetRepoAsync<AuditRecord>(
                     AuditRecordsCollectionId,
-                    input.CosmosDbEndpoint,
-                    input.KeyVaultEndpoint,
                     "/PartnerId").ConfigureAwait(false);
             }
             else if (input.DataType == typeof(ControlListEntry))
             {
                 return await GetRepoAsync<ControlListEntry>(
-                    SecureScoreControlsCollectionId,
-                    input.CosmosDbEndpoint,
-                    input.KeyVaultEndpoint).ConfigureAwait(false);
+                    SecureScoreControlsCollectionId).ConfigureAwait(false);
             }
             else if (input.DataType == typeof(CustomerDetail))
             {
                 return await GetRepoAsync<CustomerDetail>(
-                    CustomersCollectionId,
-                    input.CosmosDbEndpoint,
-                    input.KeyVaultEndpoint).ConfigureAwait(false);
+                    CustomersCollectionId).ConfigureAwait(false);
             }
             else if (input.DataType == typeof(EnvironmentDetail))
             {
                 return await GetRepoAsync<EnvironmentDetail>(
-                    EnvironmentsCollectionId,
-                    input.CosmosDbEndpoint,
-                    input.KeyVaultEndpoint).ConfigureAwait(false);
+                    EnvironmentsCollectionId).ConfigureAwait(false);
             }
             else if (input.DataType == typeof(SecureScore))
             {
                 return await GetRepoAsync<SecureScore>(
                     SecureScoreCollectionId,
-                    input.CosmosDbEndpoint,
-                    input.KeyVaultEndpoint,
                     "/tenantId").ConfigureAwait(false);
             }
             else if (input.DataType == typeof(SubscriptionDetail))
             {
                 return await GetRepoAsync<SubscriptionDetail>(
                     SubscriptionsCollectionId,
-                    input.CosmosDbEndpoint,
-                    input.KeyVaultEndpoint,
                     "/tenantId").ConfigureAwait(false);
             }
             else if (input.DataType == typeof(UtilizationDetail))
             {
                 return await GetRepoAsync<UtilizationDetail>(
                     UtilizationCollectId,
-                    input.CosmosDbEndpoint,
-                    input.KeyVaultEndpoint,
                     "/subscriptionId").ConfigureAwait(false);
             }
 
@@ -182,10 +171,12 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
         public async Task<PartnerServiceClient> ConvertAsync(PartnerServiceAttribute input, CancellationToken cancellationToken)
         {
             IVaultService vaultService;
+            string keyVaultEndpoint;
 
             try
             {
-                vaultService = new KeyVaultService(input.KeyVaultEndpoint);
+                keyVaultEndpoint = nameResolver.Resolve("KeyVaultEndpoint");
+                vaultService = new KeyVaultService(keyVaultEndpoint);
 
                 return new PartnerServiceClient(
                     new Uri(input.Endpoint),
@@ -207,10 +198,12 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
             GraphService graphService;
             IVaultService vaultService;
             List<SecureScore> secureScore;
+            string keyVaultEndpoint;
 
             try
             {
-                vaultService = new KeyVaultService(input.KeyVaultEndpoint);
+                keyVaultEndpoint = nameResolver.Resolve("KeyVaultEndpoint");
+                vaultService = new KeyVaultService(keyVaultEndpoint);
 
                 graphService = new GraphService(
                     new Uri(input.Resource),
@@ -242,10 +235,12 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
             GraphService graphService;
             IVaultService vaultService;
             List<Alert> alerts;
+            string keyVaultEndpoint; 
 
             try
             {
-                vaultService = new KeyVaultService(input.KeyVaultEndpoint);
+                keyVaultEndpoint = nameResolver.Resolve("KeyVaultEndpoint");
+                vaultService = new KeyVaultService(keyVaultEndpoint);
 
                 graphService = new GraphService(new Uri(input.Resource),
                     new ServiceCredentials(
@@ -273,9 +268,9 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
 
         public async Task<StorageService> ConvertAsync(StorageServiceAttribute input, CancellationToken cancellationToken)
         {
-            await StorageService.Instance.InitializeAsync(
-                input.KeyVaultEndpoint,
-                input.ConnectionStringName).ConfigureAwait(false);
+            string keyVaultEndpoint = nameResolver.Resolve("KeyVaultEndpoint");
+
+            await StorageService.Instance.InitializeAsync(keyVaultEndpoint).ConfigureAwait(false);
 
             return StorageService.Instance;
         }
@@ -287,6 +282,7 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
         public void Initialize(ExtensionConfigContext context)
         {
             log = context.Config.LoggerFactory.CreateLogger(LogCategories.CreateFunctionCategory("SmartOffice"));
+            nameResolver = context.Config.NameResolver;
 
             context.AddBindingRule<DataRepositoryAttribute>().BindToInput<object>(this);
             context.AddBindingRule<PartnerServiceAttribute>().BindToInput<PartnerServiceClient>(this);
@@ -295,15 +291,15 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
             context.AddBindingRule<StorageServiceAttribute>().BindToInput<StorageService>(this);
         }
 
-        private static async Task<IDocumentRepository<TEntity>> GetRepoAsync<TEntity>(
+        private async Task<IDocumentRepository<TEntity>> GetRepoAsync<TEntity>(
             string collectionId,
-            string cosmosDbEndpoint,
-            string keyVaultEndpoint,
             string partitionKey = null) where TEntity : class
         {
             DocumentRepository<TEntity> repo;
-            KeyVaultService keyVault;
+            IVaultService keyVault;
             string authKey;
+            string cosmosDbEndpoint;
+            string keyVaultEndpoint; 
 
             try
             {
@@ -311,6 +307,9 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
 
                 if (!Repos.ContainsKey(collectionId))
                 {
+                    cosmosDbEndpoint = nameResolver.Resolve("CosmosDbEndpoint");
+                    keyVaultEndpoint = nameResolver.Resolve("KeyVaultEndpoint");
+
                     keyVault = new KeyVaultService(keyVaultEndpoint);
                     authKey = await keyVault.GetSecretAsync(CosmsosDbAccessKey).ConfigureAwait(false);
 

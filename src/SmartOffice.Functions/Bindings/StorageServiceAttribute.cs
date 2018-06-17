@@ -13,15 +13,5 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
     [Binding]
     public sealed class StorageServiceAttribute : Attribute
     {
-        /// <summary>
-        /// Gets or sets the name of the storage connection string.
-        /// </summary>
-        public string ConnectionStringName { get; set; }
-
-        /// <summary>
-        /// Gets or sets the Azure Key Vault endpoint address.
-        /// </summary>
-        [AppSetting(Default = "KeyVaultEndpoint")]
-        public string KeyVaultEndpoint { get; set; }
     }
 }

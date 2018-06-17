@@ -15,15 +15,14 @@ namespace Microsoft.Partner.SmartOffice.Services
     public class StorageService : IStorageService
     {
         /// <summary>
-        /// Provides the ability to interact with Azure Storage.
+        /// Name of the storage account connection string secret.
         /// </summary>
-        private CloudStorageAccount storageAccount;
+        private const string StorageAccountConnectionStringName = "StorageConnectionString";
 
         /// <summary>
-        /// Provides the ability to perform cryptographic key operations and vault operations 
-        /// against the Key Vault service.
+        /// Provides the ability to interact with Azure Storage.
         /// </summary>
-        private IVaultService vaultSerivce;
+        private static CloudStorageAccount storageAccount;
 
         /// <summary>
         /// Singleton instance of the <see cref="StorageService" /> class.
@@ -39,17 +38,28 @@ namespace Microsoft.Partner.SmartOffice.Services
         /// Initializes an instance of the <see cref="StorageService" /> class.
         /// </summary>
         /// <param name="keyVaultEndpoint">The Azure Key Vault endpoint address.</param>
-        /// <param name="connectionString">Name of the secret that contains the Azure Storage connection string.</param>
         /// <returns>An instance of the <see cref="Task" /> class that represents the asynchronous operation.</returns>
-        public async Task InitializeAsync(string keyVaultEndpoint, string connectionString)
+        public async Task InitializeAsync(string keyVaultEndpoint)
         {
-            vaultSerivce = new KeyVaultService(keyVaultEndpoint);
+            IVaultService vaultSerivce;
 
-            if (!CloudStorageAccount.TryParse(
-                await vaultSerivce.GetSecretAsync(connectionString).ConfigureAwait(false),
-                out storageAccount))
+            try
             {
-                throw new Exception("Unable to intialize the storage account. Please check the connection string setting.");
+                vaultSerivce = new KeyVaultService(keyVaultEndpoint);
+
+                if (storageAccount == null)
+                {
+                    if (!CloudStorageAccount.TryParse(
+                        await vaultSerivce.GetSecretAsync(StorageAccountConnectionStringName).ConfigureAwait(false),
+                        out storageAccount))
+                    {
+                        throw new Exception("Unable to intialize the storage account. Please check the connection string setting.");
+                    }
+                }
+            }
+            finally
+            {
+                vaultSerivce = null;
             }
         }
 
