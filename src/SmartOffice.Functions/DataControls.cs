@@ -33,9 +33,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
         public static async Task ImportControlsAsync(
             [TimerTrigger("0 0 10 * * *")]TimerInfo timerInfo,
             [DataRepository(
-                CosmosDbEndpoint = "CosmosDbEndpoint",
-                DataType = typeof(ControlListEntry),
-                KeyVaultEndpoint = "KeyVaultEndpoint")]IDocumentRepository<ControlListEntry> repository,
+                DataType = typeof(ControlListEntry))]IDocumentRepository<ControlListEntry> repository,
             TraceWriter log)
         {
             CsvReader reader = null;

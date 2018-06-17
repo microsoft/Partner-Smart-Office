@@ -27,12 +27,6 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
         public string CustomerId { get; set; }
 
         /// <summary>
-        /// Gets or sets the Azure Key Vault endpoint address.
-        /// </summary>
-        [AppSetting(Default = "KeyVaultEndpoint")]
-        public string KeyVaultEndpoint { get; set; }
-
-        /// <summary>
         /// Gets or sets a value indicating number of days of score results to retrieve starting from current date.
         /// </summary>
         [AutoResolve]

@@ -47,28 +47,16 @@ namespace Microsoft.Partner.SmartOffice.Functions
         [FunctionName("ProcessCustomer")]
         public static async Task ProcessCustomerAsync(
             [QueueTrigger(OperationConstants.CustomersQueueName, Connection = "StorageConnectionString")]ProcessCustomerDetail customerDetail,
-            [DataRepository(
-                CosmosDbEndpoint = "CosmosDbEndpoint",
-                DataType = typeof(AuditRecord),
-                KeyVaultEndpoint = "KeyVaultEndpoint")]IDocumentRepository<AuditRecord> auditRecordRepository,
-            [DataRepository(
-                CosmosDbEndpoint = "CosmosDbEndpoint",
-                DataType = typeof(CustomerDetail),
-                KeyVaultEndpoint = "KeyVaultEndpoint")]IDocumentRepository<CustomerDetail> customerRepository,
-            [DataRepository(
-                CosmosDbEndpoint = "CosmosDbEndpoint",
-                DataType = typeof(SubscriptionDetail),
-                KeyVaultEndpoint = "KeyVaultEndpoint")]IDocumentRepository<SubscriptionDetail> subscriptionRepository,
+            [DataRepository(DataType = typeof(AuditRecord))]IDocumentRepository<AuditRecord> auditRecordRepository,
+            [DataRepository(DataType = typeof(CustomerDetail))]IDocumentRepository<CustomerDetail> customerRepository,
+            [DataRepository(DataType = typeof(SubscriptionDetail))]IDocumentRepository<SubscriptionDetail> subscriptionRepository,
             [PartnerService(
                 ApplicationId = "{PartnerCenterEndpoint.ApplicationId}",
                 Endpoint = "{PartnerCenterEndpoint.ServiceAddress}",
                 SecretName = "{PartnerCenterEndpoint.ApplicationSecretId}",
                 ApplicationTenantId = "{PartnerCenterEndpoint.TenantId}",
-                KeyVaultEndpoint = "KeyVaultEndpoint",
                 Resource = "https://graph.windows.net")]IPartnerServiceClient partner,
-            [StorageService(
-                ConnectionStringName = "StorageConnectionString",
-                KeyVaultEndpoint = "KeyVaultEndpoint")]IStorageService storage,
+            [StorageService]IStorageService storage,
             TraceWriter log)
         {
             IEnumerable<AuditRecord> auditRecords;
@@ -78,6 +66,12 @@ namespace Microsoft.Partner.SmartOffice.Functions
             try
             {
                 log.Info($"Attempting to process information for {customerDetail.Customer.Id}.");
+
+                if (customerDetail.Customer.RemovedFromPartnerCenter)
+                {
+                    // The customer no longer has relationship with the partner. So, it should not be processed.
+                    return;
+                }
 
                 // Configure the value indicating the number of days of score results to retrieve starting from current date.
                 period = (customerDetail.Customer.LastProcessed == null) ? 30 : (DateTimeOffset.UtcNow - customerDetail.Customer.LastProcessed).Value.Days;
@@ -182,28 +176,17 @@ namespace Microsoft.Partner.SmartOffice.Functions
         [FunctionName("ProcessPartner")]
         public static async Task ProcessPartnerAsync(
             [QueueTrigger(OperationConstants.PartnersQueueName, Connection = "StorageConnectionString")]EnvironmentDetail environment,
+            [DataRepository(DataType = typeof(AuditRecord))]IDocumentRepository<AuditRecord> auditRecordRepository,
+            [DataRepository(DataType = typeof(CustomerDetail))]IDocumentRepository<CustomerDetail> customerRepository,
             [DataRepository(
-                CosmosDbEndpoint = "CosmosDbEndpoint",
-                DataType = typeof(AuditRecord),
-                KeyVaultEndpoint = "KeyVaultEndpoint")]IDocumentRepository<AuditRecord> auditRecordRepository,
-            [DataRepository(
-                CosmosDbEndpoint = "CosmosDbEndpoint",
-                DataType = typeof(CustomerDetail),
-                KeyVaultEndpoint = "KeyVaultEndpoint")]IDocumentRepository<CustomerDetail> customerRepository,
-            [DataRepository(
-                CosmosDbEndpoint = "CosmosDbEndpoint",
-                DataType = typeof(EnvironmentDetail),
-                KeyVaultEndpoint = "KeyVaultEndpoint")]IDocumentRepository<EnvironmentDetail> environmentRepository,
+                DataType = typeof(EnvironmentDetail))]IDocumentRepository<EnvironmentDetail> environmentRepository,
             [PartnerService(
                 ApplicationId = "{PartnerCenterEndpoint.ApplicationId}",
                 Endpoint = "{PartnerCenterEndpoint.ServiceAddress}",
                 SecretName = "{PartnerCenterEndpoint.ApplicationSecretId}",
                 ApplicationTenantId = "{PartnerCenterEndpoint.TenantId}",
-                KeyVaultEndpoint = "KeyVaultEndpoint",
                 Resource = "https://graph.windows.net")]IPartnerServiceClient partner,
-            [StorageService(
-                ConnectionStringName = "StorageConnectionString",
-                KeyVaultEndpoint = "KeyVaultEndpoint")]IStorageService storage,
+            [StorageService]IStorageService storage,
             TraceWriter log)
         {
             List<AuditRecord> auditRecords;
@@ -243,20 +226,25 @@ namespace Microsoft.Partner.SmartOffice.Functions
                         environment.Id).ConfigureAwait(false);
                 }
 
-                if (days >= 30)
-                {
-                    customers = await GetCustomersAsync(partner, environment).ConfigureAwait(false);
-                }
-                else
-                {
-                    customers = await BuildUsingAuditRecordsAsync(
-                        environment,
-                        auditRecords,
-                        customerRepository).ConfigureAwait(false);
-                }
+                /*
+                 * We need to get a list of all customeres each time because currently there is not a 
+                 * way to detect when a customer with existing Azure AD tenant accepts the reseller relationship.
+                 */
+                customers = await GetCustomersAsync(partner, environment).ConfigureAwait(false);
 
                 // Add, or update, each customer to the database.
                 await customerRepository.AddOrUpdateAsync(customers).ConfigureAwait(false);
+
+                /*
+                 * Next update the customers using the audit records. This is required because it allows us to 
+                 * detect when the partner has removed the reseller relationship. Without this step the customer, 
+                 * that was removed would be processed unsccuessfully each execution because the partner no longer
+                 * has the necessary privileges to peform the necessary API calls.
+                 */
+                await UpdateUsingAuditRecordsAsync(
+                    environment,
+                    auditRecords,
+                    customerRepository).ConfigureAwait(false);
 
                 foreach (CustomerDetail customer in customers)
                 {
@@ -298,24 +286,17 @@ namespace Microsoft.Partner.SmartOffice.Functions
         public static async Task ProcessSecurityAsync(
             [QueueTrigger(OperationConstants.SecurityQueueName, Connection = "StorageConnectionString")]SecurityDetail data,
             [DataRepository(
-                CosmosDbEndpoint = "CosmosDbEndpoint",
-                DataType = typeof(Alert),
-                KeyVaultEndpoint = "KeyVaultEndpoint")]IDocumentRepository<Alert> securityAlertRepository,
-            [DataRepository(
-                CosmosDbEndpoint = "CosmosDbEndpoint",
-                DataType = typeof(SecureScore),
-                KeyVaultEndpoint = "KeyVaultEndpoint")]IDocumentRepository<SecureScore> secureScoreRepository,
+                DataType = typeof(Alert))]IDocumentRepository<Alert> securityAlertRepository,
+            [DataRepository(DataType = typeof(SecureScore))]IDocumentRepository<SecureScore> secureScoreRepository,
             [SecureScore(
                 ApplicationId = "{AppEndpoint.ApplicationId}",
                 CustomerId = "{Customer.Id}",
-                KeyVaultEndpoint = "KeyVaultEndpoint",
                 Period = "{Period}",
                 Resource = "{AppEndpoint.ServiceAddress}",
                 SecretName = "{AppEndpoint.ApplicationSecretId}")]List<SecureScore> scores,
             [SecurityAlerts(
                 ApplicationId = "{AppEndpoint.ApplicationId}",
                 CustomerId = "{Customer.Id}",
-                KeyVaultEndpoint = "KeyVaultEndpoint",
                 Resource = "{AppEndpoint.ServiceAddress}",
                 SecretName = "{AppEndpoint.ApplicationSecretId}")]List<Alert> alerts,
             TraceWriter log)
@@ -351,15 +332,12 @@ namespace Microsoft.Partner.SmartOffice.Functions
         public static async Task ProcessUsageAsync(
             [QueueTrigger(OperationConstants.UtilizationQueueName, Connection = "StorageConnectionString")]ProcessSubscriptionDetail subscriptionDetail,
             [DataRepository(
-                CosmosDbEndpoint = "CosmosDbEndpoint",
-                DataType = typeof(UtilizationDetail),
-                KeyVaultEndpoint = "KeyVaultEndpoint")]IDocumentRepository<UtilizationDetail> repository,
+                DataType = typeof(UtilizationDetail))]IDocumentRepository<UtilizationDetail> repository,
             [PartnerService(
                 ApplicationId = "{PartnerCenterEndpoint.ApplicationId}",
                 Endpoint = "{PartnerCenterEndpoint.ServiceAddress}",
                 SecretName = "{PartnerCenterEndpoint.ApplicationSecretId}",
                 ApplicationTenantId = "{PartnerCenterEndpoint.TenantId}",
-                KeyVaultEndpoint = "KeyVaultEndpoint",
                 Resource = "https://graph.windows.net")]IPartnerServiceClient client,
             TraceWriter log
             )
@@ -442,12 +420,8 @@ namespace Microsoft.Partner.SmartOffice.Functions
         public static async Task PullEnvironmentsAsync(
             [TimerTrigger("0 0 9 * * *")]TimerInfo timerInfo,
             [DataRepository(
-                CosmosDbEndpoint = "CosmosDbEndpoint",
-                DataType = typeof(EnvironmentDetail),
-                KeyVaultEndpoint = "KeyVaultEndpoint")]IDocumentRepository<EnvironmentDetail> repository,
-            [StorageService(
-                ConnectionStringName = "StorageConnectionString",
-                KeyVaultEndpoint = "KeyVaultEndpoint")]IStorageService storage,
+                DataType = typeof(EnvironmentDetail))]IDocumentRepository<EnvironmentDetail> repository,
+            [StorageService]IStorageService storage,
             TraceWriter log)
         {
             IEnumerable<EnvironmentDetail> environments;
@@ -513,59 +487,6 @@ namespace Microsoft.Partner.SmartOffice.Functions
             finally
             {
                 environments = null;
-            }
-        }
-
-        private static async Task<List<CustomerDetail>> BuildUsingAuditRecordsAsync(
-            EnvironmentDetail environment,
-            IEnumerable<AuditRecord> auditRecords,
-            IDocumentRepository<CustomerDetail> repository)
-        {
-            IEnumerable<AuditRecord> filteredRecords;
-            List<CustomerDetail> resources;
-            CustomerDetail control;
-            Customer resource;
-
-            try
-            {
-                // Extract a list of audit records that are scope to the defined resource type and were successful.
-                filteredRecords = auditRecords
-                    .Where(r => r.ResourceType == ResourceType.Customer && r.OperationStatus == OperationStatus.Succeeded)
-                    .OrderBy(r => r.OperationDate);
-
-                resources = await repository.GetAsync().ConfigureAwait(false);
-
-                foreach (AuditRecord record in filteredRecords)
-                {
-                    if (record.OperationType == OperationType.AddCustomer)
-                    {
-                        resource = JsonConvert.DeserializeObject<Customer>(record.ResourceNewValue);
-                        control = resources.SingleOrDefault(r => r.Id.Equals(resource.Id, StringComparison.InvariantCultureIgnoreCase));
-
-                        if (control != null)
-                        {
-                            resources.Remove(control);
-                        }
-
-                        resources.Add(
-                            ResourceConverter.Convert<Customer, CustomerDetail>(
-                                resource,
-                                new Dictionary<string, string> { { "EnvironmentId", environment.Id } }));
-                    }
-                    else if (record.OperationType == OperationType.UpdateCustomerBillingProfile)
-                    {
-                        control = resources.Single(c => c.Id == record.CustomerId);
-                        control.BillingProfile = JsonConvert.DeserializeObject<CustomerBillingProfile>(record.ResourceNewValue);
-                    }
-                }
-
-                return resources;
-            }
-            finally
-            {
-                control = null;
-                filteredRecords = null;
-                resource = null;
             }
         }
 
@@ -836,6 +757,45 @@ namespace Microsoft.Partner.SmartOffice.Functions
             finally
             {
                 seekSubscriptions = null;
+            }
+        }
+
+        private static async Task UpdateUsingAuditRecordsAsync(
+            EnvironmentDetail environment,
+            IEnumerable<AuditRecord> auditRecords,
+            IDocumentRepository<CustomerDetail> repository)
+        {
+            IEnumerable<AuditRecord> filteredRecords;
+            List<CustomerDetail> modified;
+            CustomerDetail customer;
+
+            try
+            {
+                // Extract a list of audit records that are scope to the defined resource type and were successful.
+                filteredRecords = auditRecords
+                    .Where(r => r.ResourceType == ResourceType.Customer && r.OperationStatus == OperationStatus.Succeeded)
+                    .OrderBy(r => r.OperationDate);
+
+                modified = new List<CustomerDetail>();
+
+                foreach (AuditRecord record in filteredRecords
+                    .Where(r => r.OperationType == OperationType.RemovePartnerCustomerRelationship))
+                {
+                    customer = await repository.GetAsync(record.CustomerId).ConfigureAwait(false);
+                    customer.RemovedFromPartnerCenter = true;
+
+                    modified.Add(customer);
+                }
+
+                if (modified.Count > 0)
+                {
+                    await repository.AddOrUpdateAsync(modified).ConfigureAwait(false);
+                }
+            }
+            finally
+            {
+                customer = null;
+                filteredRecords = null;
             }
         }
     }
