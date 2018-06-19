@@ -109,11 +109,15 @@ namespace Microsoft.Partner.SmartOffice.Functions
                             && r.OperationDate >= customerDetail.Customer.LastProcessed,
                         customerDetail.Customer.EnvironmentId).ConfigureAwait(false);
 
+                    subscriptions = await subscriptionRepository
+                        .GetAsync(s => s.TenantId == customerDetail.Customer.Id, customerDetail.Customer.Id)
+                        .ConfigureAwait(false);
+
                     // Since the period is less than 30 we can utilize the audit logs to reconstruct any subscriptions that were created.
-                    subscriptions = await BuildUsingAuditRecordsAsync(
-                        auditRecords,
-                        subscriptionRepository,
+                    subscriptions = await AuditRecordConverter.ConvertAsync(
                         partner,
+                        auditRecords,
+                        subscriptions,
                         customerDetail.Customer).ConfigureAwait(false);
                 }
 
@@ -226,25 +230,23 @@ namespace Microsoft.Partner.SmartOffice.Functions
                         environment.Id).ConfigureAwait(false);
                 }
 
-                /*
-                 * We need to get a list of all customeres each time because currently there is not a 
-                 * way to detect when a customer with existing Azure AD tenant accepts the reseller relationship.
-                 */
-                customers = await GetCustomersAsync(partner, environment).ConfigureAwait(false);
+                if (days >= 30)
+                {
+                    customers = await GetCustomersAsync(partner, environment).ConfigureAwait(false);
+                }
+                else
+                {
+                    customers = await customerRepository.GetAsync().ConfigureAwait(false);
+
+                    customers = await AuditRecordConverter.ConvertAsync(
+                        partner,
+                        auditRecords,
+                        customers,
+                        new Dictionary<string, string> { { "EnvironemtnId", environment.Id } }).ConfigureAwait(false);
+                }
 
                 // Add, or update, each customer to the database.
                 await customerRepository.AddOrUpdateAsync(customers).ConfigureAwait(false);
-
-                /*
-                 * Next update the customers using the audit records. This is required because it allows us to 
-                 * detect when the partner has removed the reseller relationship. Without this step the customer, 
-                 * that was removed would be processed unsccuessfully each execution because the partner no longer
-                 * has the necessary privileges to peform the necessary API calls.
-                 */
-                await UpdateUsingAuditRecordsAsync(
-                    environment,
-                    auditRecords,
-                    customerRepository).ConfigureAwait(false);
 
                 foreach (CustomerDetail customer in customers)
                 {
@@ -301,8 +303,6 @@ namespace Microsoft.Partner.SmartOffice.Functions
                 SecretName = "{AppEndpoint.ApplicationSecretId}")]List<Alert> alerts,
             TraceWriter log)
         {
-            log.Info($"Attempting to process data for {data.Customer.Id}");
-
             if (data.Customer.ProcessException != null)
             {
                 log.Warning($"Unable to process {data.Customer.Id} please check the customer's last exception for more information.");
@@ -311,7 +311,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
 
             if (scores?.Count > 0)
             {
-                log.Info($"Importing {scores.Count} Secure Score entries for {data.Customer.Id}");
+                log.Info($"Importing {scores.Count} Secure Score entries from the past {data.Period} periods for {data.Customer.Id}");
                 await secureScoreRepository.AddOrUpdateAsync(
                     scores,
                     data.Customer.Id).ConfigureAwait(false);
@@ -479,6 +479,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
                             {
                                 Id = env.Id
                             },
+
                             Period = period.ToString(CultureInfo.InvariantCulture)
                         }).ConfigureAwait(false);
                     }
@@ -490,72 +491,6 @@ namespace Microsoft.Partner.SmartOffice.Functions
             }
         }
 
-        private static async Task<List<SubscriptionDetail>> BuildUsingAuditRecordsAsync(
-            IEnumerable<AuditRecord> auditRecords,
-            IDocumentRepository<SubscriptionDetail> repository,
-            IPartnerServiceClient client,
-            CustomerDetail customer)
-        {
-            IEnumerable<AuditRecord> filteredRecords;
-            List<SubscriptionDetail> fromOrders;
-            List<SubscriptionDetail> resources;
-            SubscriptionDetail control;
-            Subscription resource;
-
-            try
-            {
-                // Extract a list of audit records that are scope to the defined resource type and were successful.
-                filteredRecords = auditRecords
-                    .Where(r => (r.ResourceType == ResourceType.Subscription || r.ResourceType == ResourceType.Order)
-                        && r.OperationStatus == OperationStatus.Succeeded)
-                    .OrderBy(r => r.OperationDate);
-
-                resources = await repository
-                    .GetAsync(r => r.TenantId == customer.Id, customer.Id)
-                    .ConfigureAwait(false);
-
-                foreach (AuditRecord record in filteredRecords)
-                {
-                    if (record.ResourceType == ResourceType.Order)
-                    {
-                        fromOrders = await ConvertToSubscriptionDetailsAsync(
-                            client,
-                            customer,
-                            JsonConvert.DeserializeObject<Order>(record.ResourceNewValue)).ConfigureAwait(false);
-
-                        if (fromOrders != null)
-                        {
-                            resources.AddRange(fromOrders);
-                        }
-                    }
-                    else if (record.ResourceType == ResourceType.Subscription)
-                    {
-                        resource = JsonConvert.DeserializeObject<Subscription>(record.ResourceNewValue);
-                        control = resources.SingleOrDefault(r => r.Id.Equals(resource.Id, StringComparison.InvariantCultureIgnoreCase));
-
-                        if (control != null)
-                        {
-                            resources.Remove(control);
-                        }
-
-                        resources.Add(
-                            ResourceConverter.Convert<Subscription, SubscriptionDetail>(
-                                resource,
-                                new Dictionary<string, string> { { "TenantId", customer.Id } }));
-                    }
-                }
-
-                return resources;
-            }
-            finally
-            {
-                control = null;
-                filteredRecords = null;
-                fromOrders = null;
-                resource = null;
-            }
-        }
-
         private static IEnumerable<DateTime> ChunkDate(DateTime startDate, DateTime endDate, int size)
         {
             while (startDate < endDate)
@@ -563,69 +498,6 @@ namespace Microsoft.Partner.SmartOffice.Functions
                 yield return startDate;
 
                 startDate = startDate.AddDays(size);
-            }
-        }
-
-        private static async Task<List<SubscriptionDetail>> ConvertToSubscriptionDetailsAsync(
-            IPartnerServiceClient client,
-            CustomerDetail customer,
-            Order order)
-        {
-            DateTime effectiveStartDate;
-            DateTimeOffset creationDate;
-            List<SubscriptionDetail> details;
-            Offer offer;
-
-            try
-            {
-                if (order.BillingCycle == BillingCycleType.OneTime)
-                {
-                    return null;
-                }
-
-                details = new List<SubscriptionDetail>();
-
-                foreach (OrderLineItem lineItem in order.LineItems)
-                {
-                    creationDate = order.CreationDate.Value;
-
-                    effectiveStartDate = new DateTime(
-                            creationDate.UtcDateTime.Year,
-                            creationDate.UtcDateTime.Month,
-                            creationDate.UtcDateTime.Day);
-
-                    offer = await client.Offers
-                        .ByCountry(customer.BillingProfile.DefaultAddress.Country).ById(lineItem.OfferId)
-                        .GetAsync().ConfigureAwait(false);
-
-                    details.Add(new SubscriptionDetail
-                    {
-                        AutoRenewEnabled = offer.IsAutoRenewable,
-                        BillingCycle = order.BillingCycle,
-                        BillingType = offer.Billing,
-                        CommitmentEndDate = (offer.Billing == BillingType.License) ?
-                            effectiveStartDate.AddYears(1) : DateTime.Parse("9999-12-14T00:00:00Z", CultureInfo.CurrentCulture),
-                        CreationDate = creationDate.UtcDateTime,
-                        EffectiveStartDate = effectiveStartDate,
-                        FriendlyName = lineItem.FriendlyName,
-                        Id = lineItem.SubscriptionId,
-                        OfferId = lineItem.OfferId,
-                        OfferName = offer.Name,
-                        ParentSubscriptionId = lineItem.ParentSubscriptionId,
-                        PartnerId = lineItem.PartnerIdOnRecord,
-                        Quantity = lineItem.Quantity,
-                        Status = SubscriptionStatus.Active,
-                        SuspensionReasons = null,
-                        TenantId = customer.Id,
-                        UnitType = offer.UnitType
-                    });
-                }
-
-                return details;
-            }
-            finally
-            {
-                offer = null;
             }
         }
 
@@ -671,7 +543,9 @@ namespace Microsoft.Partner.SmartOffice.Functions
         /// <param name="client">Provides the ability to interact with Partner Center.</param>
         /// <param name="environment">The environment that owns the customers be requesteed.</param>
         /// <returns>A list of customers associated with the partner.</returns>
-        private static async Task<List<CustomerDetail>> GetCustomersAsync(IPartnerServiceClient client, EnvironmentDetail environment)
+        private static async Task<List<CustomerDetail>> GetCustomersAsync(
+            IPartnerServiceClient client,
+            EnvironmentDetail environment)
         {
             Customer customer;
             List<CustomerDetail> customers;
@@ -700,6 +574,13 @@ namespace Microsoft.Partner.SmartOffice.Functions
                         customer = await client.Customers[c.Id].GetAsync().ConfigureAwait(false);
                         c.BillingProfile = customer.BillingProfile;
                         c.EnvironmentId = environment.Id;
+
+                        if (c.RemovedFromPartnerCenter == true)
+                        {
+                            c.LastProcessed = null;
+                        }
+
+                        c.RemovedFromPartnerCenter = false;
                     }
                     catch (ServiceClientException ex)
                     {
@@ -757,45 +638,6 @@ namespace Microsoft.Partner.SmartOffice.Functions
             finally
             {
                 seekSubscriptions = null;
-            }
-        }
-
-        private static async Task UpdateUsingAuditRecordsAsync(
-            EnvironmentDetail environment,
-            IEnumerable<AuditRecord> auditRecords,
-            IDocumentRepository<CustomerDetail> repository)
-        {
-            IEnumerable<AuditRecord> filteredRecords;
-            List<CustomerDetail> modified;
-            CustomerDetail customer;
-
-            try
-            {
-                // Extract a list of audit records that are scope to the defined resource type and were successful.
-                filteredRecords = auditRecords
-                    .Where(r => r.ResourceType == ResourceType.Customer && r.OperationStatus == OperationStatus.Succeeded)
-                    .OrderBy(r => r.OperationDate);
-
-                modified = new List<CustomerDetail>();
-
-                foreach (AuditRecord record in filteredRecords
-                    .Where(r => r.OperationType == OperationType.RemovePartnerCustomerRelationship))
-                {
-                    customer = await repository.GetAsync(record.CustomerId).ConfigureAwait(false);
-                    customer.RemovedFromPartnerCenter = true;
-
-                    modified.Add(customer);
-                }
-
-                if (modified.Count > 0)
-                {
-                    await repository.AddOrUpdateAsync(modified).ConfigureAwait(false);
-                }
-            }
-            finally
-            {
-                customer = null;
-                filteredRecords = null;
             }
         }
     }
