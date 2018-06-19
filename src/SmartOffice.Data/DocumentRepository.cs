@@ -135,17 +135,28 @@ namespace Microsoft.Partner.SmartOffice.Data
         /// <returns>The entity that was added or updated.</returns>
         public async Task<TEntity> AddOrUpdateAsync(TEntity item, string partitionKey = null)
         {
+            RequestOptions requestOptions;
             ResourceResponse<Document> response;
 
             try
             {
+                requestOptions = new RequestOptions(); 
+
+                if (!string.IsNullOrEmpty(partitionKeyPath))
+                {
+                    requestOptions.PartitionKey = new PartitionKey(partitionKey);
+                }
+
                 response = await Client.UpsertDocumentAsync(
-                    UriFactory.CreateDocumentCollectionUri(databaseId, collectionId), item).ConfigureAwait(false);
+                    UriFactory.CreateDocumentCollectionUri(databaseId, collectionId),
+                    item,
+                    requestOptions).ConfigureAwait(false);
 
                 return (TEntity)(dynamic)response.Resource;
             }
             finally
             {
+                requestOptions = null; 
                 response = null;
             }
         }
