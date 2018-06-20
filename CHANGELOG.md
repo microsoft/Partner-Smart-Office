@@ -5,6 +5,7 @@
 The following issues were addressed with this release
 
 - Added partitioning to select collections. Please note that this change is a **breaking** change. If you have an existing deployment you will need to delete all collections excepted for the *Environments* collection.
+- Added the missing account controller to enable the access denied page and sign out capability
 - Modified the processing restrictions
   - Maximum dequeue count is now configured to 3
   - Maximum number of records dequeued is now configured to 14
