@@ -83,7 +83,7 @@ namespace Microsoft.Partner.SmartOffice.Functions.Converters
                                 resource,
                                 additionalInfo));
                     }
-                    else
+                    else if(control != null)
                     {
                         control.RemovedFromPartnerCenter = false;
                     }
