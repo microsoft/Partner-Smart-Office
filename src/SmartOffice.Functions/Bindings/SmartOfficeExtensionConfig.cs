@@ -85,23 +85,12 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
         /// <summary>
         /// Collection of initialized data repositories.
         /// </summary>
-        private static readonly ConcurrentDictionary<string, object> Repos = new ConcurrentDictionary<string, object>();
+        private static readonly ConcurrentDictionary<string, object> repos = new ConcurrentDictionary<string, object>();
 
         /// <summary>
-        /// Client used to perform HTTP operations.
+        /// Collection of HttpClient object used to communicate with the Partner Center API.
         /// </summary>
-        private static readonly HttpClient httpClient = new HttpClient();
-
-        /// <summary>
-        /// Client used to perform partner HTTP operations.
-        /// </summary>
-        private static readonly HttpClient partnerHttpClient = new HttpClient(
-            new PartnerServiceMessageHandler
-            {
-
-                InnerHandler = new HttpClientHandler()
-
-            });
+        private static readonly ConcurrentDictionary<string, HttpClient> partnerHttpClients = new ConcurrentDictionary<string, HttpClient>();
 
         /// <summary>
         /// Used to help ensure that data repositories are initialized in a thread safe manner.
@@ -178,6 +167,7 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
                 keyVaultEndpoint = nameResolver.Resolve("KeyVaultEndpoint");
                 vaultService = new KeyVaultService(keyVaultEndpoint);
 
+
                 return new PartnerServiceClient(
                     new Uri(input.Endpoint),
                     new ServiceCredentials(
@@ -185,7 +175,7 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
                         await vaultService.GetSecretAsync(input.SecretName).ConfigureAwait(false),
                         input.Resource,
                         input.ApplicationTenantId),
-                    partnerHttpClient);
+                    await GetPartnerHttpClientAsync(input.ApplicationTenantId).ConfigureAwait(false));
             }
             finally
             {
@@ -211,8 +201,7 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
                         input.ApplicationId,
                         await vaultService.GetSecretAsync(input.SecretName).ConfigureAwait(false),
                         input.Resource,
-                        input.CustomerId),
-                    httpClient);
+                        input.CustomerId));
 
                 secureScore = await graphService.GetSecureScoreAsync(int.Parse(input.Period, CultureInfo.CurrentCulture), cancellationToken).ConfigureAwait(false);
 
@@ -235,7 +224,7 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
             GraphService graphService;
             IVaultService vaultService;
             List<Alert> alerts;
-            string keyVaultEndpoint; 
+            string keyVaultEndpoint;
 
             try
             {
@@ -247,8 +236,7 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
                         input.ApplicationId,
                         await vaultService.GetSecretAsync(input.SecretName).ConfigureAwait(false),
                         input.Resource,
-                        input.CustomerId),
-                    httpClient);
+                        input.CustomerId));
 
                 alerts = await graphService.GetAlertsAsync(cancellationToken).ConfigureAwait(false);
 
@@ -291,6 +279,26 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
             context.AddBindingRule<StorageServiceAttribute>().BindToInput<StorageService>(this);
         }
 
+
+        private static async Task<HttpClient> GetPartnerHttpClientAsync(string key)
+        {
+            try
+            {
+                await Semaphore.WaitAsync().ConfigureAwait(false);
+
+                if (!partnerHttpClients.ContainsKey(key))
+                {
+                    partnerHttpClients[key] = HttpClientFactory.Create(new PartnerServiceMessageHandler()); ;
+                }
+
+                return partnerHttpClients[key];
+            }
+            finally
+            {
+                Semaphore.Release();
+            }
+        }
+
         private async Task<IDocumentRepository<TEntity>> GetRepoAsync<TEntity>(
             string collectionId,
             string partitionKey = null) where TEntity : class
@@ -299,13 +307,13 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
             IVaultService keyVault;
             string authKey;
             string cosmosDbEndpoint;
-            string keyVaultEndpoint; 
+            string keyVaultEndpoint;
 
             try
             {
                 await Semaphore.WaitAsync().ConfigureAwait(false);
 
-                if (!Repos.ContainsKey(collectionId))
+                if (!repos.ContainsKey(collectionId))
                 {
                     cosmosDbEndpoint = nameResolver.Resolve("CosmosDbEndpoint");
                     keyVaultEndpoint = nameResolver.Resolve("KeyVaultEndpoint");
@@ -322,10 +330,10 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
 
                     await repo.InitializeAsync().ConfigureAwait(false);
 
-                    Repos[collectionId] = repo;
+                    repos[collectionId] = repo;
                 }
 
-                return Repos[collectionId] as IDocumentRepository<TEntity>;
+                return repos[collectionId] as IDocumentRepository<TEntity>;
             }
             finally
             {
