@@ -154,10 +154,11 @@ namespace Microsoft.Partner.SmartOffice.Functions
                     }
 
                     customerDetail.Customer.LastProcessed = DateTimeOffset.UtcNow;
-                    await customerRepository.AddOrUpdateAsync(customerDetail.Customer).ConfigureAwait(false);
-
-                    log.Info($"Successfully processed customer {customerDetail.Customer.Id}.");
                 }
+                    
+                await customerRepository.AddOrUpdateAsync(customerDetail.Customer).ConfigureAwait(false);
+
+                log.Info($"Successfully processed customer {customerDetail.Customer.Id}. Exception(s): {(customerDetail.Customer.ProcessException != null ? "yes" : "no")}");
             }
             finally
             {
