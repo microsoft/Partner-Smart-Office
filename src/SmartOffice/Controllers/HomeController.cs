@@ -14,7 +14,7 @@ namespace Microsoft.Partner.SmartOffice.Controllers
     using AspNetCore.Mvc;
     using Data;
     using Models;
-    using Services;
+    using Services.KeyVault;
 
     [Authorize(Policy = "RequireAdmin")]
     public class HomeController : Controller

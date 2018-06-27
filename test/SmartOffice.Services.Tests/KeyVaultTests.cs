@@ -10,6 +10,7 @@ namespace Microsoft.Partner.SmartOffice.Services.Tests
     using System.Net.Http;
     using System.Threading.Tasks;
     using Azure.KeyVault;
+    using KeyVault;
     using VisualStudio.TestTools.UnitTesting;
 
     [TestClass]

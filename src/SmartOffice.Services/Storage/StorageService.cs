@@ -4,10 +4,11 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace Microsoft.Partner.SmartOffice.Services
+namespace Microsoft.Partner.SmartOffice.Services.Storage
 {
     using System;
     using System.Threading.Tasks;
+    using KeyVault;
     using Newtonsoft.Json;
     using WindowsAzure.Storage;
     using WindowsAzure.Storage.Queue;

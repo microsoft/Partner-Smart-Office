@@ -20,7 +20,7 @@ namespace Microsoft.Partner.SmartOffice
     using Extensions.DependencyInjection;
     using IdentityModel.Tokens;
     using Models;
-    using Services;
+    using Services.KeyVault;
 
     public class Startup
     {

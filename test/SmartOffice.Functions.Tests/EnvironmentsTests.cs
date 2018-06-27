@@ -15,7 +15,7 @@ namespace Microsoft.Partner.SmartOffice.Functions.Tests
     using Models;
     using Models.PartnerCenter.Customers;
     using Moq;
-    using Services;
+    using Services.Storage;
     using VisualStudio.TestTools.UnitTesting;
 
     [TestClass]

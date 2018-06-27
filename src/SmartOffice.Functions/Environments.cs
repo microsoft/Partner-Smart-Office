@@ -21,13 +21,11 @@ namespace Microsoft.Partner.SmartOffice.Functions
     using Models.PartnerCenter;
     using Models.PartnerCenter.AuditRecords;
     using Models.PartnerCenter.Customers;
-    using Models.PartnerCenter.Offers;
-    using Models.PartnerCenter.Orders;
     using Models.PartnerCenter.Subscriptions;
     using Models.PartnerCenter.Utilizations;
-    using Newtonsoft.Json;
     using Services;
     using Services.PartnerCenter;
+    using Services.Storage;
 
     /// <summary>
     /// Contains the defintion for the Azure functions related to environments.
@@ -174,7 +172,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
         /// <param name="auditRecordRepository">A document repository linked to the audit records collection.</param>
         /// <param name="customerRepository">A document repository linked to the customers collection.</param>
         /// <param name="environmentRepository">A document repository linked to the environments collection.</param>
-        /// <param name="partner">An instance of the <see cref="PartnerServiceClient" /> class that is authenticated.</param>
+        /// <param name="client">An instance of the <see cref="PartnerServiceClient" /> class that is authenticated.</param>
         /// <param name="storage">An instance of the <see cref="StorageService" /> class that is authenticated.</param>
         /// <param name="log">Provides the ability to log trace messages.</param>
         /// <returns>An instance of the <see cref="Task" /> that represents an asynchronous operation.</returns>
@@ -190,7 +188,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
                 Endpoint = "{PartnerCenterEndpoint.ServiceAddress}",
                 SecretName = "{PartnerCenterEndpoint.ApplicationSecretId}",
                 ApplicationTenantId = "{PartnerCenterEndpoint.TenantId}",
-                Resource = "https://graph.windows.net")]IPartnerServiceClient partner,
+                Resource = "https://graph.windows.net")]IPartnerServiceClient client,
             [StorageService]IStorageService storage,
             TraceWriter log)
         {
@@ -217,8 +215,8 @@ namespace Microsoft.Partner.SmartOffice.Functions
                 }
 
                 auditRecords = await GetAuditRecordsAsyc(
-                    partner,
-                    DateTime.UtcNow.AddDays(-1),
+                    client,
+                    DateTime.UtcNow.AddDays(-days),
                     DateTime.UtcNow).ConfigureAwait(false);
 
                 if (auditRecords.Count > 0)
@@ -233,14 +231,14 @@ namespace Microsoft.Partner.SmartOffice.Functions
 
                 if (days >= 30)
                 {
-                    customers = await GetCustomersAsync(partner, environment).ConfigureAwait(false);
+                    customers = await GetCustomersAsync(client, environment).ConfigureAwait(false);
                 }
                 else
                 {
                     customers = await customerRepository.GetAsync().ConfigureAwait(false);
 
                     customers = await AuditRecordConverter.ConvertAsync(
-                        partner,
+                        client,
                         auditRecords,
                         customers,
                         new Dictionary<string, string> { { "EnvironemtnId", environment.Id } }).ConfigureAwait(false);
@@ -363,34 +361,39 @@ namespace Microsoft.Partner.SmartOffice.Functions
                     .Azure
                     .QueryAsync(DateTimeOffset.UtcNow.AddDays(-1), DateTimeOffset.UtcNow).ConfigureAwait(false);
 
-                records = new List<UtilizationDetail>(utilizationRecords.Items
-                    .Select(r => ResourceConverter.Convert<AzureUtilizationRecord, UtilizationDetail>(
-                        r,
-                        new Dictionary<string, string>
-                        {
-                            { "Id", $"{r.Resource.Id}--{r.UsageStartTime}" },
-                            { "SubscriptionId", subscriptionDetail.Subscription.Id },
-                            { "TenantId", subscriptionDetail.Subscription.TenantId }
-                        })));
+                records = new List<UtilizationDetail>();
 
-                while (utilizationRecords.Links.Next != null)
+                if (utilizationRecords.TotalCount > 0)
                 {
-                    utilizationRecords = await client
-                        .Customers[subscriptionDetail.Subscription.TenantId]
-                        .Subscriptions[subscriptionDetail.Subscription.Id]
-                        .Utilization
-                        .Azure
-                        .QueryAsync(utilizationRecords.Links.Next).ConfigureAwait(false);
-
                     records.AddRange(utilizationRecords.Items
                         .Select(r => ResourceConverter.Convert<AzureUtilizationRecord, UtilizationDetail>(
                             r,
                             new Dictionary<string, string>
                             {
+                            { "Id", $"{r.Resource.Id}--{r.UsageStartTime}" },
+                            { "SubscriptionId", subscriptionDetail.Subscription.Id },
+                            { "TenantId", subscriptionDetail.Subscription.TenantId }
+                            })));
+
+                    while (utilizationRecords.Links.Next != null)
+                    {
+                        utilizationRecords = await client
+                            .Customers[subscriptionDetail.Subscription.TenantId]
+                            .Subscriptions[subscriptionDetail.Subscription.Id]
+                            .Utilization
+                            .Azure
+                            .QueryAsync(utilizationRecords.Links.Next).ConfigureAwait(false);
+
+                        records.AddRange(utilizationRecords.Items
+                            .Select(r => ResourceConverter.Convert<AzureUtilizationRecord, UtilizationDetail>(
+                                r,
+                                new Dictionary<string, string>
+                                {
                                 { "Id", $"{r.Resource.Id}--{r.UsageStartTime}" },
                                 { "SubscriptionId", subscriptionDetail.Subscription.Id },
                                 { "TenantId", subscriptionDetail.Subscription.TenantId }
-                            })));
+                                })));
+                    }
                 }
 
                 if (records.Count > 0)

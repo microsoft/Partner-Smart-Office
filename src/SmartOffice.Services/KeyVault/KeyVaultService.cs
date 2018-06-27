@@ -4,7 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace Microsoft.Partner.SmartOffice.Services
+namespace Microsoft.Partner.SmartOffice.Services.KeyVault
 {
     using System;
     using System.Collections.Concurrent;
