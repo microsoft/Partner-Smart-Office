@@ -22,7 +22,10 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
     using Models.Graph;
     using Models.PartnerCenter.AuditRecords;
     using Services;
+    using Services.Graph;
+    using Services.KeyVault;
     using Services.PartnerCenter;
+    using Services.Storage;
 
     public class SmartOfficeExtensionConfig :
         IAsyncConverter<DataRepositoryAttribute, object>,

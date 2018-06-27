@@ -4,7 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace Microsoft.Partner.SmartOffice.Services
+namespace Microsoft.Partner.SmartOffice.Services.Graph
 {
     using System;
     using System.Collections.Generic;

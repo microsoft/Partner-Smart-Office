@@ -13,6 +13,7 @@ namespace Microsoft.Partner.SmartOffice.Services.Tests
     using Azure.Test.HttpRecorder;
     using Models.Graph;
     using Rest.ClientRuntime.Azure.TestFramework;
+    using Graph;
     using VisualStudio.TestTools.UnitTesting;
 
     [TestClass]
