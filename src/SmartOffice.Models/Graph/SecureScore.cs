@@ -6,6 +6,7 @@
 
 namespace Microsoft.Partner.SmartOffice.Models.Graph
 {
+    using System; 
     using System.Collections.Generic;
     using Newtonsoft.Json;
 
@@ -72,7 +73,7 @@ namespace Microsoft.Partner.SmartOffice.Models.Graph
         /// Gets or sets the created date.
         /// </summary>
         [JsonProperty(PropertyName = "createdDate")]
-        public CreatedDate CreatedDate { get; set; }
+        public DateTime CreatedDate { get; set; }
 
         /// <summary>
         /// Gets or sets the secure score for data controls. 
