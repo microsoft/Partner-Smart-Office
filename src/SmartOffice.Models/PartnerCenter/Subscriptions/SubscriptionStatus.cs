@@ -30,6 +30,10 @@ namespace Microsoft.Partner.SmartOffice.Models.PartnerCenter.Subscriptions
         /// <summary>
         /// Indicates the subscription has been deleted.
         /// </summary>
-        Deleted = 3
+        Deleted = 3,
+        /// <summary>
+        /// Indicates the subscription has been disabled.
+        /// </summary>
+        Disabled = 4
     }
 }
