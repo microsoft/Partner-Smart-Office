@@ -214,34 +214,34 @@ namespace Microsoft.Partner.SmartOffice.Functions
                     days = 1;
                 }
 
-                auditRecords = await GetAuditRecordsAsyc(
-                    client,
-                    DateTime.UtcNow.AddDays(-days),
-                    DateTime.UtcNow).ConfigureAwait(false);
-
-                if (auditRecords.Count > 0)
-                {
-                    log.Info($"Importing {auditRecords.Count} audit records available between now and the pervious day.");
-
-                    // Add, or update, each audit record to the database.
-                    await auditRecordRepository.AddOrUpdateAsync(
-                        auditRecords,
-                        environment.Id).ConfigureAwait(false);
-                }
-
                 if (days >= 30)
                 {
                     customers = await GetCustomersAsync(client, environment).ConfigureAwait(false);
                 }
                 else
                 {
+                    auditRecords = await GetAuditRecordsAsyc(
+                        client,
+                        DateTime.UtcNow.AddDays(-days),
+                        DateTime.UtcNow).ConfigureAwait(false);
+
+                    if (auditRecords.Count > 0)
+                    {
+                        log.Info($"Importing {auditRecords.Count} audit records available between now and the previous day.");
+
+                        // Add, or update, each audit record to the database.
+                        await auditRecordRepository.AddOrUpdateAsync(
+                            auditRecords,
+                            environment.Id).ConfigureAwait(false);
+                    }
+
                     customers = await customerRepository.GetAsync().ConfigureAwait(false);
 
                     customers = await AuditRecordConverter.ConvertAsync(
                         client,
                         auditRecords,
                         customers,
-                        new Dictionary<string, string> { { "EnvironemtnId", environment.Id } }).ConfigureAwait(false);
+                        new Dictionary<string, string> { { "EnvironmentId", environment.Id } }).ConfigureAwait(false);
                 }
 
                 // Add, or update, each customer to the database.
