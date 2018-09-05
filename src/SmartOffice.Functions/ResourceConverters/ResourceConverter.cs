@@ -4,7 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace Microsoft.Partner.SmartOffice.Functions.Converters
+namespace Microsoft.Partner.SmartOffice.Functions.ResourceConverters
 {
     using System.Collections.Generic;
     using System.Reflection;

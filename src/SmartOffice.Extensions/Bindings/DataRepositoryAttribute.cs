@@ -4,7 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace Microsoft.Partner.SmartOffice.Functions.Bindings
+namespace Microsoft.Partner.SmartOffice.Extensions.Bindings
 {
     using System;
     using Azure.WebJobs.Description;

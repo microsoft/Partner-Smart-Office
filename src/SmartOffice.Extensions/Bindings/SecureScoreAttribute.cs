@@ -1,17 +1,18 @@
 ﻿// -----------------------------------------------------------------------
-// <copyright file="StorageServiceAttribute.cs" company="Microsoft">
+// <copyright file="SecureScoreAttribute.cs" company="Microsoft">
 //     Copyright (c) Microsoft Corporation. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace Microsoft.Partner.SmartOffice.Functions.Bindings
+namespace Microsoft.Partner.SmartOffice.Extensions.Bindings
 {
     using System;
+    using System.ComponentModel.DataAnnotations;
     using Azure.WebJobs.Description;
 
     [AttributeUsage(AttributeTargets.Parameter, AllowMultiple = false)]
     [Binding]
-    public sealed class PartnerServiceAttribute : Attribute
+    public sealed class SecureScoreAttribute : Attribute
     {
         /// <summary>
         /// Gets or sets the application identifier used to request an access token.
@@ -20,20 +21,22 @@ namespace Microsoft.Partner.SmartOffice.Functions.Bindings
         public string ApplicationId { get; set; }
 
         /// <summary>
-        /// Gets or sets the tenant identifer that owns the application.
+        /// Gets or sets the customer identifier.
         /// </summary>
         [AutoResolve]
-        public string ApplicationTenantId { get; set; }
+        public string CustomerId { get; set; }
 
         /// <summary>
-        /// Gets or sets the endpoint address for the Partner Center API.
+        /// Gets or sets a value indicating number of days of score results to retrieve starting from current date.
         /// </summary>
         [AutoResolve]
-        public string Endpoint { get; set; }
+        [RegularExpression("^[0-9]*$")]
+        public string Period { get; set; }
 
         /// <summary>
         /// Gets or sets the identifier of the target resource that is the recipient of the token being requested.
         /// </summary>
+        [AutoResolve]
         public string Resource { get; set; }
 
         /// <summary>
