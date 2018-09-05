@@ -1,9 +1,10 @@
 {
+  "FUNCTIONS_WORKER_RUNTIME": "dotnet",
   "IsEncrypted": false,
   "Values": {
     "AzureWebJobsStorage": "UseDevelopmentStorage=true",
     "AzureWebJobsDashboard": "UseDevelopmentStorage=true",
     "KeyVaultEndpoint": "",
-    "StorageConnectionString": ""
+    "StorageConnectionString": "UseDevelopmentStorage=true"
   }
 }

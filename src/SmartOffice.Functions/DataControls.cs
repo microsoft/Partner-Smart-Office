@@ -8,15 +8,15 @@ namespace Microsoft.Partner.SmartOffice.Functions
 {
     using System.Collections.Generic;
     using System.IO;
-    using System.Linq; 
+    using System.Linq;
     using System.Reflection;
     using System.Threading.Tasks;
     using Azure.WebJobs;
     using Azure.WebJobs.Host;
-    using Bindings;
     using ClassMaps;
     using CsvHelper;
     using Data;
+    using Extensions.Bindings;
     using Models.Graph;
 
     /// <summary>
@@ -33,7 +33,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
         public static async Task ImportControlsAsync(
             [TimerTrigger("0 0 10 * * *")]TimerInfo timerInfo,
             [DataRepository(
-                DataType = typeof(ControlListEntry))]IDocumentRepository<ControlListEntry> repository,
+                DataType = typeof(ControlListEntry))]DocumentRepository<ControlListEntry> repository,
             TraceWriter log)
         {
             CsvReader reader = null;

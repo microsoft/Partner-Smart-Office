@@ -15,7 +15,6 @@ namespace Microsoft.Partner.SmartOffice.Functions.Tests
     using Models;
     using Models.PartnerCenter.Customers;
     using Moq;
-    using Services.Storage;
     using VisualStudio.TestTools.UnitTesting;
 
     [TestClass]
@@ -25,7 +24,6 @@ namespace Microsoft.Partner.SmartOffice.Functions.Tests
         public async Task PullEnvironmentsAsync()
         {
             Mock<IDocumentRepository<EnvironmentDetail>> repository;
-            Mock<IStorageService> storage;
             TestTraceWriter traceWriter;
             TimerInfo timerInfo;
 
@@ -35,9 +33,9 @@ namespace Microsoft.Partner.SmartOffice.Functions.Tests
                 repository.Setup(
                     r => r.GetAsync()).Returns(Task.FromResult(GetTestEnvironments()));
 
-                storage = new Mock<IStorageService>();
-                storage.Setup(s => s.WriteToQueueAsync(
-                    It.IsAny<string>(), It.IsAny<EnvironmentDetail>())).Returns(Task.FromResult(0));
+                //storage = new Mock<IStorageService>();
+                //storage.Setup(s => s.WriteToQueueAsync(
+                //    It.IsAny<string>(), It.IsAny<EnvironmentDetail>())).Returns(Task.FromResult(0));
 
                 timerInfo = new TimerInfo(
                     new TestTimerSchedule(),
@@ -46,11 +44,13 @@ namespace Microsoft.Partner.SmartOffice.Functions.Tests
 
                 traceWriter = new TestTraceWriter();
 
-                await Environments.PullEnvironmentsAsync(
-                    timerInfo,
-                    repository.Object,
-                    storage.Object,
-                    traceWriter).ConfigureAwait(false);
+                //await Environments.PullEnvironmentsAsync(
+                //    timerInfo,
+                //    repository.Object,
+                //    storage.Object,
+                //    traceWriter).ConfigureAwait(false);
+
+                await Task.CompletedTask.ConfigureAwait(false);
             }
             catch (Exception ex)
             {

@@ -13,12 +13,18 @@ namespace Microsoft.Partner.SmartOffice.Controllers
     using AspNetCore.Authorization;
     using AspNetCore.Mvc;
     using Data;
+    using Extensions.Configuration;
     using Models;
     using Services.KeyVault;
 
     [Authorize(Policy = "RequireAdmin")]
     public class HomeController : Controller
     {
+        /// <summary>
+        /// Provides access to the application configurations.
+        /// </summary>
+        private readonly IConfiguration configuration;
+
         /// <summary>
         /// Data repository used to manage envrionment details.
         /// </summary>
@@ -32,10 +38,12 @@ namespace Microsoft.Partner.SmartOffice.Controllers
         /// <summary>
         /// Initializes a new instance of the <see cref="HomeController" /> class.
         /// </summary>
+        /// <param name="configuration">Provides access to the application configurations.</param>
         /// <param name="repository">Data repository used to manage envrionment details.</param>
         /// <param name="vault">Provides access to an instance of Azure Key Vault.</param>
-        public HomeController(IDocumentRepository<EnvironmentDetail> repository, IVaultService vault)
+        public HomeController(IConfiguration configuration, IDocumentRepository<EnvironmentDetail> repository, IVaultService vault)
         {
+            this.configuration = configuration;
             this.repository = repository;
             this.vault = vault;
         }
@@ -111,13 +119,17 @@ namespace Microsoft.Partner.SmartOffice.Controllers
                 if (!string.IsNullOrEmpty(environment.AppEndpoint?.ApplicationSecretId))
                 {
                     // Remove the secret associated with the Azure AD application from key vault.
-                    await vault.DeleteSecretAsync(environment.AppEndpoint.ApplicationSecretId).ConfigureAwait(false);
+                    await vault.DeleteSecretAsync(
+                        configuration["KeyVaultEndpoint"], 
+                        environment.AppEndpoint.ApplicationSecretId).ConfigureAwait(false);
                 }
 
                 if (!string.IsNullOrEmpty(environment.PartnerCenterEndpoint?.ApplicationSecretId))
                 {
                     // Remove the secret associated with the Partner Center application from key vault.
-                    await vault.DeleteSecretAsync(environment.PartnerCenterEndpoint.ApplicationSecretId).ConfigureAwait(false);
+                    await vault.DeleteSecretAsync(
+                        configuration["KeyVaultEndpoint"],
+                        environment.PartnerCenterEndpoint.ApplicationSecretId).ConfigureAwait(false);
                 }
 
                 await repository.DeleteAsync(id).ConfigureAwait(false);
@@ -253,6 +265,7 @@ namespace Microsoft.Partner.SmartOffice.Controllers
             endpoint.ApplicationSecretId = secretName;
 
             await vault.SetSecretAsync(
+                configuration["KeyVaultEndpoint"],
                 endpoint.ApplicationSecretId,
                 endpoint.ApplicationSecret,
                 "text/plain").ConfigureAwait(false);

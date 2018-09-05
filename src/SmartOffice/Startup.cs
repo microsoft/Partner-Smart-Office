@@ -75,9 +75,7 @@ namespace Microsoft.Partner.SmartOffice
                     "SmartOffice",
                     "Environments"));
 
-            services.AddSingleton<IVaultService>(
-                new KeyVaultService(
-                    Configuration["KeyVaultEndpoint"]));
+            services.AddSingleton<IVaultService, KeyVaultService>();
 
             services.AddMvc(options =>
             {

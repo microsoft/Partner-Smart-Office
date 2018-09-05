@@ -13,9 +13,8 @@ namespace Microsoft.Partner.SmartOffice.Functions
     using System.Threading.Tasks;
     using Azure.WebJobs;
     using Azure.WebJobs.Host;
-    using Bindings;
-    using Converters;
     using Data;
+    using Extensions.Bindings;
     using Models;
     using Models.Graph;
     using Models.PartnerCenter;
@@ -23,9 +22,10 @@ namespace Microsoft.Partner.SmartOffice.Functions
     using Models.PartnerCenter.Customers;
     using Models.PartnerCenter.Subscriptions;
     using Models.PartnerCenter.Utilizations;
+    using ResourceConverters;
     using Services;
     using Services.PartnerCenter;
-    using Services.Storage;
+
 
     /// <summary>
     /// Contains the defintion for the Azure functions related to environments.
@@ -45,16 +45,17 @@ namespace Microsoft.Partner.SmartOffice.Functions
         [FunctionName("ProcessCustomer")]
         public static async Task ProcessCustomerAsync(
             [QueueTrigger(OperationConstants.CustomersQueueName, Connection = "StorageConnectionString")]ProcessCustomerDetail customerDetail,
-            [DataRepository(DataType = typeof(AuditRecord))]IDocumentRepository<AuditRecord> auditRecordRepository,
-            [DataRepository(DataType = typeof(CustomerDetail))]IDocumentRepository<CustomerDetail> customerRepository,
-            [DataRepository(DataType = typeof(SubscriptionDetail))]IDocumentRepository<SubscriptionDetail> subscriptionRepository,
+            [DataRepository(DataType = typeof(AuditRecord))]DocumentRepository<AuditRecord> auditRecordRepository,
+            [DataRepository(DataType = typeof(CustomerDetail))]DocumentRepository<CustomerDetail> customerRepository,
+            [DataRepository(DataType = typeof(SubscriptionDetail))]DocumentRepository<SubscriptionDetail> subscriptionRepository,
             [PartnerService(
                 ApplicationId = "{PartnerCenterEndpoint.ApplicationId}",
                 Endpoint = "{PartnerCenterEndpoint.ServiceAddress}",
                 SecretName = "{PartnerCenterEndpoint.ApplicationSecretId}",
                 ApplicationTenantId = "{PartnerCenterEndpoint.TenantId}",
                 Resource = "https://graph.windows.net")]IPartnerServiceClient partner,
-            [StorageService]IStorageService storage,
+            [Queue(OperationConstants.SecurityQueueName, Connection = "StorageConnectionString")] ICollector<SecurityDetail> securityQueue,
+            [Queue(OperationConstants.UtilizationQueueName, Connection = "StorageConnectionString")] ICollector<ProcessSubscriptionDetail> utilizationQueue,
             TraceWriter log)
         {
             IEnumerable<AuditRecord> auditRecords;
@@ -128,32 +129,28 @@ namespace Microsoft.Partner.SmartOffice.Functions
 
                 if (customerDetail.Customer.ProcessException == null)
                 {
-                    await storage.WriteToQueueAsync(
-                        OperationConstants.SecurityQueueName,
-                        new SecurityDetail
-                        {
-                            AppEndpoint = customerDetail.AppEndpoint,
-                            Customer = customerDetail.Customer,
-                            Period = period.ToString(CultureInfo.InvariantCulture)
-                        }).ConfigureAwait(false);
+                    securityQueue.Add(new SecurityDetail
+                    {
+                        AppEndpoint = customerDetail.AppEndpoint,
+                        Customer = customerDetail.Customer,
+                        Period = period.ToString(CultureInfo.InvariantCulture)
+                    });
 
                     if (customerDetail.ProcessAzureUsage)
                     {
                         foreach (SubscriptionDetail subscription in subscriptions.Where(s => s.BillingType == BillingType.Usage))
                         {
-                            await storage.WriteToQueueAsync(
-                                OperationConstants.UtilizationQueueName,
-                                new ProcessSubscriptionDetail
-                                {
-                                    PartnerCenterEndpoint = customerDetail.PartnerCenterEndpoint,
-                                    Subscription = subscription
-                                }).ConfigureAwait(false);
+                            utilizationQueue.Add(new ProcessSubscriptionDetail
+                            {
+                                PartnerCenterEndpoint = customerDetail.PartnerCenterEndpoint,
+                                Subscription = subscription
+                            });
                         }
                     }
 
                     customerDetail.Customer.LastProcessed = DateTimeOffset.UtcNow;
                 }
-                    
+
                 await customerRepository.AddOrUpdateAsync(customerDetail.Customer).ConfigureAwait(false);
 
                 log.Info($"Successfully processed customer {customerDetail.Customer.Id}. Exception(s): {(customerDetail.Customer.ProcessException != null ? "yes" : "no")}");
@@ -179,17 +176,17 @@ namespace Microsoft.Partner.SmartOffice.Functions
         [FunctionName("ProcessPartner")]
         public static async Task ProcessPartnerAsync(
             [QueueTrigger(OperationConstants.PartnersQueueName, Connection = "StorageConnectionString")]EnvironmentDetail environment,
-            [DataRepository(DataType = typeof(AuditRecord))]IDocumentRepository<AuditRecord> auditRecordRepository,
-            [DataRepository(DataType = typeof(CustomerDetail))]IDocumentRepository<CustomerDetail> customerRepository,
+            [DataRepository(DataType = typeof(AuditRecord))]DocumentRepository<AuditRecord> auditRecordRepository,
+            [DataRepository(DataType = typeof(CustomerDetail))]DocumentRepository<CustomerDetail> customerRepository,
             [DataRepository(
-                DataType = typeof(EnvironmentDetail))]IDocumentRepository<EnvironmentDetail> environmentRepository,
+                DataType = typeof(EnvironmentDetail))]DocumentRepository<EnvironmentDetail> environmentRepository,
             [PartnerService(
                 ApplicationId = "{PartnerCenterEndpoint.ApplicationId}",
                 Endpoint = "{PartnerCenterEndpoint.ServiceAddress}",
                 SecretName = "{PartnerCenterEndpoint.ApplicationSecretId}",
                 ApplicationTenantId = "{PartnerCenterEndpoint.TenantId}",
                 Resource = "https://graph.windows.net")]IPartnerServiceClient client,
-            [StorageService]IStorageService storage,
+            [Queue(OperationConstants.CustomersQueueName, Connection = "StorageConnectionString")] ICollector<ProcessCustomerDetail> customerQueue,
             TraceWriter log)
         {
             List<AuditRecord> auditRecords;
@@ -250,15 +247,13 @@ namespace Microsoft.Partner.SmartOffice.Functions
                 foreach (CustomerDetail customer in customers)
                 {
                     // Write the customer to the customers queue to start processing the customer.
-                    await storage.WriteToQueueAsync(
-                        OperationConstants.CustomersQueueName,
-                        new ProcessCustomerDetail
-                        {
-                            AppEndpoint = environment.AppEndpoint,
-                            Customer = customer,
-                            PartnerCenterEndpoint = environment.PartnerCenterEndpoint,
-                            ProcessAzureUsage = environment.ProcessAzureUsage
-                        }).ConfigureAwait(false);
+                    customerQueue.Add(new ProcessCustomerDetail
+                    {
+                        AppEndpoint = environment.AppEndpoint,
+                        Customer = customer,
+                        PartnerCenterEndpoint = environment.PartnerCenterEndpoint,
+                        ProcessAzureUsage = environment.ProcessAzureUsage
+                    });
                 }
 
                 environment.LastProcessed = DateTimeOffset.UtcNow;
@@ -287,8 +282,8 @@ namespace Microsoft.Partner.SmartOffice.Functions
         public static async Task ProcessSecurityAsync(
             [QueueTrigger(OperationConstants.SecurityQueueName, Connection = "StorageConnectionString")]SecurityDetail data,
             [DataRepository(
-                DataType = typeof(Alert))]IDocumentRepository<Alert> securityAlertRepository,
-            [DataRepository(DataType = typeof(SecureScore))]IDocumentRepository<SecureScore> secureScoreRepository,
+                DataType = typeof(Alert))]DocumentRepository<Alert> securityAlertRepository,
+            [DataRepository(DataType = typeof(SecureScore))]DocumentRepository<SecureScore> secureScoreRepository,
             [SecureScore(
                 ApplicationId = "{AppEndpoint.ApplicationId}",
                 CustomerId = "{Customer.Id}",
@@ -331,7 +326,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
         public static async Task ProcessUsageAsync(
             [QueueTrigger(OperationConstants.UtilizationQueueName, Connection = "StorageConnectionString")]ProcessSubscriptionDetail subscriptionDetail,
             [DataRepository(
-                DataType = typeof(UtilizationDetail))]IDocumentRepository<UtilizationDetail> repository,
+                DataType = typeof(UtilizationDetail))]DocumentRepository<UtilizationDetail> repository,
             [PartnerService(
                 ApplicationId = "{PartnerCenterEndpoint.ApplicationId}",
                 Endpoint = "{PartnerCenterEndpoint.ServiceAddress}",
@@ -424,8 +419,9 @@ namespace Microsoft.Partner.SmartOffice.Functions
         public static async Task PullEnvironmentsAsync(
             [TimerTrigger("0 0 9 * * *")]TimerInfo timerInfo,
             [DataRepository(
-                DataType = typeof(EnvironmentDetail))]IDocumentRepository<EnvironmentDetail> repository,
-            [StorageService]IStorageService storage,
+                DataType = typeof(EnvironmentDetail))]DocumentRepository<EnvironmentDetail> repository,
+            [Queue(OperationConstants.PartnersQueueName, Connection = "StorageConnectionString")] ICollector<EnvironmentDetail> partnerQueue,
+            [Queue(OperationConstants.SecurityQueueName, Connection = "StorageConnectionString")] ICollector<SecurityDetail> securityQueue,
             TraceWriter log)
         {
             IEnumerable<EnvironmentDetail> environments;
@@ -453,9 +449,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
                     if (env.EnvironmentType == EnvironmentType.CSP)
                     {
                         // Write the environment details to the partners storage queue.
-                        await storage.WriteToQueueAsync(
-                            OperationConstants.PartnersQueueName,
-                            env).ConfigureAwait(false);
+                        partnerQueue.Add(env);
                     }
                     else
                     {
@@ -474,9 +468,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
                         }
 
                         // Write the event details to the security storage queue.
-                        await storage.WriteToQueueAsync(
-                        OperationConstants.SecurityQueueName,
-                        new SecurityDetail
+                        securityQueue.Add(new SecurityDetail
                         {
                             AppEndpoint = env.AppEndpoint,
                             Customer = new CustomerDetail
@@ -485,7 +477,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
                             },
 
                             Period = period.ToString(CultureInfo.InvariantCulture)
-                        }).ConfigureAwait(false);
+                        });
                     }
                 }
             }

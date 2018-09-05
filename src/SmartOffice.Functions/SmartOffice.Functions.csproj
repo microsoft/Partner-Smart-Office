@@ -26,11 +26,13 @@
   <ItemGroup>
     <PackageReference Include="CsvHelper" Version="7.1.1" />
     <PackageReference Include="Microsoft.ApplicationInsights.SnapshotCollector" Version="1.3.0" />
+    <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.Storage" Version="3.0.0-beta8" />
     <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.6.1" />
-    <PackageReference Include="Microsoft.NET.Sdk.Functions" Version="1.0.14" />
+    <PackageReference Include="Microsoft.NET.Sdk.Functions" Version="1.0.19" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SmartOffice.Data\SmartOffice.Data.csproj" />
+    <ProjectReference Include="..\SmartOffice.Extensions\SmartOffice.Extensions.csproj" />
     <ProjectReference Include="..\SmartOffice.Models\SmartOffice.Models.csproj" />
     <ProjectReference Include="..\SmartOffice.Services\SmartOffice.Services.csproj" />
   </ItemGroup>

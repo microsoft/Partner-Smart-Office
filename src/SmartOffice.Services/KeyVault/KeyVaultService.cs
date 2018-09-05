@@ -13,7 +13,7 @@ namespace Microsoft.Partner.SmartOffice.Services.KeyVault
     using System.Threading.Tasks;
     using Azure.KeyVault;
     using Azure.KeyVault.Models;
-    using Newtonsoft.Json;
+    using Azure.Services.AppAuthentication;
 
     public class KeyVaultService : IVaultService, IDisposable
     {
@@ -33,29 +33,9 @@ namespace Microsoft.Partner.SmartOffice.Services.KeyVault
         private static readonly SemaphoreSlim semaphore = new SemaphoreSlim(1, 1);
 
         /// <summary>
-        /// Name of the MSI endpoint environment variable.
-        /// </summary>
-        private const string MsiEndpoint = "MSI_ENDPOINT";
-
-        /// <summary>
-        /// Name of the MSI secret environment variable.
-        /// </summary>
-        private const string MsiSecret = "MSI_SECRET";
-
-        /// <summary>
-        /// Name of the Secret HTTP header.
-        /// </summary>
-        private const string SecretHeader = "Secret";
-
-        /// <summary>
         /// Error code returned when a secret is not found in the vault.
         /// </summary>
         private const string NotFoundErrorCode = "SecretNotFound";
-
-        /// <summary>
-        /// Address for the Azure Key Vault endpoint.
-        /// </summary>
-        private readonly string endpoint;
 
         /// <summary>
         /// Provides the ability to perform cryptographic key operations and vault operations 
@@ -71,10 +51,8 @@ namespace Microsoft.Partner.SmartOffice.Services.KeyVault
         /// <summary>
         /// Initializes a new instance of the <see cref="KeyVaultService"/> class.
         /// </summary>
-        /// <param name="endpoint">Address for the Azure Key Vault endpoint.</param>
-        public KeyVaultService(string endpoint)
+        public KeyVaultService()
         {
-            this.endpoint = endpoint;
         }
 
         /// <summary>
@@ -85,22 +63,26 @@ namespace Microsoft.Partner.SmartOffice.Services.KeyVault
         /// against the Key Vault service.
         /// </param>
         /// <param name="endpoint">The Azure Key Vault service endpoint.</param>
-        public KeyVaultService(IKeyVaultClient keyVaultClient, string endpoint)
+        public KeyVaultService(IKeyVaultClient keyVaultClient)
         {
-            this.endpoint = endpoint;
             this.keyVaultClient = keyVaultClient;
         }
 
-        private IKeyVaultClient KeyVault => keyVaultClient ?? (keyVaultClient = new KeyVaultClient(GetKeyVaultAccessTokenAsync, httpClient));
+        private IKeyVaultClient KeyVault => keyVaultClient ??
+            (keyVaultClient = new KeyVaultClient(
+                new KeyVaultClient.AuthenticationCallback(
+                    new AzureServiceTokenProvider().KeyVaultTokenCallback),
+                httpClient));
 
         /// <summary>
         /// Deletes the specified secret from the configured key vault.
         /// </summary>
+        /// <param name="endpoint">Address for the Azure Key Vault endpoint.</param>
         /// <param name="secretName">The name of the secret.</param>
         /// <returns>
         /// An instance of the <see cref="Task"/> that represents the asynchronous operation.
         /// </returns>
-        public async Task DeleteSecretAsync(string secretName)
+        public async Task DeleteSecretAsync(string endpoint, string secretName)
         {
             await KeyVault.DeleteSecretAsync(endpoint, secretName).ConfigureAwait(false);
         }
@@ -108,9 +90,10 @@ namespace Microsoft.Partner.SmartOffice.Services.KeyVault
         /// <summary>
         /// Gets the secret from the configured key vault.
         /// </summary>
+        /// <param name="endpoint">Address for the Azure Key Vault endpoint.</param>
         /// <param name="secretName">The name of the secret.</param>
         /// <returns>The value for the speicifed secret.</returns>
-        public async Task<string> GetSecretAsync(string secretName)
+        public async Task<string> GetSecretAsync(string endpoint, string secretName)
         {
             SecretBundle bundle;
 
@@ -152,13 +135,14 @@ namespace Microsoft.Partner.SmartOffice.Services.KeyVault
         /// <summary>
         /// Sets a secret in the configured key vault. 
         /// </summary>
+        /// <param name="endpoint">Address for the Azure Key Vault endpoint.</param>
         /// <param name="secretName">The name of the secret.</param>
         /// <param name="value">The value of the secret.</param>
         /// <param name="contentType">Type of the secret value such as a password.</param>
         /// <returns>
         /// An instance of the <see cref="Task"/> that represents the asynchronous operation.
         /// </returns>
-        public async Task SetSecretAsync(string secretName, string value, string contentType)
+        public async Task SetSecretAsync(string endpoint, string secretName, string value, string contentType)
         {
             await KeyVault.SetSecretAsync(endpoint, secretName, value, null, contentType).ConfigureAwait(false);
         }
@@ -182,44 +166,6 @@ namespace Microsoft.Partner.SmartOffice.Services.KeyVault
             }
 
             disposed = true;
-        }
-
-        private static async Task<string> GetKeyVaultAccessTokenAsync(string authority, string resource, string scope)
-        {
-            HttpResponseMessage response = null;
-            TokenResponse token;
-            string content;
-            string endpoint;
-            string secret;
-
-            try
-            {
-                endpoint = Environment.GetEnvironmentVariable(MsiEndpoint);
-                secret = Environment.GetEnvironmentVariable(MsiSecret);
-
-                using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, new Uri($"{endpoint}?resource={resource}&api-version=2017-09-01")))
-                {
-                    request.Headers.Add(SecretHeader, secret);
-
-                    response = await httpClient.SendAsync(request).ConfigureAwait(false);
-
-                    content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-
-                    if (!response.IsSuccessStatusCode)
-                    {
-                        throw new Exception(content);
-                    }
-
-                    token = JsonConvert.DeserializeObject<TokenResponse>(content);
-
-                    return token.AccessToken;
-                }
-            }
-            finally
-            {
-                response?.Dispose();
-                token = null;
-            }
         }
     }
 }

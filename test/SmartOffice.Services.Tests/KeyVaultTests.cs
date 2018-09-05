@@ -56,9 +56,9 @@ namespace Microsoft.Partner.SmartOffice.Services.Tests
 
             try
             {
-                service = new KeyVaultService(keyVaultClient, KeyVaultEndpoint);
+                service = new KeyVaultService(keyVaultClient);
 
-                actual = await service.GetSecretAsync("UnitTest").ConfigureAwait(false);
+                actual = await service.GetSecretAsync(KeyVaultEndpoint, "UnitTest").ConfigureAwait(false);
 
                 Assert.AreEqual("AmazingSecret", actual);
             }
