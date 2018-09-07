@@ -6,14 +6,18 @@
 
 namespace Microsoft.Partner.SmartOffice.Models.Graph
 {
+    using Converters;
+    using Newtonsoft.Json;
+
+    [JsonConverter(typeof(EnumJsonConverter))]
     public enum LogonType
     {
-        Unknown = -1,
-        Interactive = 0,
-        RemoteInteractive = 1,
-        Network = 2,
-        Batch = 3,
-        Service = 4,
-        UnknownFutureValue = 127, // 0x0000007F
+        Unknown = 0,
+        Interactive = 1,
+        RemoteInteractive = 2,
+        Network = 3,
+        Batch = 4,
+        Service = 5,
+        UnknownFutureValue = 127
     }
 }

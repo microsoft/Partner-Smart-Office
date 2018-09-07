@@ -1,19 +1,20 @@
 ﻿// -----------------------------------------------------------------------
-// <copyright file="ApplicationPermissionsRequired.cs" company="Microsoft">
+// <copyright file="ConnectionDirection.cs" company="Microsoft">
 //     Copyright (c) Microsoft Corporation. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
 
 namespace Microsoft.Partner.SmartOffice.Models.Graph
 {
-    public enum ApplicationPermissionsRequired
+    using Converters;
+    using Newtonsoft.Json;
+
+    [JsonConverter(typeof(EnumJsonConverter))]
+    public enum ConnectionDirection
     {
         Unknown = 0,
-        Anonymous = 1,
-        Guest = 2,
-        User = 3,
-        Administrator = 4,
-        System = 5,
+        Inbound = 1,
+        Outbound = 2,
         UnknownFutureValue = 127
     }
 }

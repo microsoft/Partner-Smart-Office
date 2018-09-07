@@ -1,19 +1,26 @@
 ﻿// -----------------------------------------------------------------------
-// <copyright file="ApplicationPermissionsRequired.cs" company="Microsoft">
+// <copyright file="FileHashType.cs" company="Microsoft">
 //     Copyright (c) Microsoft Corporation. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
 
 namespace Microsoft.Partner.SmartOffice.Models.Graph
 {
-    public enum ApplicationPermissionsRequired
+    using Converters;
+    using Newtonsoft.Json;
+
+    [JsonConverter(typeof(EnumJsonConverter))]
+    public enum FileHashType
     {
         Unknown = 0,
-        Anonymous = 1,
-        Guest = 2,
-        User = 3,
-        Administrator = 4,
-        System = 5,
+        Sha1 = 1,
+        Sha256 = 2,
+        Md5 = 3,
+        AuthenticodeHash256 = 4,
+        LsHash = 5,
+        Ctph = 6,
+        PeSha1 = 7,
+        PeSha256 = 8,
         UnknownFutureValue = 127
     }
 }

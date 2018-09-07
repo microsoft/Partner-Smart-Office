@@ -11,8 +11,7 @@ namespace Microsoft.Partner.SmartOffice.Models.Graph
         Unknown = 0,
         TruePositive = 1,
         FalsePositive = 2,
-        TrueNegative = 3,
-        FalseNegative = 4,
-        UnknownFutureValue = 127, // 0x0000007F
+        BenignPositive = 3,
+        UnknownFutureValue = 127
     }
 }

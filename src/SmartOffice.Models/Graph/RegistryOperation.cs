@@ -1,19 +1,21 @@
 ﻿// -----------------------------------------------------------------------
-// <copyright file="ApplicationPermissionsRequired.cs" company="Microsoft">
+// <copyright file="RegistryOperation.cs" company="Microsoft">
 //     Copyright (c) Microsoft Corporation. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
 
 namespace Microsoft.Partner.SmartOffice.Models.Graph
 {
-    public enum ApplicationPermissionsRequired
+    using Converters;
+    using Newtonsoft.Json;
+
+    [JsonConverter(typeof(EnumJsonConverter))]
+    public enum RegistryOperation
     {
         Unknown = 0,
-        Anonymous = 1,
-        Guest = 2,
-        User = 3,
-        Administrator = 4,
-        System = 5,
+        Create = 1,
+        Modify = 2,
+        Delete = 3,
         UnknownFutureValue = 127
     }
 }

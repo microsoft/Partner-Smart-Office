@@ -1,5 +1,5 @@
 ﻿// -----------------------------------------------------------------------
-// <copyright file="MalwareState.cs" company="Microsoft">
+// <copyright file="FileHash.cs" company="Microsoft">
 //     Copyright (c) Microsoft Corporation. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -7,24 +7,15 @@
 namespace Microsoft.Partner.SmartOffice.Models.Graph
 {
     using System.Collections.Generic;
-    using Newtonsoft.Json;
+    using Newtonsoft.Json; 
 
-    public class MalwareState
+   public class FileHash
     {
         [JsonProperty]
-        public string Category { get; set; }
+        public FileHashType? HashType { get; set; }
 
         [JsonProperty]
-        public string Family { get; set; }
-
-        [JsonProperty]
-        public string Name { get; set; }
-
-        [JsonProperty]
-        public string Severity { get; set; }
-
-        [JsonProperty]
-        public bool? WasRunning { get; set; }
+        public string HashValue { get; set; }
 
         [JsonExtensionData(ReadData = true)]
         public IDictionary<string, object> AdditionalData { get; set; }

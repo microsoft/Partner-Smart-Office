@@ -22,19 +22,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SmartOffice.Services", "src
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SmartOffice.Functions", "src\SmartOffice.Functions\SmartOffice.Functions.csproj", "{183CF908-5D9F-4610-8F1B-5D1451F53DC1}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{FC6E52D8-8868-41E4-9A00-191A270B6692}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SmartOffice.Data", "src\SmartOffice.Data\SmartOffice.Data.csproj", "{C0320696-8360-40DD-90C2-5B98B04383C6}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SmartOffice", "src\SmartOffice\SmartOffice.csproj", "{C4A36A3B-A9B4-4156-998A-4F2D06863664}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SmartOffice.Data.Tests", "test\SmartOffice.Data.Tests\SmartOffice.Data.Tests.csproj", "{016E288C-C5A3-44A2-B54C-620235E242D2}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SmartOffice.Functions.Tests", "test\SmartOffice.Functions.Tests\SmartOffice.Functions.Tests.csproj", "{2B8E38AC-6806-48F9-9D7F-0BE2A4948B74}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SmartOffice.Services.Tests", "test\SmartOffice.Services.Tests\SmartOffice.Services.Tests.csproj", "{05DD47D4-C87B-4378-B426-12396AEEEA8F}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartOffice.Extensions", "src\SmartOffice.Extensions\SmartOffice.Extensions.csproj", "{A677D0BC-7753-4330-BA25-FE5BCD950D16}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SmartOffice.Extensions", "src\SmartOffice.Extensions\SmartOffice.Extensions.csproj", "{A677D0BC-7753-4330-BA25-FE5BCD950D16}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -62,18 +54,6 @@ Global
 		{C4A36A3B-A9B4-4156-998A-4F2D06863664}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C4A36A3B-A9B4-4156-998A-4F2D06863664}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C4A36A3B-A9B4-4156-998A-4F2D06863664}.Release|Any CPU.Build.0 = Release|Any CPU
-		{016E288C-C5A3-44A2-B54C-620235E242D2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{016E288C-C5A3-44A2-B54C-620235E242D2}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{016E288C-C5A3-44A2-B54C-620235E242D2}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{016E288C-C5A3-44A2-B54C-620235E242D2}.Release|Any CPU.Build.0 = Release|Any CPU
-		{2B8E38AC-6806-48F9-9D7F-0BE2A4948B74}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2B8E38AC-6806-48F9-9D7F-0BE2A4948B74}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2B8E38AC-6806-48F9-9D7F-0BE2A4948B74}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2B8E38AC-6806-48F9-9D7F-0BE2A4948B74}.Release|Any CPU.Build.0 = Release|Any CPU
-		{05DD47D4-C87B-4378-B426-12396AEEEA8F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{05DD47D4-C87B-4378-B426-12396AEEEA8F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{05DD47D4-C87B-4378-B426-12396AEEEA8F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{05DD47D4-C87B-4378-B426-12396AEEEA8F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{A677D0BC-7753-4330-BA25-FE5BCD950D16}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{A677D0BC-7753-4330-BA25-FE5BCD950D16}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A677D0BC-7753-4330-BA25-FE5BCD950D16}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -88,9 +68,6 @@ Global
 		{183CF908-5D9F-4610-8F1B-5D1451F53DC1} = {F13E7F55-1E06-4577-980F-720B0F3BEAB8}
 		{C0320696-8360-40DD-90C2-5B98B04383C6} = {F13E7F55-1E06-4577-980F-720B0F3BEAB8}
 		{C4A36A3B-A9B4-4156-998A-4F2D06863664} = {F13E7F55-1E06-4577-980F-720B0F3BEAB8}
-		{016E288C-C5A3-44A2-B54C-620235E242D2} = {FC6E52D8-8868-41E4-9A00-191A270B6692}
-		{2B8E38AC-6806-48F9-9D7F-0BE2A4948B74} = {FC6E52D8-8868-41E4-9A00-191A270B6692}
-		{05DD47D4-C87B-4378-B426-12396AEEEA8F} = {FC6E52D8-8868-41E4-9A00-191A270B6692}
 		{A677D0BC-7753-4330-BA25-FE5BCD950D16} = {F13E7F55-1E06-4577-980F-720B0F3BEAB8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution

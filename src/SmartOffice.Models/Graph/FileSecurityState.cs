@@ -7,19 +7,23 @@
 namespace Microsoft.Partner.SmartOffice.Models.Graph
 {
     using System.Collections.Generic;
+    using Newtonsoft.Json;
 
     public class FileSecurityState
     {
-        public string AuthenticodeHash256 { get; set; }
+        [JsonProperty]
+        public FileHash FileHash { get; set; }
 
+        [JsonProperty]
         public string Name { get; set; }
 
+        [JsonProperty]
         public string Path { get; set; }
 
+        [JsonProperty]
         public string RiskScore { get; set; }
 
-        public string Sha256 { get; set; }
-
+        [JsonExtensionData(ReadData = true)]
         public IDictionary<string, object> AdditionalData { get; set; }
     }
 }

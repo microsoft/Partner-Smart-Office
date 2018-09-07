@@ -1,17 +1,22 @@
 ﻿// -----------------------------------------------------------------------
-// <copyright file="AlertType.cs" company="Microsoft">
+// <copyright file="ConnectionStatus.cs" company="Microsoft">
 //     Copyright (c) Microsoft Corporation. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
 
 namespace Microsoft.Partner.SmartOffice.Models.Graph
 {
-    public enum AlertType
+    using Converters;
+    using Newtonsoft.Json;
+
+    [JsonConverter(typeof(EnumJsonConverter))]
+    public enum ConnectionStatus
     {
         Unknown = 0,
-        SingleSensorAtomic = 10, // 0x0000000A
-        SingleSensorCompound = 20, // 0x00000014
-        MultiSensorCompound = 30, // 0x0000001E
-        UnknownFutureValue = 127, // 0x0000007F
+        Attempted = 1,
+        Succeeded = 2,
+        Blocked = 3,
+        Failed = 4,
+        UnknownFutureValue = 127
     }
 }

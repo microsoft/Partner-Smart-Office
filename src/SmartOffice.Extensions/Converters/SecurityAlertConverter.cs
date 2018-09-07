@@ -12,6 +12,7 @@ namespace Microsoft.Partner.SmartOffice.Extensions.Converters
     using System.Threading.Tasks;
     using Azure.WebJobs;
     using Bindings;
+    using Microsoft.Extensions.Logging;
     using Microsoft.Extensions.Options;
     using Models.Graph;
     using Services;
@@ -20,12 +21,15 @@ namespace Microsoft.Partner.SmartOffice.Extensions.Converters
 
     public class SecurityAlertConverter : IAsyncConverter<SecurityAlertsAttribute, List<Alert>>
     {
+        private readonly ILogger log;
+
         private readonly IVaultService vault;
 
         private readonly SmartOfficeOptions options;
 
-        public SecurityAlertConverter(IOptions<SmartOfficeOptions> options, IVaultService vault)
+        public SecurityAlertConverter(ILoggerFactory loggerFactory, IOptions<SmartOfficeOptions> options, IVaultService vault)
         {
+            log = loggerFactory?.CreateLogger("Host.Bindings.SecurityAlertConverter");
             this.options = options.Value;
             this.vault = vault;
         }
@@ -37,7 +41,6 @@ namespace Microsoft.Partner.SmartOffice.Extensions.Converters
 
             try
             {
-
                 graphService = new GraphService(new Uri(input.Resource),
                     new ServiceCredentials(
                         input.ApplicationId,
@@ -49,9 +52,9 @@ namespace Microsoft.Partner.SmartOffice.Extensions.Converters
 
                 return alerts;
             }
-            catch (ServiceClientException)
+            catch (ServiceClientException ex)
             {
-                // log.LogError(ex, $"Encountered {ex.Message} when processing {input.CustomerId}");
+                log.LogError(ex, $"Encountered an error when processing {input.CustomerId}");
                 return null;
             }
             finally
