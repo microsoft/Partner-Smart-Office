@@ -18,6 +18,6 @@ namespace Microsoft.Partner.SmartOffice.Models.Graph
         Network = 3,
         Batch = 4,
         Service = 5,
-        UnknownFutureValue = 127, // 0x0000007F
+        UnknownFutureValue = 127
     }
 }

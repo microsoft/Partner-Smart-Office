@@ -12,10 +12,10 @@ namespace Microsoft.Partner.SmartOffice.Models.Graph
     [JsonConverter(typeof(EnumJsonConverter))]
     public enum UserAccountSecurityType
     {
-        Unknown = -1,
-        Standard = 0,
-        Power = 1,
-        Administrator = 2,
-        UnknownFutureValue = 127, // 0x0000007F
+        Unknown = 0,
+        Standard = 1,
+        Power = 2,
+        Administrator = 3,
+        UnknownFutureValue = 127
     }
 }
