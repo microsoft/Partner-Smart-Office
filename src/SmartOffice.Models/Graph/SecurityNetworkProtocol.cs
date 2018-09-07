@@ -6,6 +6,10 @@
 
 namespace Microsoft.Partner.SmartOffice.Models.Graph
 {
+    using Converters;
+    using Newtonsoft.Json;
+
+    [JsonConverter(typeof(EnumJsonConverter))]
     public enum SecurityNetworkProtocol
     {
         Unknown = -1,

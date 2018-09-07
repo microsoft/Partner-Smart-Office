@@ -1,5 +1,5 @@
 ﻿// -----------------------------------------------------------------------
-// <copyright file="ProcessIntegrityLevel.cs" company="Microsoft">
+// <copyright file="RegistryOperation.cs" company="Microsoft">
 //     Copyright (c) Microsoft Corporation. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -10,14 +10,12 @@ namespace Microsoft.Partner.SmartOffice.Models.Graph
     using Newtonsoft.Json;
 
     [JsonConverter(typeof(EnumJsonConverter))]
-    public enum ProcessIntegrityLevel
+    public enum RegistryOperation
     {
         Unknown = 0,
-        Untrusted = 10, // 0x0000000A
-        Low = 20, // 0x00000014
-        Medium = 30, // 0x0000001E
-        High = 40, // 0x00000028
-        System = 50, // 0x00000032
-        UnknownFutureValue = 60, // 0x0000003C
+        Create = 1,
+        Modify = 2,
+        Delete = 3,
+        UnknownFutureValue = 127
     }
 }

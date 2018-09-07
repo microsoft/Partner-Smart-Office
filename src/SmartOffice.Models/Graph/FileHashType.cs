@@ -1,5 +1,5 @@
 ﻿// -----------------------------------------------------------------------
-// <copyright file="ProcessIntegrityLevel.cs" company="Microsoft">
+// <copyright file="FileHashType.cs" company="Microsoft">
 //     Copyright (c) Microsoft Corporation. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -10,14 +10,17 @@ namespace Microsoft.Partner.SmartOffice.Models.Graph
     using Newtonsoft.Json;
 
     [JsonConverter(typeof(EnumJsonConverter))]
-    public enum ProcessIntegrityLevel
+    public enum FileHashType
     {
         Unknown = 0,
-        Untrusted = 10, // 0x0000000A
-        Low = 20, // 0x00000014
-        Medium = 30, // 0x0000001E
-        High = 40, // 0x00000028
-        System = 50, // 0x00000032
-        UnknownFutureValue = 60, // 0x0000003C
+        Sha1 = 1,
+        Sha256 = 2,
+        Md5 = 3,
+        AuthenticodeHash256 = 4,
+        LsHash = 5,
+        Ctph = 6,
+        PeSha1 = 7,
+        PeSha256 = 8,
+        UnknownFutureValue = 127
     }
 }

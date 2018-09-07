@@ -45,7 +45,7 @@ namespace Microsoft.Partner.SmartOffice.Extensions
             dataRepoConverter = new DataRepositoryConverter(loggerFactory, options, vault);
             partnerServiceConverter = new PartnerServiceConverter(options, vault);
             secureScoreConverter = new SecureScoreConverter(loggerFactory, options, vault);
-            securityAlertConverter = new SecurityAlertConverter(options, vault);
+            securityAlertConverter = new SecurityAlertConverter(loggerFactory, options, vault);
         }
 
         /// <summary>

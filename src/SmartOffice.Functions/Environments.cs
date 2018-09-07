@@ -306,6 +306,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
             if (scores?.Count > 0)
             {
                 log.Info($"Importing {scores.Count} Secure Score entries from the past {data.Period} periods for {data.Customer.Id}");
+
                 await secureScoreRepository.AddOrUpdateAsync(
                     scores,
                     data.Customer.Id).ConfigureAwait(false);
@@ -314,6 +315,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
             if (alerts?.Count > 0)
             {
                 log.Info($"Importing {alerts.Count} security alert entries for {data.Customer.Id}");
+
                 await securityAlertRepository.AddOrUpdateAsync(
                     alerts,
                     data.Customer.Id).ConfigureAwait(false);
@@ -365,9 +367,9 @@ namespace Microsoft.Partner.SmartOffice.Functions
                             r,
                             new Dictionary<string, string>
                             {
-                            { "Id", $"{r.Resource.Id}--{r.UsageStartTime}" },
-                            { "SubscriptionId", subscriptionDetail.Subscription.Id },
-                            { "TenantId", subscriptionDetail.Subscription.TenantId }
+                                { "Id", $"{r.Resource.Id}--{r.UsageStartTime}" },
+                                { "SubscriptionId", subscriptionDetail.Subscription.Id },
+                                { "TenantId", subscriptionDetail.Subscription.TenantId }
                             })));
 
                     while (utilizationRecords.Links.Next != null)

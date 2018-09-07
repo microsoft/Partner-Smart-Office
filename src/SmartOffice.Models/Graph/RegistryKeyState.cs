@@ -1,5 +1,5 @@
 ﻿// -----------------------------------------------------------------------
-// <copyright file="HostSecurityState.cs" company="Microsoft">
+// <copyright file="RegistryKeyState.cs" company="Microsoft">
 //     Copyright (c) Microsoft Corporation. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -7,36 +7,39 @@
 namespace Microsoft.Partner.SmartOffice.Models.Graph
 {
     using System.Collections.Generic;
-    using Newtonsoft.Json;
+    using Newtonsoft.Json; 
 
-    public class HostSecurityState
+    public sealed class RegistryKeyState
     {
         [JsonProperty]
-        public string Fqdn { get; set; }
+        public RegistryHive? Hive { get; set; }
 
         [JsonProperty]
-        public bool? IsAzureAdJoined { get; set; }
+        public string Key { get; set; }
 
         [JsonProperty]
-        public bool? IsAzureAdRegistered { get; set; }
+        public string OldKey { get; set; }
 
         [JsonProperty]
-        public bool? IsHybridAzureDomainJoined { get; set; }
+        public string OldValueData { get; set; }
 
         [JsonProperty]
-        public string NetBiosName { get; set; }
+        public string OldValueName { get; set; }
 
         [JsonProperty]
-        public string Os { get; set; }
+        public RegistryOperation? Operation { get; set; }
 
         [JsonProperty]
-        public string PrivateIpAddress { get; set; }
+        public int? ProcessId { get; set; }
 
         [JsonProperty]
-        public string PublicIpAddress { get; set; }
+        public string ValueData { get; set; }
 
         [JsonProperty]
-        public string RiskScore { get; set; }
+        public string ValueName { get; set; }
+
+        [JsonProperty]
+        public RegistryValueType? ValueType { get; set; }
 
         [JsonExtensionData(ReadData = true)]
         public IDictionary<string, object> AdditionalData { get; set; }
