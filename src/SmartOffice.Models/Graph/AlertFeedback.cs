@@ -6,6 +6,9 @@
 
 namespace Microsoft.Partner.SmartOffice.Models.Graph
 {
+    using Newtonsoft.Json; 
+
+    [JsonConverter(typeof(EnumConverter))]
     public enum AlertFeedback
     {
         Unknown = 0,

@@ -4,7 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace Microsoft.Partner.SmartOffice.Models.Converters
+namespace Microsoft.Partner.SmartOffice.Models.PartnerCenter.JsonConverters
 {
     using System;
     using System.Globalization;

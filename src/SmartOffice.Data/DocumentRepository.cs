@@ -18,7 +18,7 @@ namespace Microsoft.Partner.SmartOffice.Data
     using Azure.Documents;
     using Azure.Documents.Client;
     using Azure.Documents.Linq;
-    using Models.Converters;
+    using Models.PartnerCenter.JsonConverters;
     using Newtonsoft.Json;
 
     public class DocumentRepository<TEntity> : IDocumentRepository<TEntity> where TEntity : class
