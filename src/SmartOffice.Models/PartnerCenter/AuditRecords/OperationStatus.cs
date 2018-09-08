@@ -6,7 +6,7 @@
 
 namespace Microsoft.Partner.SmartOffice.Models.PartnerCenter.AuditRecords
 {
-    using Converters;
+    using JsonConverters;
     using Newtonsoft.Json; 
 
     [JsonConverter(typeof(EnumJsonConverter))]

@@ -13,7 +13,7 @@ namespace Microsoft.Partner.SmartOffice.Services.PartnerCenter
     using System.Threading.Tasks;
     using AuditRecords;
     using Customers;
-    using Models.Converters;
+    using Models.PartnerCenter.JsonConverters;
     using Models.PartnerCenter;
     using Newtonsoft.Json;
     using Offers;

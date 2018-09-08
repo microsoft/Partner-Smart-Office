@@ -6,10 +6,9 @@
 
 namespace Microsoft.Partner.SmartOffice.Models.Graph
 {
-    using Converters;
     using Newtonsoft.Json;
 
-    [JsonConverter(typeof(EnumJsonConverter))]
+    [JsonConverter(typeof(EnumConverter))]
     public enum EmailRole
     {
         Unknown = 0,

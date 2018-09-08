@@ -6,10 +6,9 @@
 
 namespace Microsoft.Partner.SmartOffice.Models.Graph
 {
-    using Converters;
     using Newtonsoft.Json;
 
-    [JsonConverter(typeof(EnumJsonConverter))]
+    [JsonConverter(typeof(EnumConverter))]
     public enum ProcessIntegrityLevel
     {
         Unknown = 0,

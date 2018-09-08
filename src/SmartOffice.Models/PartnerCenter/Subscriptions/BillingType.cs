@@ -6,7 +6,7 @@
 
 namespace Microsoft.Partner.SmartOffice.Models.PartnerCenter.Subscriptions
 {
-    using Converters;
+    using JsonConverters;
     using Newtonsoft.Json; 
 
     [JsonConverter(typeof(EnumJsonConverter))]
