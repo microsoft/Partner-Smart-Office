@@ -167,4 +167,4 @@ $ResourceGroup = Read-Host -Prompt "Specify a resource group name"
 Write-Host -ForegroundColor Green "Deploying Partner Smart Office. Please note this process can take several minutes."
 
 New-AzureRmResourceGroup -Location southcentralus -Name $ResourceGroup
-New-AzureRmResourceGroupDeployment -Name $(New-Guid).ToString() -ResourceGroupName $ResourceGroup -TemplateUri https://raw.githubusercontent.com/Microsoft/Partner-Smart-Office/master/azuredeploy.json -appName $appName -applicationId $app.Id
+New-AzureRmResourceGroupDeployment -Name $(New-Guid).ToString() -ResourceGroupName $ResourceGroup -TemplateUri https://raw.githubusercontent.com/Microsoft/Partner-Smart-Office/master/azuredeploy.json -appName $appName -applicationId $app.AppId
