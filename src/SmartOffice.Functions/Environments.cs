@@ -15,6 +15,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
     using Azure.WebJobs.Host;
     using Data;
     using Extensions.Bindings;
+    using Microsoft.Extensions.Logging;
     using Models;
     using Models.Graph;
     using Models.PartnerCenter;
@@ -56,7 +57,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
                 Resource = "https://graph.windows.net")]IPartnerServiceClient partner,
             [Queue(OperationConstants.SecurityQueueName, Connection = "StorageConnectionString")] ICollector<SecurityDetail> securityQueue,
             [Queue(OperationConstants.UtilizationQueueName, Connection = "StorageConnectionString")] ICollector<ProcessSubscriptionDetail> utilizationQueue,
-            TraceWriter log)
+            ILogger log)
         {
             IEnumerable<AuditRecord> auditRecords;
             List<SubscriptionDetail> subscriptions;
@@ -64,7 +65,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
 
             try
             {
-                log.Info($"Attempting to process information for {customerDetail.Customer.Id}.");
+                log.LogInformation($"Attempting to process information for {customerDetail.Customer.Id}.");
 
                 if (customerDetail.Customer.RemovedFromPartnerCenter)
                 {
@@ -97,7 +98,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
                         customerDetail.Customer.ProcessException = ex;
                         subscriptions = null;
 
-                        log.Warning($"Encountered an exception when processing {customerDetail.Customer.Id}. Check the customer record for more information.");
+                        log.LogWarning($"Encountered an exception when processing {customerDetail.Customer.Id}. Check the customer record for more information.");
                     }
                 }
                 else
@@ -153,7 +154,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
 
                 await customerRepository.AddOrUpdateAsync(customerDetail.Customer).ConfigureAwait(false);
 
-                log.Info($"Successfully processed customer {customerDetail.Customer.Id}. Exception(s): {(customerDetail.Customer.ProcessException != null ? "yes" : "no")}");
+                log.LogInformation($"Successfully processed customer {customerDetail.Customer.Id}. Exception(s): {(customerDetail.Customer.ProcessException != null ? "yes" : "no")}");
             }
             finally
             {
@@ -187,7 +188,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
                 ApplicationTenantId = "{PartnerCenterEndpoint.TenantId}",
                 Resource = "https://graph.windows.net")]IPartnerServiceClient client,
             [Queue(OperationConstants.CustomersQueueName, Connection = "StorageConnectionString")] ICollector<ProcessCustomerDetail> customerQueue,
-            TraceWriter log)
+            ILogger log)
         {
             List<AuditRecord> auditRecords;
             List<CustomerDetail> customers;
@@ -195,7 +196,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
 
             try
             {
-                log.Info($"Starting to process the {environment.FriendlyName} CSP environment.");
+                log.LogInformation($"Starting to process the {environment.FriendlyName} CSP environment.");
 
                 // Calculate the number of days that have gone by, since the last successful synchronization.
                 days = (environment.LastProcessed == null) ? 30 : (DateTimeOffset.UtcNow - environment.LastProcessed).Days;
@@ -224,7 +225,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
 
                     if (auditRecords.Count > 0)
                     {
-                        log.Info($"Importing {auditRecords.Count} audit records available between now and the previous day.");
+                        log.LogInformation($"Importing {auditRecords.Count} audit records available between now and the previous day.");
 
                         // Add, or update, each audit record to the database.
                         await auditRecordRepository.AddOrUpdateAsync(
@@ -259,7 +260,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
                 environment.LastProcessed = DateTimeOffset.UtcNow;
                 await environmentRepository.AddOrUpdateAsync(environment).ConfigureAwait(false);
 
-                log.Info($"Successfully process the {environment.FriendlyName} CSP environment.");
+                log.LogInformation($"Successfully process the {environment.FriendlyName} CSP environment.");
             }
             finally
             {
@@ -295,17 +296,17 @@ namespace Microsoft.Partner.SmartOffice.Functions
                 CustomerId = "{Customer.Id}",
                 Resource = "{AppEndpoint.ServiceAddress}",
                 SecretName = "{AppEndpoint.ApplicationSecretId}")]List<Alert> alerts,
-            TraceWriter log)
+            ILogger log)
         {
             if (data.Customer.ProcessException != null)
             {
-                log.Warning($"Unable to process {data.Customer.Id} please check the customer's last exception for more information.");
+                log.LogWarning($"Unable to process {data.Customer.Id} please check the customer's last exception for more information.");
                 return;
             }
 
             if (scores?.Count > 0)
             {
-                log.Info($"Importing {scores.Count} Secure Score entries from the past {data.Period} periods for {data.Customer.Id}");
+                log.LogInformation($"Importing {scores.Count} Secure Score entries from the past {data.Period} periods for {data.Customer.Id}");
 
                 await secureScoreRepository.AddOrUpdateAsync(
                     scores,
@@ -314,14 +315,14 @@ namespace Microsoft.Partner.SmartOffice.Functions
 
             if (alerts?.Count > 0)
             {
-                log.Info($"Importing {alerts.Count} security alert entries for {data.Customer.Id}");
+                log.LogInformation($"Importing {alerts.Count} security alert entries for {data.Customer.Id}");
 
                 await securityAlertRepository.AddOrUpdateAsync(
                     alerts,
                     data.Customer.Id).ConfigureAwait(false);
             }
 
-            log.Info($"Successfully process data for {data.Customer.Id}");
+            log.LogInformation($"Successfully process data for {data.Customer.Id}");
         }
 
         [FunctionName("ProcessUtilization")]
@@ -335,8 +336,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
                 SecretName = "{PartnerCenterEndpoint.ApplicationSecretId}",
                 ApplicationTenantId = "{PartnerCenterEndpoint.TenantId}",
                 Resource = "https://graph.windows.net")]IPartnerServiceClient client,
-            TraceWriter log
-            )
+            ILogger log)
         {
             // Subscriptions with a billing type of usage are the only ones that have utilization records.
             if (subscriptionDetail.Subscription.BillingType != BillingType.Usage)
@@ -344,7 +344,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
                 return;
             }
 
-            log.Info($"Requesting utilization records for {subscriptionDetail.Subscription.Id}");
+            log.LogInformation($"Requesting utilization records for {subscriptionDetail.Subscription.Id}");
 
             List<UtilizationDetail> records;
             ResourceCollection<AzureUtilizationRecord> utilizationRecords;
@@ -395,7 +395,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
 
                 if (records.Count > 0)
                 {
-                    log.Info($"Writing {records.Count} utilization records to the repository.");
+                    log.LogInformation($"Writing {records.Count} utilization records to the repository.");
 
                     await repository.AddOrUpdateAsync(
                         records,
@@ -424,7 +424,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
                 DataType = typeof(EnvironmentDetail))]DocumentRepository<EnvironmentDetail> repository,
             [Queue(OperationConstants.PartnersQueueName, Connection = "StorageConnectionString")] ICollector<EnvironmentDetail> partnerQueue,
             [Queue(OperationConstants.SecurityQueueName, Connection = "StorageConnectionString")] ICollector<SecurityDetail> securityQueue,
-            TraceWriter log)
+            ILogger log)
         {
             IEnumerable<EnvironmentDetail> environments;
             int period;
@@ -433,7 +433,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
             {
                 if (timerInfo.IsPastDue)
                 {
-                    log.Info("Execution of the function is starting behind schedule.");
+                    log.LogInformation("Execution of the function is starting behind schedule.");
                 }
 
                 // Obtain a complete list of all configured environments. 
@@ -441,7 +441,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
 
                 if (environments.Count() == 0)
                 {
-                    log.Warning("No environment have been configured. Ensure that an envrionment has been created using the portal.");
+                    log.LogWarning("No environment have been configured. Ensure that an envrionment has been created using the portal.");
                     return;
                 }
 
