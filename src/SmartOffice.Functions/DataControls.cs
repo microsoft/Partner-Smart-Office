@@ -12,11 +12,11 @@ namespace Microsoft.Partner.SmartOffice.Functions
     using System.Reflection;
     using System.Threading.Tasks;
     using Azure.WebJobs;
-    using Azure.WebJobs.Host;
     using ClassMaps;
     using CsvHelper;
     using Data;
     using Extensions.Bindings;
+    using Microsoft.Extensions.Logging;
     using Models.Graph;
 
     /// <summary>
@@ -34,7 +34,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
             [TimerTrigger("0 0 10 * * *")]TimerInfo timerInfo,
             [DataRepository(
                 DataType = typeof(ControlListEntry))]DocumentRepository<ControlListEntry> repository,
-            TraceWriter log)
+            ILogger log)
         {
             CsvReader reader = null;
             List<ControlListEntry> entries;
@@ -43,7 +43,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
             {
                 if (timerInfo.IsPastDue)
                 {
-                    log.Info("Execution of the function is starting behind schedule.");
+                    log.LogInformation("Execution of the function is starting behind schedule.");
                 }
 
                 using (StreamReader streamReader = new StreamReader(
@@ -54,12 +54,12 @@ namespace Microsoft.Partner.SmartOffice.Functions
 
                     entries = reader.GetRecords<ControlListEntry>().ToList();
 
-                    log.Info($"Importing {entries.Count} Office 365 Secure Score controls details...");
+                    log.LogInformation($"Importing {entries.Count} Office 365 Secure Score controls details...");
 
                     await repository.AddOrUpdateAsync(entries).ConfigureAwait(false);
                 }
 
-                log.Info("Successfully import Office 365 Secure Score controls.");
+                log.LogInformation("Successfully import Office 365 Secure Score controls.");
             }
             finally
             {

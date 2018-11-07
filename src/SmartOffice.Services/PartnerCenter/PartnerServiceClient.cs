@@ -13,8 +13,8 @@ namespace Microsoft.Partner.SmartOffice.Services.PartnerCenter
     using System.Threading.Tasks;
     using AuditRecords;
     using Customers;
-    using Models.PartnerCenter.JsonConverters;
     using Models.PartnerCenter;
+    using Models.PartnerCenter.JsonConverters;
     using Newtonsoft.Json;
     using Offers;
     using Rest;
@@ -22,6 +22,16 @@ namespace Microsoft.Partner.SmartOffice.Services.PartnerCenter
 
     public class PartnerServiceClient : ServiceClient<PartnerServiceClient>, IPartnerServiceClient
     {
+        /// <summary>
+        /// The name of the client header.
+        /// </summary>
+        private const string ClientHeader = "MS-PartnerCenter-Client";
+
+        /// <summary>
+        /// The client connecting to the partner service.
+        /// </summary>
+        private const string PartnerCenterClient = "Partner Center Functions";
+
         /// <summary>
         /// Initializes a new instance of the <see cref="PartnerServiceClient" /> class.
         /// </summary>
@@ -127,6 +137,8 @@ namespace Microsoft.Partner.SmartOffice.Services.PartnerCenter
                 {
                     await Credentials.ProcessHttpRequestAsync(request, cancellationToken).ConfigureAwait(false);
 
+                    request.Headers.Add(ClientHeader, PartnerCenterClient);
+
                     response = await HttpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
                     content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
@@ -155,6 +167,8 @@ namespace Microsoft.Partner.SmartOffice.Services.PartnerCenter
                 using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, new Uri(Endpoint, $"/v1/{link.Uri}")))
                 {
                     await Credentials.ProcessHttpRequestAsync(request, cancellationToken).ConfigureAwait(false);
+
+                    request.Headers.Add(ClientHeader, PartnerCenterClient);
 
                     foreach (KeyValuePair<string, string> header in link.Headers)
                     {
