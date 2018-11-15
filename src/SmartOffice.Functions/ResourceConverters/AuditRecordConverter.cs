@@ -11,6 +11,7 @@ namespace Microsoft.Partner.SmartOffice.Functions.ResourceConverters
     using System.Globalization;
     using System.Linq;
     using System.Threading.Tasks;
+    using Microsoft.Extensions.Logging;
     using Models;
     using Models.PartnerCenter.AuditRecords;
     using Models.PartnerCenter.Customers;
@@ -18,6 +19,7 @@ namespace Microsoft.Partner.SmartOffice.Functions.ResourceConverters
     using Models.PartnerCenter.Orders;
     using Models.PartnerCenter.Subscriptions;
     using Newtonsoft.Json;
+    using Services;
     using Services.PartnerCenter;
 
     public static class AuditRecordConverter
@@ -43,11 +45,12 @@ namespace Microsoft.Partner.SmartOffice.Functions.ResourceConverters
         /// <returns>
         /// A list of customer details that incorporates the changes reflected by the audit records.
         /// </returns>
-        public async static Task<List<CustomerDetail>> ConvertAsync(
+        public static async Task<List<CustomerDetail>> ConvertAsync(
             IPartnerServiceClient client,
             List<AuditRecord> records,
             List<CustomerDetail> details,
-            Dictionary<string, string> additionalInfo)
+            Dictionary<string, string> additionalInfo,
+            ILogger log)
         {
             Customer resource;
             CustomerDetail control;
@@ -76,14 +79,21 @@ namespace Microsoft.Partner.SmartOffice.Functions.ResourceConverters
 
                     if (control == null && record.OperationType != OperationType.AddCustomer)
                     {
-                        resource = await client.Customers[record.CustomerId].GetAsync().ConfigureAwait(false);
+                        try
+                        {
+                            resource = await client.Customers[record.CustomerId].GetAsync().ConfigureAwait(false);
 
-                        results.Add(
-                            ResourceConverter.Convert<Customer, CustomerDetail>(
-                                resource,
-                                additionalInfo));
+                            results.Add(
+                                ResourceConverter.Convert<Customer, CustomerDetail>(
+                                    resource,
+                                    additionalInfo));
+                        }
+                        catch (ServiceClientException ex)
+                        {
+                            log.LogError($"Unable to process the customer with the identifier of {record.CustomerId}", ex);
+                        }
                     }
-                    else if(control != null)
+                    else if (control != null)
                     {
                         control.RemovedFromPartnerCenter = false;
                     }

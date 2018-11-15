@@ -12,7 +12,6 @@ namespace Microsoft.Partner.SmartOffice.Functions
     using System.Linq;
     using System.Threading.Tasks;
     using Azure.WebJobs;
-    using Azure.WebJobs.Host;
     using Data;
     using Extensions.Bindings;
     using Microsoft.Extensions.Logging;
@@ -239,7 +238,8 @@ namespace Microsoft.Partner.SmartOffice.Functions
                         client,
                         auditRecords,
                         customers,
-                        new Dictionary<string, string> { { "EnvironmentId", environment.Id } }).ConfigureAwait(false);
+                        new Dictionary<string, string> { { "EnvironmentId", environment.Id } },
+                        log).ConfigureAwait(false);
                 }
 
                 // Add, or update, each customer to the database.
