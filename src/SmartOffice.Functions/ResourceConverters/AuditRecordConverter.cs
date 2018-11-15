@@ -97,8 +97,7 @@ namespace Microsoft.Partner.SmartOffice.Functions.ResourceConverters
                     {
                         control.RemovedFromPartnerCenter = false;
                     }
-
-                    if (record.OperationType == OperationType.AddCustomer)
+                    else if (record.OperationType == OperationType.AddCustomer)
                     {
                         resource = Convert<Customer>(record);
 
