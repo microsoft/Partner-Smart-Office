@@ -66,6 +66,24 @@ namespace Microsoft.Partner.SmartOffice.Functions
             {
                 log.LogInformation($"Attempting to process information for {customerDetail.Customer.Id}.");
 
+                //pull in customer details from PartnerCenter
+                try
+                {
+                    Customer customer = await partner.Customers[customerDetail.Customer.Id].GetAsync().ConfigureAwait(false);
+                    customerDetail.Customer.BillingProfile = customer.BillingProfile;
+
+                    if (customerDetail.Customer.RemovedFromPartnerCenter == true)
+                    {
+                        customerDetail.Customer.LastProcessed = null;
+                    }
+
+                    customerDetail.Customer.RemovedFromPartnerCenter = false;
+                }
+                catch (ServiceClientException ex)
+                {
+                    customerDetail.Customer.ProcessException = ex;
+                }
+
                 if (customerDetail.Customer.RemovedFromPartnerCenter)
                 {
                     // The customer no longer has relationship with the partner. So, it should not be processed.
@@ -545,7 +563,6 @@ namespace Microsoft.Partner.SmartOffice.Functions
             IPartnerServiceClient client,
             EnvironmentDetail environment)
         {
-            Customer customer;
             List<CustomerDetail> customers;
             SeekBasedResourceCollection<Customer> seekCustomers;
 
@@ -565,26 +582,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
                     customers.AddRange(seekCustomers.Items.Select(c => ResourceConverter.Convert<Customer, CustomerDetail>(c)));
                 }
 
-                foreach (CustomerDetail c in customers)
-                {
-                    try
-                    {
-                        customer = await client.Customers[c.Id].GetAsync().ConfigureAwait(false);
-                        c.BillingProfile = customer.BillingProfile;
-                        c.EnvironmentId = environment.Id;
-
-                        if (c.RemovedFromPartnerCenter == true)
-                        {
-                            c.LastProcessed = null;
-                        }
-
-                        c.RemovedFromPartnerCenter = false;
-                    }
-                    catch (ServiceClientException ex)
-                    {
-                        c.ProcessException = ex;
-                    }
-                }
+                customers.ForEach(c => c.EnvironmentId = environment.Id);
 
                 return customers;
             }
