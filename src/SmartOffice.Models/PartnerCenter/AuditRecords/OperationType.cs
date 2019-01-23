@@ -179,6 +179,11 @@ namespace Microsoft.Partner.SmartOffice.Models.PartnerCenter.AuditRecords
         /// <summary>
         /// Creates a referral for the partner
         /// </summary>
-        CreateReferral
+        CreateReferral,
+
+        /// <summary>
+        /// Updates a referral for the partner
+        /// </summary>
+        UpdateReferral,
     }
 }
