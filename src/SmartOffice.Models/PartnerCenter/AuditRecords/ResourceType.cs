@@ -79,5 +79,10 @@ namespace Microsoft.Partner.SmartOffice.Models.PartnerCenter.AuditRecords
         /// Partner Relationship Resource
         /// </summary>
         PartnerRelationship,
+
+        /// <summary>
+        /// Partner Referral Resource
+        /// </summary>
+        Referral
     }
 }
