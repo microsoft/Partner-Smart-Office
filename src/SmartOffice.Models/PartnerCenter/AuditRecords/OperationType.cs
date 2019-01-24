@@ -175,5 +175,15 @@ namespace Microsoft.Partner.SmartOffice.Models.PartnerCenter.AuditRecords
         /// Removes a partner user.
         /// </summary>
         RemovePartnerUser,
+
+        /// <summary>
+        /// Creates a referral for the partner
+        /// </summary>
+        CreateReferral,
+
+        /// <summary>
+        /// Updates a referral for the partner
+        /// </summary>
+        UpdateReferral,
     }
 }
