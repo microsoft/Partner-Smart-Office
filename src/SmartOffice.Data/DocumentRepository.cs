@@ -273,14 +273,26 @@ namespace Microsoft.Partner.SmartOffice.Data
         public async Task<List<TEntity>> GetAsync()
         {
             FeedResponse<dynamic> response;
-            List<TEntity> results;
+            List<TEntity> results = new List<TEntity>();
 
             try
             {
-                response = await Client.ReadDocumentFeedAsync(
-                    UriFactory.CreateDocumentCollectionUri(databaseId, collectionId)).ConfigureAwait(false);
+                string continuation = string.Empty;
 
-                results = response.Select(d => (TEntity)d).ToList();
+                do
+                {
+                    response = await Client.ReadDocumentFeedAsync(
+                        UriFactory.CreateDocumentCollectionUri(databaseId, collectionId),
+                        new FeedOptions
+                        {
+                            MaxItemCount = 100,
+                            RequestContinuation = continuation
+                        }).ConfigureAwait(false);
+
+                    results.AddRange(response.Select(d => (TEntity)d).ToList());
+
+                    continuation = response.ResponseContinuation;
+                } while (!string.IsNullOrEmpty(continuation));
 
                 return results;
             }
@@ -298,20 +310,22 @@ namespace Microsoft.Partner.SmartOffice.Data
         /// <returns>
         /// A collection that contains items from the repository that satisfy the condition specified by predicate.
         /// </returns>
-        public async Task<List<TEntity>> GetAsync(Expression<Func<TEntity, bool>> predicate, string partitionKey)
+        public async Task<List<TEntity>> GetAsync(Expression<Func<TEntity, bool>> predicate, string partitionKey = null)
         {
             IDocumentQuery<TEntity> query;
             List<TEntity> results;
 
             try
             {
+                FeedOptions options = new FeedOptions();
+                if(!string.IsNullOrEmpty(partitionKey))
+                {
+                    options.PartitionKey = new PartitionKey(partitionKey);
+                }
 
                 query = Client.CreateDocumentQuery<TEntity>(
                     UriFactory.CreateDocumentCollectionUri(databaseId, collectionId),
-                    new FeedOptions
-                    {
-                        PartitionKey = new PartitionKey(partitionKey)
-                    })
+                    options)
                     .Where(predicate)
                     .AsDocumentQuery();
 
