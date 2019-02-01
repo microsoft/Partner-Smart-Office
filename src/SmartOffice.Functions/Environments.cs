@@ -242,7 +242,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
 
                     if (auditRecords.Count > 0)
                     {
-                        log.LogInformation($"Importing {auditRecords.Count} audit records available between now and the previous day.");
+                        log.LogInformation($"Importing {auditRecords.Count} audit records available between now and the previous day for the {environment.FriendlyName} Region.");
 
                         // Add, or update, each audit record to the database.
                         await auditRecordRepository.AddOrUpdateAsync(
@@ -250,7 +250,9 @@ namespace Microsoft.Partner.SmartOffice.Functions
                             environment.Id).ConfigureAwait(false);
                     }
 
-                    customers = await customerRepository.GetAsync().ConfigureAwait(false);
+                    customers = await customerRepository.GetAsync(c => c.EnvironmentId == environment.Id).ConfigureAwait(false);
+
+                    log.LogInformation($"Retrieved {customers.Count()} customers from the repository for the {environment.FriendlyName} Region");
 
                     customers = await AuditRecordConverter.ConvertAsync(
                         client,
@@ -260,9 +262,11 @@ namespace Microsoft.Partner.SmartOffice.Functions
                         log).ConfigureAwait(false);
                 }
 
+                log.LogInformation($"Saving {customers.Count()} customers to the repository for the {environment.FriendlyName} Region");
                 // Add, or update, each customer to the database.
                 await customerRepository.AddOrUpdateAsync(customers).ConfigureAwait(false);
 
+                log.LogInformation($"Adding {customers.Count()} customers to the queue for processing for the {environment.FriendlyName} Region");
                 foreach (CustomerDetail customer in customers)
                 {
                     // Write the customer to the customers queue to start processing the customer.
@@ -278,7 +282,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
                 environment.LastProcessed = DateTimeOffset.UtcNow;
                 await environmentRepository.AddOrUpdateAsync(environment).ConfigureAwait(false);
 
-                log.LogInformation($"Successfully process the {environment.FriendlyName} CSP environment.");
+                log.LogInformation($"Successfully processed the {environment.FriendlyName} CSP environment.");
             }
             finally
             {
