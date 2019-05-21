@@ -6,17 +6,17 @@
 
 namespace Microsoft.Partner.SmartOffice.Extensions.Converters
 {
-    using System;
     using System.Collections.Generic;
+    using System.Net.Http.Headers;
     using System.Threading;
     using System.Threading.Tasks;
     using Azure.WebJobs;
     using Bindings;
+    using Graph;
+    using IdentityModel.Clients.ActiveDirectory;
     using Microsoft.Extensions.Logging;
     using Microsoft.Extensions.Options;
-    using Models.Graph;
     using Services;
-    using Services.Graph;
     using Services.KeyVault;
 
     public class SecurityAlertConverter : IAsyncConverter<SecurityAlertsAttribute, List<Alert>>
@@ -36,19 +36,35 @@ namespace Microsoft.Partner.SmartOffice.Extensions.Converters
 
         public async Task<List<Alert>> ConvertAsync(SecurityAlertsAttribute input, CancellationToken cancellationToken)
         {
-            GraphService graphService;
+            GraphServiceClient client;
+            ISecurityAlertsCollectionPage page;
             List<Alert> alerts;
 
             try
             {
-                graphService = new GraphService(new Uri(input.Resource),
-                    new ServiceCredentials(
-                        input.ApplicationId,
-                        await vault.GetSecretAsync(options.KeyVaultEndpoint, input.SecretName).ConfigureAwait(false),
-                        input.Resource,
-                        input.CustomerId));
+                client = new GraphServiceClient(
+                    new DelegateAuthenticationProvider(async (requestMessage) =>
+                    {
+                        requestMessage
+                            .Headers
+                            .Authorization = new AuthenticationHeaderValue(
+                                "Bearer",
+                                await GetTokenAsync(
+                                    input.ApplicationId,
+                                    await vault.GetSecretAsync(options.KeyVaultEndpoint, input.SecretName).ConfigureAwait(false),
+                                    input.Resource,
+                                    input.CustomerId).ConfigureAwait(false));
+                    }));
 
-                alerts = await graphService.GetAlertsAsync(cancellationToken).ConfigureAwait(false);
+                page = await client.Security.Alerts.Request().GetAsync().ConfigureAwait(false);
+
+                alerts = new List<Alert>(page.CurrentPage);
+
+                while (page.NextPageRequest != null)
+                {
+                    page = await page.NextPageRequest.GetAsync().ConfigureAwait(false);
+                    alerts.AddRange(page.CurrentPage);
+                }
 
                 return alerts;
             }
@@ -57,10 +73,22 @@ namespace Microsoft.Partner.SmartOffice.Extensions.Converters
                 log.LogError(ex, $"Encountered an error when processing {input.CustomerId}");
                 return null;
             }
-            finally
-            {
-                graphService = null;
-            }
+        }
+
+        private static async Task<string> GetTokenAsync(string clientId, string clientSecret, string resource, string tenantId)
+        {
+            AuthenticationContext authContext;
+            AuthenticationResult authResult;
+
+            authContext = new AuthenticationContext($"https://login.microsoftonline.com/{tenantId}");
+
+            authResult = await authContext.AcquireTokenAsync(
+                resource,
+                new ClientCredential(
+                    clientId,
+                    clientSecret)).ConfigureAwait(false);
+
+            return authResult.AccessToken;
         }
     }
 }

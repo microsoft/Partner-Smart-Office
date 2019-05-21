@@ -13,10 +13,10 @@ namespace Microsoft.Partner.SmartOffice.Extensions.Converters
     using Azure.WebJobs;
     using Bindings;
     using Data;
+    using Graph;
     using Microsoft.Extensions.Logging;
     using Microsoft.Extensions.Options;
     using Models;
-    using Models.Graph;
     using Models.PartnerCenter.AuditRecords;
     using Services.KeyVault;
 
@@ -56,11 +56,6 @@ namespace Microsoft.Partner.SmartOffice.Extensions.Converters
         /// Identifier for the secure score collection.
         /// </summary>
         private const string SecureScoreCollectionId = "SecureScore";
-
-        /// <summary>
-        /// Identifier for the secure score controls collection.
-        /// </summary>
-        private const string SecureScoreControlsCollectionId = "SecureScoreControls";
 
         /// <summary>
         /// Identifier for the subscriptions collection.
@@ -106,11 +101,6 @@ namespace Microsoft.Partner.SmartOffice.Extensions.Converters
                 return await GetRepoAsync<AuditRecord>(
                     AuditRecordsCollectionId,
                     "/PartnerId").ConfigureAwait(false);
-            }
-            else if (input.DataType == typeof(ControlListEntry))
-            {
-                return await GetRepoAsync<ControlListEntry>(
-                    SecureScoreControlsCollectionId).ConfigureAwait(false);
             }
             else if (input.DataType == typeof(CustomerDetail))
             {
