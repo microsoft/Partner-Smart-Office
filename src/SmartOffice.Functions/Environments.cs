@@ -16,7 +16,6 @@ namespace Microsoft.Partner.SmartOffice.Functions
     using Extensions.Bindings;
     using Microsoft.Extensions.Logging;
     using Models;
-    using Models.Graph;
     using Models.PartnerCenter;
     using Models.PartnerCenter.AuditRecords;
     using Models.PartnerCenter.Customers;
@@ -305,19 +304,19 @@ namespace Microsoft.Partner.SmartOffice.Functions
         public static async Task ProcessSecurityAsync(
             [QueueTrigger(OperationConstants.SecurityQueueName, Connection = "StorageConnectionString")]SecurityDetail data,
             [DataRepository(
-                DataType = typeof(Alert))]DocumentRepository<Alert> securityAlertRepository,
-            [DataRepository(DataType = typeof(SecureScore))]DocumentRepository<SecureScore> secureScoreRepository,
+                DataType = typeof(Graph.Alert))]DocumentRepository<Graph.Alert> securityAlertRepository,
+            [DataRepository(DataType = typeof(Graph.SecureScore))]DocumentRepository<Graph.SecureScore> secureScoreRepository,
             [SecureScore(
                 ApplicationId = "{AppEndpoint.ApplicationId}",
                 CustomerId = "{Customer.Id}",
                 Period = "{Period}",
                 Resource = "{AppEndpoint.ServiceAddress}",
-                SecretName = "{AppEndpoint.ApplicationSecretId}")]List<SecureScore> scores,
+                SecretName = "{AppEndpoint.ApplicationSecretId}")]List<Graph.SecureScore> scores,
             [SecurityAlerts(
                 ApplicationId = "{AppEndpoint.ApplicationId}",
                 CustomerId = "{Customer.Id}",
                 Resource = "{AppEndpoint.ServiceAddress}",
-                SecretName = "{AppEndpoint.ApplicationSecretId}")]List<Alert> alerts,
+                SecretName = "{AppEndpoint.ApplicationSecretId}")]List<Graph.Alert> alerts,
             ILogger log)
         {
             if (data.Customer.ProcessException != null)
@@ -451,63 +450,56 @@ namespace Microsoft.Partner.SmartOffice.Functions
             IEnumerable<EnvironmentDetail> environments;
             int period;
 
-            try
+            if (timerInfo.IsPastDue)
             {
-                if (timerInfo.IsPastDue)
-                {
-                    log.LogInformation("Execution of the function is starting behind schedule.");
-                }
-
-                // Obtain a complete list of all configured environments. 
-                environments = await repository.GetAsync().ConfigureAwait(false);
-
-                if (environments.Count() == 0)
-                {
-                    log.LogWarning("No environment have been configured. Ensure that an envrionment has been created using the portal.");
-                    return;
-                }
-
-                foreach (EnvironmentDetail env in environments)
-                {
-
-                    if (env.EnvironmentType == EnvironmentType.CSP)
-                    {
-                        // Write the environment details to the partners storage queue.
-                        partnerQueue.Add(env);
-                    }
-                    else
-                    {
-                        // Configure the value indicating the number of days of score results to retrieve starting from current date.
-                        period = (env.LastProcessed == null) ? 30 : (DateTimeOffset.UtcNow - env.LastProcessed).Days;
-
-                        // Ensure that the period is at least 1 or greater. This ensure the request to retrieve data is succesfully. 
-                        if (period < 1)
-                        {
-                            period = 1;
-                        }
-
-                        if (period >= 30)
-                        {
-                            period = 30;
-                        }
-
-                        // Write the event details to the security storage queue.
-                        securityQueue.Add(new SecurityDetail
-                        {
-                            AppEndpoint = env.AppEndpoint,
-                            Customer = new CustomerDetail
-                            {
-                                Id = env.Id
-                            },
-
-                            Period = period.ToString(CultureInfo.InvariantCulture)
-                        });
-                    }
-                }
+                log.LogInformation("Execution of the function is starting behind schedule.");
             }
-            finally
+
+            // Obtain a complete list of all configured environments. 
+            environments = await repository.GetAsync().ConfigureAwait(false);
+
+            if (environments.Count() == 0)
             {
-                environments = null;
+                log.LogWarning("No environment have been configured. Ensure that an envrionment has been created using the portal.");
+                return;
+            }
+
+            foreach (EnvironmentDetail env in environments)
+            {
+
+                if (env.EnvironmentType == EnvironmentType.CSP)
+                {
+                    // Write the environment details to the partners storage queue.
+                    partnerQueue.Add(env);
+                }
+                else
+                {
+                    // Configure the value indicating the number of days of score results to retrieve starting from current date.
+                    period = (env.LastProcessed == null) ? 30 : (DateTimeOffset.UtcNow - env.LastProcessed).Days;
+
+                    // Ensure that the period is at least 1 or greater. This ensure the request to retrieve data is succesfully. 
+                    if (period < 1)
+                    {
+                        period = 1;
+                    }
+
+                    if (period >= 30)
+                    {
+                        period = 30;
+                    }
+
+                    // Write the event details to the security storage queue.
+                    securityQueue.Add(new SecurityDetail
+                    {
+                        AppEndpoint = env.AppEndpoint,
+                        Customer = new CustomerDetail
+                        {
+                            Id = env.Id
+                        },
+
+                        Period = period.ToString(CultureInfo.InvariantCulture)
+                    });
+                }
             }
         }
 
@@ -529,32 +521,25 @@ namespace Microsoft.Partner.SmartOffice.Functions
             List<AuditRecord> auditRecords;
             SeekBasedResourceCollection<AuditRecord> seekAuditRecords;
 
-            try
-            {
-                auditRecords = new List<AuditRecord>();
+            auditRecords = new List<AuditRecord>();
 
-                foreach (DateTime date in ChunkDate(startDate, endDate, 30))
+            foreach (DateTime date in ChunkDate(startDate, endDate, 30))
+            {
+                // Request the audit records for the previous day from Partner Center.
+                seekAuditRecords = await client.AuditRecords.QueryAsync(date).ConfigureAwait(false);
+
+                auditRecords.AddRange(seekAuditRecords.Items);
+
+                while (seekAuditRecords.Links.Next != null)
                 {
-                    // Request the audit records for the previous day from Partner Center.
-                    seekAuditRecords = await client.AuditRecords.QueryAsync(date).ConfigureAwait(false);
+                    // Request the next page of audit records from Partner Center.
+                    seekAuditRecords = await client.AuditRecords.QueryAsync(seekAuditRecords.Links.Next).ConfigureAwait(false);
 
                     auditRecords.AddRange(seekAuditRecords.Items);
-
-                    while (seekAuditRecords.Links.Next != null)
-                    {
-                        // Request the next page of audit records from Partner Center.
-                        seekAuditRecords = await client.AuditRecords.QueryAsync(seekAuditRecords.Links.Next).ConfigureAwait(false);
-
-                        auditRecords.AddRange(seekAuditRecords.Items);
-                    }
                 }
+            }
 
-                return auditRecords;
-            }
-            finally
-            {
-                seekAuditRecords = null;
-            }
+            return auditRecords;
         }
 
         /// <summary>

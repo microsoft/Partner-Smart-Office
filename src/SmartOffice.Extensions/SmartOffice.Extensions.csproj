@@ -11,6 +11,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="Microsoft.Graph" Version="1.15.0" />
     <PackageReference Include="Microsoft.NET.Sdk.Functions" Version="1.0.24" />
   </ItemGroup>
 
@@ -20,9 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Update="SmartOfficeWebJobsBuilderExtensions.cs">
-      <SubType>Component</SubType>
-    </Compile>
+    <Compile Update="SmartOfficeWebJobsBuilderExtensions.cs" />
   </ItemGroup>
 
 </Project>
