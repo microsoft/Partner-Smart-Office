@@ -13,14 +13,15 @@ namespace Microsoft.Partner.SmartOffice.Functions.ResourceConverters
     using System.Threading.Tasks;
     using Microsoft.Extensions.Logging;
     using Models;
-    using Models.PartnerCenter.AuditRecords;
-    using Models.PartnerCenter.Customers;
-    using Models.PartnerCenter.Offers;
-    using Models.PartnerCenter.Orders;
-    using Models.PartnerCenter.Subscriptions;
     using Newtonsoft.Json;
     using Services;
-    using Services.PartnerCenter;
+    using Store.PartnerCenter;
+    using Store.PartnerCenter.Models.Auditing;
+    using Store.PartnerCenter.Models.Customers;
+    using Store.PartnerCenter.Models.Invoices;
+    using Store.PartnerCenter.Models.Offers;
+    using Store.PartnerCenter.Models.Orders;
+    using Store.PartnerCenter.Models.Subscriptions;
 
     public static class AuditRecordConverter
     {
@@ -46,7 +47,7 @@ namespace Microsoft.Partner.SmartOffice.Functions.ResourceConverters
         /// A list of customer details that incorporates the changes reflected by the audit records.
         /// </returns>
         public static async Task<List<CustomerDetail>> ConvertAsync(
-            IPartnerServiceClient client,
+            IPartner client,
             List<AuditRecord> records,
             List<CustomerDetail> details,
             Dictionary<string, string> additionalInfo,
@@ -137,7 +138,7 @@ namespace Microsoft.Partner.SmartOffice.Functions.ResourceConverters
         /// A list of subscription details that incorporates the changes reflected by the audit records.
         /// </returns>
         public static async Task<List<SubscriptionDetail>> ConvertAsync(
-            IPartnerServiceClient client,
+            IPartner client,
             IEnumerable<AuditRecord> auditRecords,
             List<SubscriptionDetail> details,
             CustomerDetail customer)
@@ -202,7 +203,7 @@ namespace Microsoft.Partner.SmartOffice.Functions.ResourceConverters
 
 
         private static async Task<List<SubscriptionDetail>> ConvertAsync(
-            IPartnerServiceClient partner,
+            IPartner partner,
             CustomerDetail customer,
             Order order)
         {
@@ -211,57 +212,50 @@ namespace Microsoft.Partner.SmartOffice.Functions.ResourceConverters
             List<SubscriptionDetail> details;
             Offer offer;
 
-            try
+            if (order.BillingCycle == BillingCycleType.OneTime)
             {
-                if (order.BillingCycle == BillingCycleType.OneTime)
-                {
-                    return null;
-                }
-
-                details = new List<SubscriptionDetail>();
-
-                foreach (OrderLineItem lineItem in order.LineItems)
-                {
-                    creationDate = order.CreationDate.Value;
-
-                    effectiveStartDate = new DateTime(
-                            creationDate.UtcDateTime.Year,
-                            creationDate.UtcDateTime.Month,
-                            creationDate.UtcDateTime.Day);
-
-                    offer = await partner.Offers
-                        .ByCountry(customer.BillingProfile.DefaultAddress.Country).ById(lineItem.OfferId)
-                        .GetAsync().ConfigureAwait(false);
-
-                    details.Add(new SubscriptionDetail
-                    {
-                        AutoRenewEnabled = offer.IsAutoRenewable,
-                        BillingCycle = order.BillingCycle,
-                        BillingType = offer.Billing,
-                        CommitmentEndDate = (offer.Billing == BillingType.License) ?
-                            effectiveStartDate.AddYears(1) : DateTime.Parse("9999-12-14T00:00:00Z", CultureInfo.CurrentCulture),
-                        CreationDate = creationDate.UtcDateTime,
-                        EffectiveStartDate = effectiveStartDate,
-                        FriendlyName = lineItem.FriendlyName,
-                        Id = lineItem.SubscriptionId,
-                        OfferId = lineItem.OfferId,
-                        OfferName = offer.Name,
-                        ParentSubscriptionId = lineItem.ParentSubscriptionId,
-                        PartnerId = lineItem.PartnerIdOnRecord,
-                        Quantity = lineItem.Quantity,
-                        Status = SubscriptionStatus.Active,
-                        SuspensionReasons = null,
-                        TenantId = customer.Id,
-                        UnitType = offer.UnitType
-                    });
-                }
-
-                return details;
+                return null;
             }
-            finally
+
+            details = new List<SubscriptionDetail>();
+
+            foreach (OrderLineItem lineItem in order.LineItems)
             {
-                offer = null;
+                creationDate = order.CreationDate.Value;
+
+                effectiveStartDate = new DateTime(
+                        creationDate.UtcDateTime.Year,
+                        creationDate.UtcDateTime.Month,
+                        creationDate.UtcDateTime.Day);
+
+                offer = await partner.Offers
+                    .ByCountry(customer.BillingProfile.DefaultAddress.Country).ById(lineItem.OfferId)
+                    .GetAsync().ConfigureAwait(false);
+
+                details.Add(new SubscriptionDetail
+                {
+                    AutoRenewEnabled = offer.IsAutoRenewable,
+                    BillingCycle = order.BillingCycle,
+                    BillingType = offer.Billing,
+                    CommitmentEndDate = (offer.Billing == BillingType.License) ?
+                        effectiveStartDate.AddYears(1) : DateTime.Parse("9999-12-14T00:00:00Z", CultureInfo.CurrentCulture),
+                    CreationDate = creationDate.UtcDateTime,
+                    EffectiveStartDate = effectiveStartDate,
+                    FriendlyName = lineItem.FriendlyName,
+                    Id = lineItem.SubscriptionId,
+                    OfferId = lineItem.OfferId,
+                    OfferName = offer.Name,
+                    ParentSubscriptionId = lineItem.ParentSubscriptionId,
+                    PartnerId = lineItem.PartnerIdOnRecord,
+                    Quantity = lineItem.Quantity,
+                    Status = SubscriptionStatus.Active,
+                    SuspensionReasons = null,
+                    TenantId = customer.Id,
+                    UnitType = offer.UnitType
+                });
             }
+
+            return details;
         }
     }
 }

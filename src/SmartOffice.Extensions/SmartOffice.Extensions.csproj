@@ -9,6 +9,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Graph" Version="1.15.0" />
     <PackageReference Include="Microsoft.NET.Sdk.Functions" Version="1.0.28" />
+    <PackageReference Include="PartnerCenter.DotNet" Version="1.13.1" />
   </ItemGroup>
 
   <ItemGroup>

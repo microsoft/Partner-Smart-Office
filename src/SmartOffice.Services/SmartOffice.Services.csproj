@@ -21,8 +21,4 @@
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\SmartOffice.Models\SmartOffice.Models.csproj" />
-  </ItemGroup>
-
 </Project>

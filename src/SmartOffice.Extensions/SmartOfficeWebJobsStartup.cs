@@ -10,7 +10,6 @@ namespace Microsoft.Partner.SmartOffice.Extensions
 {
     using Azure.WebJobs;
     using Azure.WebJobs.Hosting;
-    using Bindings;
 
     public class SmartOfficeWebJobsStartup : IWebJobsStartup
     {
