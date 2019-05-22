@@ -8,7 +8,6 @@ namespace Microsoft.Partner.SmartOffice.Extensions
 {
     using Azure.WebJobs;
     using Azure.WebJobs.Host.Config;
-    using Bindings;
     using Converters;
     using Microsoft.Extensions.Logging;
     using Microsoft.Extensions.Options;
@@ -29,6 +28,8 @@ namespace Microsoft.Partner.SmartOffice.Extensions
 
         private readonly SecureScoreConverter secureScoreConverter;
 
+        private readonly SecureScoreControlProfileConverter secureScoreControlProfileConverter;
+
         private readonly SecurityAlertConverter securityAlertConverter;
 
         /// <summary>
@@ -45,6 +46,7 @@ namespace Microsoft.Partner.SmartOffice.Extensions
             dataRepoConverter = new DataRepositoryConverter(loggerFactory, options, vault);
             partnerServiceConverter = new PartnerServiceConverter(options, vault);
             secureScoreConverter = new SecureScoreConverter(loggerFactory, options, vault);
+            secureScoreControlProfileConverter = new SecureScoreControlProfileConverter(loggerFactory, options, vault);
             securityAlertConverter = new SecurityAlertConverter(loggerFactory, options, vault);
         }
 
@@ -57,6 +59,7 @@ namespace Microsoft.Partner.SmartOffice.Extensions
             context.AddBindingRule<DataRepositoryAttribute>().BindToInput(dataRepoConverter);
             context.AddBindingRule<PartnerServiceAttribute>().BindToInput(partnerServiceConverter);
             context.AddBindingRule<SecureScoreAttribute>().BindToInput(secureScoreConverter);
+            context.AddBindingRule<SecureScoreControlProfileAttribute>().BindToInput(secureScoreControlProfileConverter);
             context.AddBindingRule<SecurityAlertsAttribute>().BindToInput(securityAlertConverter);
         }
     }

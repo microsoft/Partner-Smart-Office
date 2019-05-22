@@ -13,13 +13,13 @@ namespace Microsoft.Partner.SmartOffice.Functions
     using System.Threading.Tasks;
     using Azure.WebJobs;
     using Data;
-    using Extensions.Bindings;
+    using Extensions;
     using Microsoft.Extensions.Logging;
-    using Microsoft.Store.PartnerCenter.Enumerators;
     using Models;
     using ResourceConverters;
     using Services;
     using Store.PartnerCenter;
+    using Store.PartnerCenter.Enumerators;
     using Store.PartnerCenter.Models;
     using Store.PartnerCenter.Models.Auditing;
     using Store.PartnerCenter.Models.Customers;
@@ -39,7 +39,6 @@ namespace Microsoft.Partner.SmartOffice.Functions
         /// <param name="customerRepository">A data repository linked to the subscriptions collection.</param>
         /// <param name="subscriptionRepository">A data repository linked to the subscriptions collection.</param>
         /// <param name="partner">Provides the ability to interact with Partner Center.</param>
-        /// <param name="storage">An instance of the <see cref="StorageService" /> class that is authenticated.</param>
         /// <param name="log">Provides the ability to log trace messages.</param>
         /// <returns>An instance of the <see cref="Task" /> that represents an asynchronous operation.</returns>
         [FunctionName("ProcessCustomer")]
@@ -307,12 +306,18 @@ namespace Microsoft.Partner.SmartOffice.Functions
             [DataRepository(
                 DataType = typeof(Graph.Alert))]DocumentRepository<Graph.Alert> securityAlertRepository,
             [DataRepository(DataType = typeof(Graph.SecureScore))]DocumentRepository<Graph.SecureScore> secureScoreRepository,
+            [DataRepository(DataType = typeof(Graph.SecureScoreControlProfile))]DocumentRepository<Graph.SecureScoreControlProfile> controlProfileRepository,
             [SecureScore(
                 ApplicationId = "{AppEndpoint.ApplicationId}",
                 CustomerId = "{Customer.Id}",
                 Period = "{Period}",
                 Resource = "{AppEndpoint.ServiceAddress}",
                 SecretName = "{AppEndpoint.ApplicationSecretId}")]List<Graph.SecureScore> scores,
+            [SecureScoreControlProfile(
+                ApplicationId = "{AppEndpoint.ApplicationId}",
+                CustomerId = "{Customer.Id}",
+                Resource = "{AppEndpoint.ServiceAddress}",
+                SecretName = "{AppEndpoint.ApplicationSecretId}")]List<Graph.SecureScoreControlProfile> profiles,
             [SecurityAlerts(
                 ApplicationId = "{AppEndpoint.ApplicationId}",
                 CustomerId = "{Customer.Id}",
@@ -333,6 +338,12 @@ namespace Microsoft.Partner.SmartOffice.Functions
                 await secureScoreRepository.AddOrUpdateAsync(
                     scores,
                     data.Customer.Id).ConfigureAwait(false);
+            }
+
+            if (profiles?.Count > 0)
+            {
+                log.LogInformation($"Importing {profiles.Count} Secure Score Control Profiles entries for {data.Customer.Id}");
+                await controlProfileRepository.AddOrUpdateAsync(profiles).ConfigureAwait(false);
             }
 
             if (alerts?.Count > 0)

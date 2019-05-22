@@ -1,5 +1,5 @@
 ﻿// -----------------------------------------------------------------------
-// <copyright file="DataRepositoryAttribute.cs" company="Microsoft">
+// <copyright file="SecureScoreControlProfileAttribute.cs" company="Microsoft">
 //     Copyright (c) Microsoft Corporation. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -7,15 +7,11 @@
 namespace Microsoft.Partner.SmartOffice.Extensions
 {
     using System;
-    using Azure.WebJobs.Description;
+    using Microsoft.Azure.WebJobs.Description;
 
     [AttributeUsage(AttributeTargets.Parameter, AllowMultiple = false)]
     [Binding]
-    public sealed class DataRepositoryAttribute : Attribute
+    public sealed class SecureScoreControlProfileAttribute : TokenBaseAttribute
     {
-        /// <summary>
-        /// Gets or sets the data type of the repository. 
-        /// </summary>
-        public Type DataType { get; set; }
     }
 }

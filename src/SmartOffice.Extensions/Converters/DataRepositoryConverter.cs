@@ -11,7 +11,6 @@ namespace Microsoft.Partner.SmartOffice.Extensions.Converters
     using System.Threading;
     using System.Threading.Tasks;
     using Azure.WebJobs;
-    using Bindings;
     using Data;
     using Graph;
     using Microsoft.Extensions.Logging;
@@ -56,6 +55,11 @@ namespace Microsoft.Partner.SmartOffice.Extensions.Converters
         /// Identifier for the secure score collection.
         /// </summary>
         private const string SecureScoreCollectionId = "SecureScore";
+
+        /// <summary>
+        /// Identifier for the secure score control collection.
+        /// </summary>
+        private const string SecureScoreControlCollectionId = "SecureScoreControls";
 
         /// <summary>
         /// Identifier for the subscriptions collection.
@@ -114,9 +118,11 @@ namespace Microsoft.Partner.SmartOffice.Extensions.Converters
             }
             else if (input.DataType == typeof(SecureScore))
             {
-                return await GetRepoAsync<SecureScore>(
-                    SecureScoreCollectionId,
-                    "/tenantId").ConfigureAwait(false);
+                return await GetRepoAsync<SecureScore>(SecureScoreCollectionId).ConfigureAwait(false);
+            }
+            else if (input.DataType == typeof(SecureScoreControlProfile))
+            {
+                return await GetRepoAsync<SecureScoreControlProfile>(SecureScoreControlCollectionId).ConfigureAwait(false);
             }
             else if (input.DataType == typeof(SubscriptionDetail))
             {

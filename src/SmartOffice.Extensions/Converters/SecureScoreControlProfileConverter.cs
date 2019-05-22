@@ -1,5 +1,5 @@
 ﻿// -----------------------------------------------------------------------
-// <copyright file="SecurityAlertConverter.cs" company="Microsoft">
+// <copyright file="SecureScoreControlProfileConverter.cs" company="Microsoft">
 //     Copyright (c) Microsoft Corporation. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -18,7 +18,7 @@ namespace Microsoft.Partner.SmartOffice.Extensions.Converters
     using Services;
     using Services.KeyVault;
 
-    public class SecurityAlertConverter : IAsyncConverter<SecurityAlertsAttribute, List<Alert>>
+    public class SecureScoreControlProfileConverter : IAsyncConverter<SecureScoreControlProfileAttribute, List<SecureScoreControlProfile>>
     {
         private readonly ILogger log;
 
@@ -26,18 +26,18 @@ namespace Microsoft.Partner.SmartOffice.Extensions.Converters
 
         private readonly SmartOfficeOptions options;
 
-        public SecurityAlertConverter(ILoggerFactory loggerFactory, IOptions<SmartOfficeOptions> options, IVaultService vault)
+        public SecureScoreControlProfileConverter(ILoggerFactory loggerFactory, IOptions<SmartOfficeOptions> options, IVaultService vault)
         {
-            log = loggerFactory?.CreateLogger("Host.Bindings.SecurityAlertConverter");
+            log = loggerFactory?.CreateLogger("Host.Bindings.SecureScoreControlProfileConverter");
             this.options = options.Value;
             this.vault = vault;
         }
 
-        public async Task<List<Alert>> ConvertAsync(SecurityAlertsAttribute input, CancellationToken cancellationToken)
+        public async Task<List<SecureScoreControlProfile>> ConvertAsync(SecureScoreControlProfileAttribute input, CancellationToken cancellationToken)
         {
             GraphServiceClient client;
-            ISecurityAlertsCollectionPage page;
-            List<Alert> alerts;
+            ISecuritySecureScoreControlProfilesCollectionPage page;
+            List<SecureScoreControlProfile> profiles;
 
             try
             {
@@ -55,17 +55,18 @@ namespace Microsoft.Partner.SmartOffice.Extensions.Converters
                                     input.CustomerId).ConfigureAwait(false));
                     }));
 
-                page = await client.Security.Alerts.Request().GetAsync().ConfigureAwait(false);
+                page = await client.Security.SecureScoreControlProfiles.Request().GetAsync().ConfigureAwait(false);
 
-                alerts = new List<Alert>(page.CurrentPage);
+                profiles = new List<SecureScoreControlProfile>(page.CurrentPage);
 
                 while (page.NextPageRequest != null)
                 {
                     page = await page.NextPageRequest.GetAsync().ConfigureAwait(false);
-                    alerts.AddRange(page.CurrentPage);
+                    profiles.AddRange(page.CurrentPage);
                 }
 
-                return alerts;
+
+                return profiles;
             }
             catch (ServiceClientException ex)
             {

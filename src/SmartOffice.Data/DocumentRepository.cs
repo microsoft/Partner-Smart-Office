@@ -138,27 +138,19 @@ namespace Microsoft.Partner.SmartOffice.Data
             RequestOptions requestOptions;
             ResourceResponse<Document> response;
 
-            try
+            requestOptions = new RequestOptions();
+
+            if (!string.IsNullOrEmpty(partitionKeyPath))
             {
-                requestOptions = new RequestOptions(); 
-
-                if (!string.IsNullOrEmpty(partitionKeyPath))
-                {
-                    requestOptions.PartitionKey = new PartitionKey(partitionKey);
-                }
-
-                response = await Client.UpsertDocumentAsync(
-                    UriFactory.CreateDocumentCollectionUri(databaseId, collectionId),
-                    item,
-                    requestOptions).ConfigureAwait(false);
-
-                return (TEntity)(dynamic)response.Resource;
+                requestOptions.PartitionKey = new PartitionKey(partitionKey);
             }
-            finally
-            {
-                requestOptions = null; 
-                response = null;
-            }
+
+            response = await Client.UpsertDocumentAsync(
+                UriFactory.CreateDocumentCollectionUri(databaseId, collectionId),
+                item,
+                requestOptions).ConfigureAwait(false);
+
+            return (TEntity)(dynamic)response.Resource;
         }
 
         /// <summary>
@@ -194,7 +186,7 @@ namespace Microsoft.Partner.SmartOffice.Data
                     requestOptions.PartitionKey = new PartitionKey(partitionKey);
                 }
 
-                foreach (IEnumerable<TEntity> batch in Batch(items, 500))
+                foreach (IEnumerable<TEntity> batch in Batch(items, 50))
                 {
                     await InvokeRequestAsync(() =>
                         Client.ExecuteStoredProcedureAsync<int>(
@@ -257,10 +249,6 @@ namespace Microsoft.Partner.SmartOffice.Data
 
                 return null;
             }
-            finally
-            {
-                document = null;
-            }
         }
 
         /// <summary>
@@ -315,33 +303,26 @@ namespace Microsoft.Partner.SmartOffice.Data
             IDocumentQuery<TEntity> query;
             List<TEntity> results;
 
-            try
+            FeedOptions options = new FeedOptions();
+            if (!string.IsNullOrEmpty(partitionKey))
             {
-                FeedOptions options = new FeedOptions();
-                if(!string.IsNullOrEmpty(partitionKey))
-                {
-                    options.PartitionKey = new PartitionKey(partitionKey);
-                }
-
-                query = Client.CreateDocumentQuery<TEntity>(
-                    UriFactory.CreateDocumentCollectionUri(databaseId, collectionId),
-                    options)
-                    .Where(predicate)
-                    .AsDocumentQuery();
-
-                results = new List<TEntity>();
-
-                while (query.HasMoreResults)
-                {
-                    results.AddRange(await query.ExecuteNextAsync<TEntity>().ConfigureAwait(false));
-                }
-
-                return results;
+                options.PartitionKey = new PartitionKey(partitionKey);
             }
-            finally
+
+            query = Client.CreateDocumentQuery<TEntity>(
+                UriFactory.CreateDocumentCollectionUri(databaseId, collectionId),
+                options)
+                .Where(predicate)
+                .AsDocumentQuery();
+
+            results = new List<TEntity>();
+
+            while (query.HasMoreResults)
             {
-                query = null;
+                results.AddRange(await query.ExecuteNextAsync<TEntity>().ConfigureAwait(false));
             }
+
+            return results;
         }
 
         /// <summary>
@@ -366,17 +347,10 @@ namespace Microsoft.Partner.SmartOffice.Data
         {
             ResourceResponse<Document> response;
 
-            try
-            {
-                response = await Client.UpsertDocumentAsync(
-                    UriFactory.CreateDocumentCollectionUri(databaseId, collectionId), item).ConfigureAwait(false);
+            response = await Client.UpsertDocumentAsync(
+                UriFactory.CreateDocumentCollectionUri(databaseId, collectionId), item).ConfigureAwait(false);
 
-                return (TEntity)(dynamic)response.Resource;
-            }
-            finally
-            {
-                response = null;
-            }
+            return (TEntity)(dynamic)response.Resource;
         }
 
         private static IEnumerable<IEnumerable<T>> Batch<T>(IEnumerable<T> entities, int batchSize)

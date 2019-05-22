@@ -1,5 +1,5 @@
 ﻿// -----------------------------------------------------------------------
-// <copyright file="DataRepositoryConverter.cs" company="Microsoft">
+// <copyright file="SecureScoreConverter.cs" company="Microsoft">
 //     Copyright (c) Microsoft Corporation. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -11,7 +11,6 @@ namespace Microsoft.Partner.SmartOffice.Extensions.Converters
     using System.Threading;
     using System.Threading.Tasks;
     using Azure.WebJobs;
-    using Bindings;
     using Graph;
     using IdentityModel.Clients.ActiveDirectory;
     using Microsoft.Extensions.Logging;

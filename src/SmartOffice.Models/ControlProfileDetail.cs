@@ -1,12 +1,12 @@
 ﻿// -----------------------------------------------------------------------
-// <copyright file="SecurityDetails.cs" company="Microsoft">
+// <copyright file="ControlProfileDetail.cs" company="Microsoft">
 //     Copyright (c) Microsoft Corporation. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
 
 namespace Microsoft.Partner.SmartOffice.Models
 {
-    public sealed class SecurityDetails
+    public sealed class ControlProfileDetail
     {
         /// <summary>
         /// Gets or sets the application endpoint.
@@ -17,10 +17,5 @@ namespace Microsoft.Partner.SmartOffice.Models
         /// Gets or sets the customer details.
         /// </summary>
         public CustomerDetail Customer { get; set; }
-
-        /// <summary>
-        /// Gets or sets a value indicating number of days of score results to retrieve starting from current date.
-        /// </summary>
-        public string Period { get; set; }
     }
 }
