@@ -9,8 +9,9 @@ namespace Microsoft.Partner.SmartOffice.Models
     using System;
     using System.Collections.Generic;
     using Newtonsoft.Json;
-    using PartnerCenter.Offers;
-    using PartnerCenter.Subscriptions;
+    using Store.PartnerCenter.Models.Invoices;
+    using Store.PartnerCenter.Models.Offers;
+    using Store.PartnerCenter.Models.Subscriptions;
 
     public sealed class SubscriptionDetail
     {

@@ -7,8 +7,8 @@
 namespace Microsoft.Partner.SmartOffice.Models
 {
     using System;
-    using Models.PartnerCenter.Customers;
     using Newtonsoft.Json;
+    using Store.PartnerCenter.Models.Customers;
 
     public sealed class CustomerDetail
     {

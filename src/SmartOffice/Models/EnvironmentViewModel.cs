@@ -7,7 +7,6 @@
 namespace Microsoft.Partner.SmartOffice.Models
 {
     using System.Collections.Generic;
-    using System.ComponentModel.DataAnnotations;
     using Microsoft.AspNetCore.Mvc.Rendering;
 
     public class EnvironmentViewModel

@@ -15,16 +15,17 @@ namespace Microsoft.Partner.SmartOffice.Functions
     using Data;
     using Extensions.Bindings;
     using Microsoft.Extensions.Logging;
+    using Microsoft.Store.PartnerCenter.Enumerators;
     using Models;
-    using Models.PartnerCenter;
-    using Models.PartnerCenter.AuditRecords;
-    using Models.PartnerCenter.Customers;
-    using Models.PartnerCenter.Subscriptions;
-    using Models.PartnerCenter.Utilizations;
     using ResourceConverters;
     using Services;
-    using Services.PartnerCenter;
-
+    using Store.PartnerCenter;
+    using Store.PartnerCenter.Models;
+    using Store.PartnerCenter.Models.Auditing;
+    using Store.PartnerCenter.Models.Customers;
+    using Store.PartnerCenter.Models.Invoices;
+    using Store.PartnerCenter.Models.Subscriptions;
+    using Store.PartnerCenter.Models.Utilizations;
 
     /// <summary>
     /// Contains the defintion for the Azure functions related to environments.
@@ -52,7 +53,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
                 Endpoint = "{PartnerCenterEndpoint.ServiceAddress}",
                 SecretName = "{PartnerCenterEndpoint.ApplicationSecretId}",
                 ApplicationTenantId = "{PartnerCenterEndpoint.TenantId}",
-                Resource = "https://graph.windows.net")]IPartnerServiceClient partner,
+                Resource = "https://graph.windows.net")]IPartner partner,
             [Queue(OperationConstants.SecurityQueueName, Connection = "StorageConnectionString")] ICollector<SecurityDetail> securityQueue,
             [Queue(OperationConstants.UtilizationQueueName, Connection = "StorageConnectionString")] ICollector<ProcessSubscriptionDetail> utilizationQueue,
             ILogger log)
@@ -202,7 +203,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
                 Endpoint = "{PartnerCenterEndpoint.ServiceAddress}",
                 SecretName = "{PartnerCenterEndpoint.ApplicationSecretId}",
                 ApplicationTenantId = "{PartnerCenterEndpoint.TenantId}",
-                Resource = "https://graph.windows.net")]IPartnerServiceClient client,
+                Resource = "https://graph.windows.net")]IPartner client,
             [Queue(OperationConstants.CustomersQueueName, Connection = "StorageConnectionString")] ICollector<ProcessCustomerDetail> customerQueue,
             ILogger log)
         {
@@ -356,7 +357,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
                 Endpoint = "{PartnerCenterEndpoint.ServiceAddress}",
                 SecretName = "{PartnerCenterEndpoint.ApplicationSecretId}",
                 ApplicationTenantId = "{PartnerCenterEndpoint.TenantId}",
-                Resource = "https://graph.windows.net")]IPartnerServiceClient client,
+                Resource = "https://graph.windows.net")]IPartner client,
             ILogger log)
         {
             // Subscriptions with a billing type of usage are the only ones that have utilization records.
@@ -367,6 +368,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
 
             log.LogInformation($"Requesting utilization records for {subscriptionDetail.Subscription.Id}");
 
+            IResourceCollectionEnumerator<ResourceCollection<AzureUtilizationRecord>> enumerator;
             List<UtilizationDetail> records;
             ResourceCollection<AzureUtilizationRecord> utilizationRecords;
 
@@ -379,39 +381,22 @@ namespace Microsoft.Partner.SmartOffice.Functions
                     .Azure
                     .QueryAsync(DateTimeOffset.UtcNow.AddDays(-1), DateTimeOffset.UtcNow).ConfigureAwait(false);
 
+                enumerator = client.Enumerators.Utilization.Azure.Create(utilizationRecords);
                 records = new List<UtilizationDetail>();
 
-                if (utilizationRecords.TotalCount > 0)
+                while (enumerator.HasValue)
                 {
-                    records.AddRange(utilizationRecords.Items
+                    records.AddRange(enumerator.Current.Items
                         .Select(r => ResourceConverter.Convert<AzureUtilizationRecord, UtilizationDetail>(
                             r,
                             new Dictionary<string, string>
                             {
-                                { "Id", $"{r.Resource.Id}--{r.UsageStartTime}" },
-                                { "SubscriptionId", subscriptionDetail.Subscription.Id },
-                                { "TenantId", subscriptionDetail.Subscription.TenantId }
+                                            { "Id", $"{r.Resource.Id}--{r.UsageStartTime}" },
+                                            { "SubscriptionId", subscriptionDetail.Subscription.Id },
+                                            { "TenantId", subscriptionDetail.Subscription.TenantId }
                             })));
 
-                    while (utilizationRecords.Links.Next != null)
-                    {
-                        utilizationRecords = await client
-                            .Customers[subscriptionDetail.Subscription.TenantId]
-                            .Subscriptions[subscriptionDetail.Subscription.Id]
-                            .Utilization
-                            .Azure
-                            .QueryAsync(utilizationRecords.Links.Next).ConfigureAwait(false);
-
-                        records.AddRange(utilizationRecords.Items
-                            .Select(r => ResourceConverter.Convert<AzureUtilizationRecord, UtilizationDetail>(
-                                r,
-                                new Dictionary<string, string>
-                                {
-                                { "Id", $"{r.Resource.Id}--{r.UsageStartTime}" },
-                                { "SubscriptionId", subscriptionDetail.Subscription.Id },
-                                { "TenantId", subscriptionDetail.Subscription.TenantId }
-                                })));
-                    }
+                    await enumerator.NextAsync().ConfigureAwait(false);
                 }
 
                 if (records.Count > 0)
@@ -514,10 +499,11 @@ namespace Microsoft.Partner.SmartOffice.Functions
         }
 
         private static async Task<List<AuditRecord>> GetAuditRecordsAsyc(
-            IPartnerServiceClient client,
+            IPartner client,
             DateTime startDate,
             DateTime endDate)
         {
+            IResourceCollectionEnumerator<SeekBasedResourceCollection<AuditRecord>> enumerator;
             List<AuditRecord> auditRecords;
             SeekBasedResourceCollection<AuditRecord> seekAuditRecords;
 
@@ -527,15 +513,12 @@ namespace Microsoft.Partner.SmartOffice.Functions
             {
                 // Request the audit records for the previous day from Partner Center.
                 seekAuditRecords = await client.AuditRecords.QueryAsync(date).ConfigureAwait(false);
+                enumerator = client.Enumerators.AuditRecords.Create(seekAuditRecords);
 
-                auditRecords.AddRange(seekAuditRecords.Items);
-
-                while (seekAuditRecords.Links.Next != null)
+                while (enumerator.HasValue)
                 {
-                    // Request the next page of audit records from Partner Center.
-                    seekAuditRecords = await client.AuditRecords.QueryAsync(seekAuditRecords.Links.Next).ConfigureAwait(false);
-
-                    auditRecords.AddRange(seekAuditRecords.Items);
+                    auditRecords.AddRange(enumerator.Current.Items);
+                    await enumerator.NextAsync().ConfigureAwait(false);
                 }
             }
 
@@ -549,26 +532,25 @@ namespace Microsoft.Partner.SmartOffice.Functions
         /// <param name="environment">The environment that owns the customers be requesteed.</param>
         /// <returns>A list of customers associated with the partner.</returns>
         private static async Task<List<CustomerDetail>> GetCustomersAsync(
-            IPartnerServiceClient client,
+            IPartner client,
             EnvironmentDetail environment)
         {
+            IResourceCollectionEnumerator<SeekBasedResourceCollection<Customer>> enumerator;
             List<CustomerDetail> customers;
             SeekBasedResourceCollection<Customer> seekCustomers;
 
             try
             {
-                // Request a list of customers from Partner Center.
                 seekCustomers = await client.Customers.GetAsync().ConfigureAwait(false);
+                enumerator = client.Enumerators.Customers.Create(seekCustomers);
 
-                customers = new List<CustomerDetail>(
-                    seekCustomers.Items.Select(c => ResourceConverter.Convert<Customer, CustomerDetail>(c)));
+                customers = new List<CustomerDetail>();
 
-                while (seekCustomers.Links.Next != null)
+
+                while (enumerator.HasValue)
                 {
-                    // Request the next page of customers from Partner Center.
-                    seekCustomers = await client.Customers.GetAsync(seekCustomers.Links.Next).ConfigureAwait(false);
-
-                    customers.AddRange(seekCustomers.Items.Select(c => ResourceConverter.Convert<Customer, CustomerDetail>(c)));
+                    customers.AddRange(enumerator.Current.Items.Select(c => ResourceConverter.Convert<Customer, CustomerDetail>(c)));
+                    await enumerator.NextAsync().ConfigureAwait(false);
                 }
 
                 customers.ForEach(c => c.EnvironmentId = environment.Id);
@@ -587,15 +569,13 @@ namespace Microsoft.Partner.SmartOffice.Functions
         /// <param name="client">Provides the ability to interact with Partner Center.</param>
         /// <param name="customerId">Identifier for the customer.</param>
         /// <returns>A list of subscriptions for the specified customer.</returns>
-        private static async Task<List<SubscriptionDetail>> GetSubscriptionsAsync(IPartnerServiceClient client, string customerId)
+        private static async Task<List<SubscriptionDetail>> GetSubscriptionsAsync(IPartner client, string customerId)
         {
             List<SubscriptionDetail> subscriptions;
-            SeekBasedResourceCollection<Subscription> seekSubscriptions;
+            ResourceCollection<Subscription> seekSubscriptions;
 
             try
             {
-
-                // Request a list of subscriptions from the Partner Center API.
                 seekSubscriptions = await client.Customers.ById(customerId).Subscriptions.GetAsync().ConfigureAwait(false);
 
                 subscriptions = new List<SubscriptionDetail>(
@@ -603,20 +583,6 @@ namespace Microsoft.Partner.SmartOffice.Functions
                     .Select(s => ResourceConverter.Convert<Subscription, SubscriptionDetail>(
                         s,
                         new Dictionary<string, string> { { "TenantId", customerId } })));
-
-                while (seekSubscriptions.Links.Next != null)
-                {
-                    // Request the next page of subscriptions from the Partner Center API.
-                    seekSubscriptions = await client.Customers
-                        .ById(customerId)
-                        .Subscriptions
-                        .GetAsync(seekSubscriptions.Links.Next).ConfigureAwait(false);
-
-                    subscriptions.AddRange(seekSubscriptions.Items
-                        .Select(s => ResourceConverter.Convert<Subscription, SubscriptionDetail>(
-                            s,
-                            new Dictionary<string, string> { { "TenantId", customerId } })));
-                }
 
                 return subscriptions;
             }

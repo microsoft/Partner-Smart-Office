@@ -9,7 +9,7 @@ namespace Microsoft.Partner.SmartOffice.Models
     using System;
     using System.Collections.Generic;
     using Newtonsoft.Json;
-    using PartnerCenter.Utilizations;
+    using Store.PartnerCenter.Models.Utilizations;
 
     public sealed class UtilizationDetail
     {

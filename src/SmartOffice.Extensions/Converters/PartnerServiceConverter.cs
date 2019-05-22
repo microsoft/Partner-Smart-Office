@@ -6,7 +6,6 @@
 
 namespace Microsoft.Partner.SmartOffice.Extensions.Converters
 {
-    using System;
     using System.Collections.Concurrent;
     using System.Net.Http;
     using System.Threading;
@@ -14,11 +13,11 @@ namespace Microsoft.Partner.SmartOffice.Extensions.Converters
     using Azure.WebJobs;
     using Bindings;
     using Microsoft.Extensions.Options;
-    using Services;
     using Services.KeyVault;
-    using Services.PartnerCenter;
+    using Store.PartnerCenter;
+    using Store.PartnerCenter.Extensions;
 
-    public class PartnerServiceConverter : IAsyncConverter<PartnerServiceAttribute, PartnerServiceClient>
+    public class PartnerServiceConverter : IAsyncConverter<PartnerServiceAttribute, IPartner>
     {
         /// <summary>
         /// Collection of HttpClient object used to communicate with the Partner Center API.
@@ -40,15 +39,13 @@ namespace Microsoft.Partner.SmartOffice.Extensions.Converters
             this.vault = vault;
         }
 
-        public async Task<PartnerServiceClient> ConvertAsync(PartnerServiceAttribute input, CancellationToken cancellationToken)
+        public async Task<IPartner> ConvertAsync(PartnerServiceAttribute input, CancellationToken cancellationToken)
         {
-            return new PartnerServiceClient(
-                new Uri(input.Endpoint),
-                new ServiceCredentials(
+            return PartnerService.Instance.CreatePartnerOperations(
+                await PartnerCredentials.GenerateByApplicationCredentialsAsync(
                     input.ApplicationId,
                     await vault.GetSecretAsync(options.KeyVaultEndpoint, input.SecretName).ConfigureAwait(false),
-                    input.Resource,
-                    input.ApplicationTenantId),
+                    input.ApplicationTenantId).ConfigureAwait(false),
                 await GetPartnerHttpClientAsync(input.ApplicationTenantId).ConfigureAwait(false));
         }
 
@@ -60,7 +57,7 @@ namespace Microsoft.Partner.SmartOffice.Extensions.Converters
 
                 if (!partnerHttpClients.ContainsKey(key))
                 {
-                    partnerHttpClients[key] = HttpClientFactory.Create(new PartnerServiceMessageHandler()); ;
+                    partnerHttpClients[key] = HttpClientFactory.Create();
                 }
 
                 return partnerHttpClients[key];

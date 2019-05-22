@@ -17,8 +17,8 @@ namespace Microsoft.Partner.SmartOffice.Extensions.Converters
     using Microsoft.Extensions.Logging;
     using Microsoft.Extensions.Options;
     using Models;
-    using Models.PartnerCenter.AuditRecords;
     using Services.KeyVault;
+    using Store.PartnerCenter.Models.Auditing;
 
     public class DataRepositoryConverter : IAsyncConverter<DataRepositoryAttribute, object>
     {
