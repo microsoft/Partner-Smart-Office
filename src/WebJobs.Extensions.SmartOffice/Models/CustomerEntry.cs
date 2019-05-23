@@ -1,9 +1,8 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-namespace Microsoft.Azure.WebJobs.Extensions.SmartOffice.Models
+namespace Microsoft.Azure.WebJobs.Extensions.SmartOffice
 {
-    using System.Collections.Generic;
     using Graph;
 
     /// <summary>
@@ -12,13 +11,9 @@ namespace Microsoft.Azure.WebJobs.Extensions.SmartOffice.Models
     public sealed class CustomerEntry
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="CustomerEntry" /> class.
+        /// Gets or set the customer identifier.
         /// </summary>
-        public CustomerEntry()
-        {
-            SecureScoreControlProfiles = new List<SecureScoreControlProfile>();
-            Subscriptions = new List<SubscriptionEntry>();
-        }
+        public string CustomerId { get; set; }
 
         /// <summary>
         /// Gets or set the identifier.
@@ -31,13 +26,8 @@ namespace Microsoft.Azure.WebJobs.Extensions.SmartOffice.Models
         public string Name { get; set; }
 
         /// <summary>
-        /// Gets a collection of Secure Score control profiles.
+        /// Gets or sets the Secure Score information.
         /// </summary>
-        public List<SecureScoreControlProfile> SecureScoreControlProfiles { get; private set; }
-
-        /// <summary>
-        /// Gets a collection of subscriptions.
-        /// </summary>
-        public List<SubscriptionEntry> Subscriptions { get; private set; }
+        public SecureScore SecureScore { get; set; }
     }
 }

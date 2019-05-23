@@ -4,8 +4,10 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace Microsoft.Partner.SmartOffice.Models
+namespace Microsoft.Partner.SmartOffice.Extensions
 {
+    using Models;
+
     public sealed class ProcessSubscriptionDetail
     {
         /// <summary>

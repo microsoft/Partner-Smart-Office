@@ -8,7 +8,7 @@ namespace Microsoft.Partner.SmartOffice.Models
 {
     public enum EnvironmentType
     {
-        CSP, 
+        CSP,
         EA
     }
 }

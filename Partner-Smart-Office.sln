@@ -20,15 +20,15 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SmartOffice.Models", "src\S
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SmartOffice.Services", "src\SmartOffice.Services\SmartOffice.Services.csproj", "{4D0D66B6-09CC-423F-BD73-673276DE9014}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SmartOffice.Functions", "src\SmartOffice.Functions\SmartOffice.Functions.csproj", "{183CF908-5D9F-4610-8F1B-5D1451F53DC1}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SmartOffice.Data", "src\SmartOffice.Data\SmartOffice.Data.csproj", "{C0320696-8360-40DD-90C2-5B98B04383C6}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SmartOffice", "src\SmartOffice\SmartOffice.csproj", "{C4A36A3B-A9B4-4156-998A-4F2D06863664}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SmartOffice.Extensions", "src\SmartOffice.Extensions\SmartOffice.Extensions.csproj", "{A677D0BC-7753-4330-BA25-FE5BCD950D16}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebJobs.Extensions.SmartOffice", "src\WebJobs.Extensions.SmartOffice\WebJobs.Extensions.SmartOffice.csproj", "{D089D69F-A246-4A65-928D-0AA27FCA1CCA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebJobs.Extensions.SmartOffice", "src\WebJobs.Extensions.SmartOffice\WebJobs.Extensions.SmartOffice.csproj", "{D089D69F-A246-4A65-928D-0AA27FCA1CCA}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SmartOffice.Functions", "src\SmartOffice.Functions\SmartOffice.Functions.csproj", "{8E47748B-CDE7-434B-96EC-1BD999767424}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -44,10 +44,6 @@ Global
 		{4D0D66B6-09CC-423F-BD73-673276DE9014}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4D0D66B6-09CC-423F-BD73-673276DE9014}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4D0D66B6-09CC-423F-BD73-673276DE9014}.Release|Any CPU.Build.0 = Release|Any CPU
-		{183CF908-5D9F-4610-8F1B-5D1451F53DC1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{183CF908-5D9F-4610-8F1B-5D1451F53DC1}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{183CF908-5D9F-4610-8F1B-5D1451F53DC1}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{183CF908-5D9F-4610-8F1B-5D1451F53DC1}.Release|Any CPU.Build.0 = Release|Any CPU
 		{C0320696-8360-40DD-90C2-5B98B04383C6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C0320696-8360-40DD-90C2-5B98B04383C6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C0320696-8360-40DD-90C2-5B98B04383C6}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -64,6 +60,10 @@ Global
 		{D089D69F-A246-4A65-928D-0AA27FCA1CCA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D089D69F-A246-4A65-928D-0AA27FCA1CCA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D089D69F-A246-4A65-928D-0AA27FCA1CCA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8E47748B-CDE7-434B-96EC-1BD999767424}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8E47748B-CDE7-434B-96EC-1BD999767424}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8E47748B-CDE7-434B-96EC-1BD999767424}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8E47748B-CDE7-434B-96EC-1BD999767424}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -71,11 +71,11 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{FC4A5E49-1254-41F9-AC2B-1AD8B692381E} = {F13E7F55-1E06-4577-980F-720B0F3BEAB8}
 		{4D0D66B6-09CC-423F-BD73-673276DE9014} = {F13E7F55-1E06-4577-980F-720B0F3BEAB8}
-		{183CF908-5D9F-4610-8F1B-5D1451F53DC1} = {F13E7F55-1E06-4577-980F-720B0F3BEAB8}
 		{C0320696-8360-40DD-90C2-5B98B04383C6} = {F13E7F55-1E06-4577-980F-720B0F3BEAB8}
 		{C4A36A3B-A9B4-4156-998A-4F2D06863664} = {F13E7F55-1E06-4577-980F-720B0F3BEAB8}
 		{A677D0BC-7753-4330-BA25-FE5BCD950D16} = {F13E7F55-1E06-4577-980F-720B0F3BEAB8}
 		{D089D69F-A246-4A65-928D-0AA27FCA1CCA} = {F13E7F55-1E06-4577-980F-720B0F3BEAB8}
+		{8E47748B-CDE7-434B-96EC-1BD999767424} = {F13E7F55-1E06-4577-980F-720B0F3BEAB8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {2AD22973-0841-41CF-B3F6-83C0F6FEB90E}

@@ -24,15 +24,15 @@ namespace Microsoft.Azure.WebJobs.Extensions.SmartOffice
         public string ApplicationSecret { get; set; }
 
         /// <summary>
+        /// Gets or sets Azure AD tenant identifier.
+        /// </summary>
+        [AutoResolve]
+        public string CustomerId { get; set; }
+
+        /// <summary>
         /// Gets or sets the identifier of the target resource that is the recipient of the token being requested.
         /// </summary>
         [AutoResolve]
-        public string Resource { get; set; }
-
-        /// <summary>
-        /// Gets or sets the Azure AD identifier.
-        /// </summary>
-        [AutoResolve]
-        public string TenantId { get; set; }
+        public string Resource { get; set; } = "https://graph.microsoft.com";
     }
 }

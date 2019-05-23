@@ -11,11 +11,11 @@ namespace Microsoft.Partner.SmartOffice.Functions.ResourceConverters
     using System.Globalization;
     using System.Linq;
     using System.Threading.Tasks;
+    using Extensions;
     using Microsoft.Extensions.Logging;
-    using Models;
     using Newtonsoft.Json;
-    using Services;
     using Store.PartnerCenter;
+    using Store.PartnerCenter.Exceptions;
     using Store.PartnerCenter.Models.Auditing;
     using Store.PartnerCenter.Models.Customers;
     using Store.PartnerCenter.Models.Invoices;
@@ -89,7 +89,7 @@ namespace Microsoft.Partner.SmartOffice.Functions.ResourceConverters
                                     resource,
                                     additionalInfo));
                         }
-                        catch (ServiceClientException ex)
+                        catch (PartnerException ex)
                         {
                             log.LogError($"Unable to process the customer with the identifier of {record.CustomerId}", ex);
                         }

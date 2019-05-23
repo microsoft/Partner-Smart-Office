@@ -17,9 +17,9 @@ namespace Microsoft.Partner.SmartOffice.Functions
     using Microsoft.Extensions.Logging;
     using Models;
     using ResourceConverters;
-    using Services;
     using Store.PartnerCenter;
     using Store.PartnerCenter.Enumerators;
+    using Store.PartnerCenter.Exceptions;
     using Store.PartnerCenter.Models;
     using Store.PartnerCenter.Models.Auditing;
     using Store.PartnerCenter.Models.Customers;
@@ -78,7 +78,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
 
                     customerDetail.Customer.RemovedFromPartnerCenter = false;
                 }
-                catch (ServiceClientException ex)
+                catch (PartnerException ex)
                 {
                     customerDetail.Customer.ProcessException = ex;
                 }
@@ -109,7 +109,7 @@ namespace Microsoft.Partner.SmartOffice.Functions
                             partner,
                             customerDetail.Customer.Id).ConfigureAwait(false);
                     }
-                    catch (ServiceClientException ex)
+                    catch (PartnerException ex)
                     {
                         customerDetail.Customer.ProcessException = ex;
                         subscriptions = null;

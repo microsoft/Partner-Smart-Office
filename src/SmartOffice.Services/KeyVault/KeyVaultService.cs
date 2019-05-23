@@ -126,8 +126,6 @@ namespace Microsoft.Partner.SmartOffice.Services.KeyVault
             }
             finally
             {
-                bundle = null;
-
                 semaphore.Release();
             }
         }

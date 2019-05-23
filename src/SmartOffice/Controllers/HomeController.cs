@@ -120,7 +120,7 @@ namespace Microsoft.Partner.SmartOffice.Controllers
                 {
                     // Remove the secret associated with the Azure AD application from key vault.
                     await vault.DeleteSecretAsync(
-                        configuration["KeyVaultEndpoint"], 
+                        configuration["KeyVaultEndpoint"],
                         environment.AppEndpoint.ApplicationSecretId).ConfigureAwait(false);
                 }
 

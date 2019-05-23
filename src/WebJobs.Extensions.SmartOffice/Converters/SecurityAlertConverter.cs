@@ -10,9 +10,9 @@ namespace Microsoft.Azure.WebJobs.Extensions.SmartOffice
     using Microsoft.Extensions.Logging;
 
     /// <summary>
-    /// Provides the functionality to convert the input binding parameter to a collection of Secure Score entries. 
+    /// Provides the functionality to convert the input binding parameter to a collection of security alerts. 
     /// </summary>
-    internal class SecureScoreConverter : IAsyncConverter<SecureScoreAttribute, List<SecureScore>>
+    internal class SecurityAlertConverter : IAsyncConverter<SecurityAlertAttribute, List<Alert>>
     {
         /// <summary>
         /// The configuration provider for the Smart Office extension.
@@ -20,10 +20,10 @@ namespace Microsoft.Azure.WebJobs.Extensions.SmartOffice
         private readonly SmartOfficeExtensionConfigProvider provider;
 
         /// <summary>
-        /// Initializes an instance of the <see cref="SecureScoreConverter" /> class.
+        /// Initializes an instance of the <see cref="SecurityAlertConverter" /> class.
         /// </summary>
         /// <param name="provider">The configuration provider for the Smart Office extension.</param>
-        public SecureScoreConverter(SmartOfficeExtensionConfigProvider provider)
+        public SecurityAlertConverter(SmartOfficeExtensionConfigProvider provider)
         {
             provider.AssertNotNull(nameof(provider));
 
@@ -31,22 +31,22 @@ namespace Microsoft.Azure.WebJobs.Extensions.SmartOffice
         }
 
         /// <summary>
-        /// Converts the input parameter to a collection of Secure Score entries.
+        /// Converts the input parameter to a collection of security alerts.
         /// </summary>
         /// <param name="input">The input binding parameter used to perform the conversion.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
-        /// <returns>A collection of Secure Score entries.</returns>
-        public async Task<List<SecureScore>> ConvertAsync(SecureScoreAttribute input, CancellationToken cancellationToken)
+        /// <returns>A collection of security alerts.</returns>
+        public async Task<List<Alert>> ConvertAsync(SecurityAlertAttribute input, CancellationToken cancellationToken)
         {
             GraphServiceClient serviceClient;
-            ISecuritySecureScoresCollectionPage page;
-            List<SecureScore> items = null;
+            ISecurityAlertsCollectionPage page;
+            List<Alert> items = null;
 
             try
             {
                 serviceClient = provider.GetServiceClient(input);
-                page = await serviceClient.Security.SecureScores.Request().GetAsync(cancellationToken).ConfigureAwait(false);
-                items = new List<SecureScore>(page.CurrentPage);
+                page = await serviceClient.Security.Alerts.Request().GetAsync(cancellationToken).ConfigureAwait(false);
+                items = new List<Alert>(page.CurrentPage);
 
                 while (page.NextPageRequest != null)
                 {

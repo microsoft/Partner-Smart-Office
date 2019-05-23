@@ -15,7 +15,6 @@ namespace Microsoft.Partner.SmartOffice.Extensions.Converters
     using IdentityModel.Clients.ActiveDirectory;
     using Microsoft.Extensions.Logging;
     using Microsoft.Extensions.Options;
-    using Services;
     using Services.KeyVault;
 
     public class SecureScoreControlProfileConverter : IAsyncConverter<SecureScoreControlProfileAttribute, List<SecureScoreControlProfile>>
@@ -68,7 +67,7 @@ namespace Microsoft.Partner.SmartOffice.Extensions.Converters
 
                 return profiles;
             }
-            catch (ServiceClientException ex)
+            catch (ClientException ex)
             {
                 log.LogError(ex, $"Encountered an error when processing {input.CustomerId}");
                 return null;

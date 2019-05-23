@@ -10,6 +10,7 @@ namespace Microsoft.Azure.WebJobs.Extensions.SmartOffice
     using Graph;
     using Host.Config;
     using IdentityModel.Clients.ActiveDirectory;
+    using Microsoft.Extensions.Logging;
 
     /// <summary>
     /// The Smart Office extension configuration where the bindings, collectors, and converters are configured.
@@ -17,6 +18,43 @@ namespace Microsoft.Azure.WebJobs.Extensions.SmartOffice
     [Extension("SmartOffice")]
     internal class SmartOfficeExtensionConfigProvider : IExtensionConfigProvider
     {
+        /// <summary>
+        /// Used to configure the logging system and create instances of <see cref="ILogger" />.
+        /// </summary>
+        private readonly ILoggerFactory loggerFactory;
+
+        /// <summary>
+        /// Used to perform logging.
+        /// </summary>
+        private ILogger logger;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SmartOfficeExtensionConfigProvider" /> class.
+        /// </summary>
+        /// <param name="loggerFactory">Used to configure the logging system and create instances of <see cref="ILogger" />.</param>
+        public SmartOfficeExtensionConfigProvider(ILoggerFactory loggerFactory)
+        {
+            loggerFactory.AssertNotNull(nameof(loggerFactory));
+
+            this.loggerFactory = loggerFactory;
+        }
+
+        /// <summary>
+        /// Gets an instance of <see cref="ILogger" /> used to perform logging.
+        /// </summary>
+        public ILogger Logger
+        {
+            get
+            {
+                if (logger == null)
+                {
+                    logger = loggerFactory.CreateLogger("SmartOffice");
+                }
+
+                return logger;
+            }
+        }
+
         /// <summary>
         /// Performs the operations to initialize the extension.
         /// </summary>
@@ -50,7 +88,7 @@ namespace Microsoft.Azure.WebJobs.Extensions.SmartOffice
                                 input.ApplicationId,
                                 input.ApplicationSecret,
                                 input.Resource,
-                                input.TenantId).ConfigureAwait(false));
+                                input.CustomerId).ConfigureAwait(false));
                 }));
         }
 

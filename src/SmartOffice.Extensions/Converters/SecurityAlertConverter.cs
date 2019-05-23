@@ -15,7 +15,6 @@ namespace Microsoft.Partner.SmartOffice.Extensions.Converters
     using IdentityModel.Clients.ActiveDirectory;
     using Microsoft.Extensions.Logging;
     using Microsoft.Extensions.Options;
-    using Services;
     using Services.KeyVault;
 
     public class SecurityAlertConverter : IAsyncConverter<SecurityAlertsAttribute, List<Alert>>
@@ -67,7 +66,7 @@ namespace Microsoft.Partner.SmartOffice.Extensions.Converters
 
                 return alerts;
             }
-            catch (ServiceClientException ex)
+            catch (ClientException ex)
             {
                 log.LogError(ex, $"Encountered an error when processing {input.CustomerId}");
                 return null;
