@@ -6,7 +6,10 @@ namespace SmartOffice.Aggregator
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Threading.Tasks;
     using Converters;
+    using Data;
+    using Microsoft.Azure.Documents.Client;
     using Microsoft.Azure.WebJobs;
     using Microsoft.Azure.WebJobs.Extensions.PartnerCenter;
     using Microsoft.Extensions.Logging;
@@ -18,16 +21,14 @@ namespace SmartOffice.Aggregator
     public static class Partners
     {
         [FunctionName("PartnerDeltaSync")]
-        public static void PartnerDeltaSync(
+        public static async Task PartnerDeltaSyncAsync(
             [QueueTrigger(
                 "partnerdeltasync",
                 Connection = "StorageConnectionString")]EnvironmentRecord input,
             [CosmosDB(
                 databaseName: "smartoffice",
                 collectionName: "customers",
-                ConnectionStringSetting = "ComosDbConnectionString",
-                CreateIfNotExists = true,
-                SqlQuery = "SELECT * FROM customers")]List<CustomerEntry> customers,
+                ConnectionStringSetting = "CosmosDbConnectionString")]DocumentClient client,
             [AuditRecord(
                 ApplicationId = "{PartnerCenter.ApplicationId}",
                 ApplicationSecretName = "{PartnerCenter.ApplicationSecret}",
@@ -38,12 +39,14 @@ namespace SmartOffice.Aggregator
             [CosmosDB(
                 databaseName: "smartoffice",
                 collectionName: "customers",
-                ConnectionStringSetting = "ComosDbConnectionString")]
-                IAsyncCollector<CustomerEntry> items,
+                ConnectionStringSetting = "CosmosDbConnectionString",
+                CreateIfNotExists = true)]IAsyncCollector<CustomerEntry> items,
             [Queue(
                 "securitysync", Connection = "StorageConnectionString")] ICollector<CustomerRecord> output,
             ILogger log)
         {
+            List<CustomerEntry> customers = await DocumentRepository.GetAsync<CustomerEntry>(client, "smartoffice", "environments").ConfigureAwait(false);
+
             records.Where(r => r.OperationStatus == OperationStatus.Succeeded && !string.IsNullOrEmpty(r.CustomerId))
                 .OrderBy(r => r.OperationDate).ToList().ForEach(async (r) =>
             {
@@ -59,7 +62,7 @@ namespace SmartOffice.Aggregator
 
             customers.ForEach((entry) =>
             {
-                output.Add(GetCustomerRecord(entry));
+                output.Add(GetCustomerRecord(entry, input.AppEndpoint));
             });
         }
 
@@ -76,8 +79,8 @@ namespace SmartOffice.Aggregator
             [CosmosDB(
                 databaseName: "smartoffice",
                 collectionName: "customers",
-                ConnectionStringSetting = "ComosDbConnectionString")]
-                IAsyncCollector<CustomerEntry> items,
+                ConnectionStringSetting = "CosmosDbConnectionString",
+                CreateIfNotExists = true)]IAsyncCollector<CustomerEntry> items,
             [Queue(
                 "securitysync", Connection = "StorageConnectionString")] IAsyncCollector<CustomerRecord> output,
             ILogger log)
@@ -89,7 +92,7 @@ namespace SmartOffice.Aggregator
                 CustomerEntry entry = GetCustomerEntry(customer);
 
                 await items.AddAsync(entry).ConfigureAwait(false);
-                await output.AddAsync(GetCustomerRecord(entry)).ConfigureAwait(false);
+                await output.AddAsync(GetCustomerRecord(entry, input.AppEndpoint)).ConfigureAwait(false);
             });
         }
 
@@ -110,7 +113,7 @@ namespace SmartOffice.Aggregator
             return entry;
         }
 
-        private static CustomerRecord GetCustomerRecord(CustomerEntry entry)
+        private static CustomerRecord GetCustomerRecord(CustomerEntry entry, EndpointEntry endpoint)
         {
             CustomerRecord record;
             int period;
@@ -135,6 +138,7 @@ namespace SmartOffice.Aggregator
                 period = 30;
             }
 
+            record.AppEndpoint = endpoint;
             record.SecureScorePeriod = period;
 
             return record;

@@ -11,6 +11,11 @@ namespace SmartOffice.Aggregator.Records
     public sealed class CustomerRecord : CustomerEntry
     {
         /// <summary>
+        /// Gets or sets the application endpoint information.
+        /// </summary>
+        public EndpointEntry AppEndpoint { get; set; }
+
+        /// <summary>
         /// Gets or sets the number of days of Secure Score results to retrieve starting from current date.
         /// </summary>
         public int SecureScorePeriod { get; set; }

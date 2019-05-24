@@ -5,6 +5,9 @@ namespace SmartOffice.Aggregator
 {
     using System;
     using System.Collections.Generic;
+    using System.Threading.Tasks;
+    using Data;
+    using Microsoft.Azure.Documents.Client;
     using Microsoft.Azure.WebJobs;
     using Microsoft.Extensions.Logging;
     using Models;
@@ -13,14 +16,12 @@ namespace SmartOffice.Aggregator
     public static class Environments
     {
         [FunctionName("GetEnvironments")]
-        public static void GetEnvironments(
+        public static async Task GetEnvironmentsAsync(
             [TimerTrigger("0 */5 * * * *")]TimerInfo myTimer,
             [CosmosDB(
                 databaseName: "smartoffice",
                 collectionName: "environments",
-                ConnectionStringSetting = "ComosDbConnectionString",
-                CreateIfNotExists = true,
-                SqlQuery = "SELECT * FROM environments")]IEnumerable<EnvironmentEntry> environments,
+                ConnectionStringSetting = "CosmosDbConnectionString")]DocumentClient client,
             [Queue(
                 "partnerdeltasync", Connection = "StorageConnectionString")] ICollector<EnvironmentRecord> deltaSyncQueue,
             [Queue(
@@ -31,7 +32,9 @@ namespace SmartOffice.Aggregator
             int days;
 
 
-            foreach (EnvironmentEntry entry in environments)
+            List<EnvironmentEntry> environments = await DocumentRepository.GetAsync<EnvironmentEntry>(client, "smartoffice", "environments").ConfigureAwait(false);
+
+            environments.ForEach((entry) =>
             {
                 log.LogInformation(entry.FriendlyName);
 
@@ -66,7 +69,7 @@ namespace SmartOffice.Aggregator
 
                     deltaSyncQueue.Add(record);
                 }
-            }
+            });
         }
     }
 }
