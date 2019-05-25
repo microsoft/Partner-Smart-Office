@@ -7,11 +7,8 @@
     <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.CosmosDB" Version="3.0.3" />
     <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.Storage" Version="3.0.6" />
     <PackageReference Include="Microsoft.NET.Sdk.Functions" Version="1.0.28" />
-    <PackageReference Include="WebJobs.Extensions.MSGraph" Version="0.0.2-alpha" />
-    <PackageReference Include="WebJobs.Extensions.PartnerCenter" Version="0.0.1-alpha" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\SmartOffice.Models\SmartOffice.Models.csproj" />
+    <PackageReference Include="WebJobs.Extensions.MSGraph" Version="0.0.4-alpha" />
+    <PackageReference Include="WebJobs.Extensions.PartnerCenter" Version="0.0.3-alpha" />
   </ItemGroup>
   <ItemGroup>
     <None Update="host.json">

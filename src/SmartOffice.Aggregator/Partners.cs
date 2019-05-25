@@ -30,25 +30,22 @@ namespace SmartOffice.Aggregator
                 collectionName: "customers",
                 ConnectionStringSetting = "CosmosDbConnectionString")]DocumentClient client,
             [AuditRecord(
-                ApplicationId = "{PartnerCenter.ApplicationId}",
-                ApplicationSecretName = "{PartnerCenter.ApplicationSecret}",
-                ApplicationTenantId = "{PartnerCenter.TenantId}",
+                ApplicationId = "{PartnerCenterEndpoint.ApplicationId}",
+                ApplicationSecretName = "{PartnerCenterEndpoint.ApplicationSecretName}",
+                ApplicationTenantId = "{PartnerCenterEndpoint.TenantId}",
                 KeyVaultEndpoint = "%KeyVaultEndpoint%",
                 EndDate = "{AuditEndDate}",
                 StartDate = "{AuditStartDate}")]List<AuditRecord> records,
-            [CosmosDB(
-                databaseName: "smartoffice",
-                collectionName: "customers",
-                ConnectionStringSetting = "CosmosDbConnectionString",
-                CreateIfNotExists = true)]IAsyncCollector<CustomerEntry> items,
             [Queue(
-                "securitysync", Connection = "StorageConnectionString")] ICollector<CustomerRecord> output,
+                "controlprofilesync", Connection = "StorageConnectionString")]IAsyncCollector<CustomerRecord> profileSync,
+            [Queue(
+                "securitysync", Connection = "StorageConnectionString")]IAsyncCollector<CustomerRecord> securitySync,
             ILogger log)
         {
             List<CustomerEntry> customers = await DocumentRepository.GetAsync<CustomerEntry>(client, "smartoffice", "environments").ConfigureAwait(false);
 
             records.Where(r => r.OperationStatus == OperationStatus.Succeeded && !string.IsNullOrEmpty(r.CustomerId))
-                .OrderBy(r => r.OperationDate).ToList().ForEach(async (r) =>
+                .OrderBy(r => r.OperationDate).ToList().ForEach((r) =>
             {
                 if (r.OperationType == OperationType.AddCustomer)
                 {
@@ -56,13 +53,13 @@ namespace SmartOffice.Aggregator
                     CustomerEntry entry = ResourceConverter.Convert<Customer, CustomerEntry>(resource);
 
                     customers.Add(entry);
-                    await items.AddAsync(entry).ConfigureAwait(false);
                 }
             });
 
-            customers.ForEach((entry) =>
+            customers.ForEach(async (entry) =>
             {
-                output.Add(GetCustomerRecord(entry, input.AppEndpoint));
+                await profileSync.AddAsync(GetCustomerRecord(entry, input.AppEndpoint)).ConfigureAwait(false);
+                await securitySync.AddAsync(GetCustomerRecord(entry, input.AppEndpoint)).ConfigureAwait(false);
             });
         }
 
@@ -72,27 +69,24 @@ namespace SmartOffice.Aggregator
                 "partnerfullsync",
                 Connection = "StorageConnectionString")]EnvironmentRecord input,
             [Customer(
-                ApplicationId = "{PartnerCenter.ApplicationId}",
-                ApplicationSecretName = "{PartnerCenter.ApplicationSecret}",
-                ApplicationTenantId = "{PartnerCenter.TenantId}",
+                ApplicationId = "{PartnerCenterEndpoint.ApplicationId}",
+                ApplicationSecretName = "{PartnerCenterEndpoint.ApplicationSecretName}",
+                ApplicationTenantId = "{PartnerCenterEndpoint.TenantId}",
                 KeyVaultEndpoint = "%KeyVaultEndpoint%")]List<Customer> customers,
-            [CosmosDB(
-                databaseName: "smartoffice",
-                collectionName: "customers",
-                ConnectionStringSetting = "CosmosDbConnectionString",
-                CreateIfNotExists = true)]IAsyncCollector<CustomerEntry> items,
             [Queue(
-                "securitysync", Connection = "StorageConnectionString")] IAsyncCollector<CustomerRecord> output,
+                "controlprofilesync", Connection = "StorageConnectionString")]ICollector<CustomerRecord> profileSync,
+            [Queue(
+                "securitysync", Connection = "StorageConnectionString")]ICollector<CustomerRecord> securitySync,
             ILogger log)
         {
             log.LogInformation($"Processing {input.FriendlyName}");
 
-            customers.ForEach(async (customer) =>
+            customers.ForEach((customer) =>
             {
                 CustomerEntry entry = GetCustomerEntry(customer);
 
-                await items.AddAsync(entry).ConfigureAwait(false);
-                await output.AddAsync(GetCustomerRecord(entry, input.AppEndpoint)).ConfigureAwait(false);
+                profileSync.Add(GetCustomerRecord(entry, input.AppEndpoint));
+                securitySync.Add(GetCustomerRecord(entry, input.AppEndpoint));
             });
         }
 

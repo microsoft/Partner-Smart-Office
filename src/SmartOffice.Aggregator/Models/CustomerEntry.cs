@@ -1,24 +1,21 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-namespace SmartOffice.Models
+namespace SmartOffice.Aggregator.Models
 {
     using System;
+    using System.Collections.Generic;
+    using Microsoft.Graph;
 
     /// <summary>
-    /// Represents an environment entry.
+    /// Represents a customer entry.
     /// </summary>
-    public class EnvironmentEntry
+    public class CustomerEntry
     {
         /// <summary>
-        /// Gets or sets the application endpoint information.
+        /// Gets or sets the environment identifier associated with this entry.
         /// </summary>
-        public EndpointEntry AppEndpoint { get; set; }
-
-        /// <summary>
-        /// Gets or sets the friendly name.
-        /// </summary>
-        public string FriendlyName { get; set; }
+        public string EnvironmentId { get; set; }
 
         /// <summary>
         /// Gets or sets the identifier.
@@ -31,9 +28,13 @@ namespace SmartOffice.Models
         public DateTimeOffset? LastProcessed { get; set; }
 
         /// <summary>
-        /// Gets or sets the Partner Center endpoint information.
+        /// Gets or sets the name.
         /// </summary>
-        /// <remarks>
-        public EndpointEntry PartnerCenterEndpoint { get; set; }
+        public string Name { get; set; }
+
+        /// <summary>
+        /// Gets or sets the collection of Secure Score control profiles.
+        /// </summary>
+        public IEnumerable<SecureScoreControlProfile> SecureScoreControlProfiles { get; set; }
     }
 }

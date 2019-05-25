@@ -4,14 +4,40 @@
 namespace SmartOffice.Aggregator
 {
     using System.Collections.Generic;
+    using System.Threading.Tasks;
+    using Converters;
     using Microsoft.Azure.WebJobs;
     using Microsoft.Azure.WebJobs.Extensions.MicrosoftGraph;
     using Microsoft.Extensions.Logging;
     using Microsoft.Graph;
+    using Models;
     using Records;
 
     public static class Security
     {
+        [FunctionName("controlprofilesync")]
+        public static async Task ControlProfileSyncAsync(
+            [QueueTrigger(
+                "controlprofilesync",
+                Connection = "StorageConnectionString")]CustomerRecord input,
+            [SecureScoreControlProfile(
+                ApplicationId = "{AppEndpoint.ApplicationId}",
+                ApplicationSecretName = "{AppEndpoint.ApplicationSecretName}",
+                KeyVaultEndpoint = "%KeyVaultEndpoint%",
+                TenantId = "{Id}")]List<SecureScoreControlProfile> profiles,
+            [CosmosDB(
+                databaseName: "smartoffice",
+                collectionName: "customers",
+                ConnectionStringSetting = "CosmosDbConnectionString",
+                CreateIfNotExists = true)]IAsyncCollector<CustomerEntry> items)
+        {
+            CustomerEntry entry = ResourceConverter.Convert<CustomerRecord, CustomerEntry>(input);
+
+            entry.SecureScoreControlProfiles = profiles;
+
+            await items.AddAsync(entry).ConfigureAwait(false);
+        }
+
         [FunctionName("SecuritySync")]
         public static void SecuritySync(
             [QueueTrigger(
@@ -23,17 +49,31 @@ namespace SmartOffice.Aggregator
                 KeyVaultEndpoint = "%KeyVaultEndpoint%",
                 Period = "{SecureScorePeriod}",
                 TenantId = "{Id}")]List<SecureScore> scores,
+            [SecurityAlert(
+                ApplicationId = "{AppEndpoint.ApplicationId}",
+                ApplicationSecretName = "{AppEndpoint.ApplicationSecretName}",
+                KeyVaultEndpoint = "%KeyVaultEndpoint%",
+                TenantId = "{Id}")]List<Alert> alerts,
             [CosmosDB(
-                databaseName: "securescores",
-                collectionName: "customers",
+                databaseName: "smartoffice",
+                collectionName: "securescores",
                 ConnectionStringSetting = "CosmosDbConnectionString",
-                CreateIfNotExists = true)]IAsyncCollector<SecureScore> items,
+                CreateIfNotExists = true)]IAsyncCollector<SecureScore> secureScores,
+            [CosmosDB(
+                databaseName: "smartoffice",
+                collectionName: "securityalerts",
+                ConnectionStringSetting = "CosmosDbConnectionString",
+                CreateIfNotExists = true)]IAsyncCollector<Alert> securityAlerts,
             ILogger log)
         {
+            alerts.ForEach(async (alert) =>
+            {
+                await securityAlerts.AddAsync(alert).ConfigureAwait(false);
+            });
 
             scores.ForEach(async (score) =>
             {
-                await items.AddAsync(score).ConfigureAwait(false);
+                await secureScores.AddAsync(score).ConfigureAwait(false);
             });
         }
     }

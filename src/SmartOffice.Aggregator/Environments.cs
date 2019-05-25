@@ -11,10 +11,23 @@ namespace SmartOffice.Aggregator
     using Microsoft.Azure.WebJobs;
     using Microsoft.Extensions.Logging;
     using Models;
+    using Newtonsoft.Json;
+    using Newtonsoft.Json.Serialization;
     using Records;
 
     public static class Environments
     {
+        static Environments()
+        {
+            JsonConvert.DefaultSettings = () =>
+            {
+                return new JsonSerializerSettings
+                {
+                    ContractResolver = new CamelCasePropertyNamesContractResolver()
+                };
+            };
+        }
+
         [FunctionName("GetEnvironments")]
         public static async Task GetEnvironmentsAsync(
             [TimerTrigger("0 */5 * * * *")]TimerInfo myTimer,
@@ -23,9 +36,9 @@ namespace SmartOffice.Aggregator
                 collectionName: "environments",
                 ConnectionStringSetting = "CosmosDbConnectionString")]DocumentClient client,
             [Queue(
-                "partnerdeltasync", Connection = "StorageConnectionString")] ICollector<EnvironmentRecord> deltaSyncQueue,
+                "partnerdeltsync", Connection = "StorageConnectionString")]IAsyncCollector<EnvironmentRecord> deltaSyncQueue,
             [Queue(
-                "partnerfullasync", Connection = "StorageConnectionString")] ICollector<EnvironmentRecord> fullSyncQueue,
+                "partnerfullsync", Connection = "StorageConnectionString")]IAsyncCollector<EnvironmentRecord> fullSyncQueue,
             ILogger log)
         {
             EnvironmentRecord record;
@@ -34,7 +47,7 @@ namespace SmartOffice.Aggregator
 
             List<EnvironmentEntry> environments = await DocumentRepository.GetAsync<EnvironmentEntry>(client, "smartoffice", "environments").ConfigureAwait(false);
 
-            environments.ForEach((entry) =>
+            environments.ForEach(async (entry) =>
             {
                 log.LogInformation(entry.FriendlyName);
 
@@ -53,7 +66,7 @@ namespace SmartOffice.Aggregator
                 if (days >= 30)
                 {
                     // Perform a full sync because the environment has not been processed in the past 30 days.
-                    fullSyncQueue.Add(record);
+                    await fullSyncQueue.AddAsync(record).ConfigureAwait(false);
                 }
                 else
                 {
@@ -67,7 +80,7 @@ namespace SmartOffice.Aggregator
                     record.AuditEndDate = DateTime.UtcNow.ToString();
                     record.AuditStartDate = DateTime.UtcNow.AddDays(-days).ToString();
 
-                    deltaSyncQueue.Add(record);
+                    await deltaSyncQueue.AddAsync(record).ConfigureAwait(false);
                 }
             });
         }

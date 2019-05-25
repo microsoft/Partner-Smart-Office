@@ -14,8 +14,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartOffice.Aggregator", "src\SmartOffice.Aggregator\SmartOffice.Aggregator.csproj", "{1FF3D251-AC78-4D83-BA4C-E5F9CFF8CEBB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartOffice.Models", "src\SmartOffice.Models\SmartOffice.Models.csproj", "{117BA4AC-27ED-42B5-9F49-AD0CA6779037}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -26,17 +24,12 @@ Global
 		{1FF3D251-AC78-4D83-BA4C-E5F9CFF8CEBB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1FF3D251-AC78-4D83-BA4C-E5F9CFF8CEBB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1FF3D251-AC78-4D83-BA4C-E5F9CFF8CEBB}.Release|Any CPU.Build.0 = Release|Any CPU
-		{117BA4AC-27ED-42B5-9F49-AD0CA6779037}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{117BA4AC-27ED-42B5-9F49-AD0CA6779037}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{117BA4AC-27ED-42B5-9F49-AD0CA6779037}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{117BA4AC-27ED-42B5-9F49-AD0CA6779037}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{1FF3D251-AC78-4D83-BA4C-E5F9CFF8CEBB} = {FF51B4BF-FEC0-4A57-94F0-E3189ED16E0B}
-		{117BA4AC-27ED-42B5-9F49-AD0CA6779037} = {FF51B4BF-FEC0-4A57-94F0-E3189ED16E0B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {02E44719-B267-4639-BF57-B71481076A21}

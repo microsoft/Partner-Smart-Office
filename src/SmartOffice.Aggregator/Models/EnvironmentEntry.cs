@@ -1,19 +1,24 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-namespace SmartOffice.Models
+namespace SmartOffice.Aggregator.Models
 {
     using System;
 
     /// <summary>
-    /// Represents a customer entry.
+    /// Represents an environment entry.
     /// </summary>
-    public class CustomerEntry
+    public class EnvironmentEntry
     {
         /// <summary>
-        /// Gets or sets the environment identifier associated with this entry.
+        /// Gets or sets the application endpoint information.
         /// </summary>
-        public string EnvironmentId { get; set; }
+        public EndpointEntry AppEndpoint { get; set; }
+
+        /// <summary>
+        /// Gets or sets the friendly name.
+        /// </summary>
+        public string FriendlyName { get; set; }
 
         /// <summary>
         /// Gets or sets the identifier.
@@ -26,8 +31,9 @@ namespace SmartOffice.Models
         public DateTimeOffset? LastProcessed { get; set; }
 
         /// <summary>
-        /// Gets or sets the name.
+        /// Gets or sets the Partner Center endpoint information.
         /// </summary>
-        public string Name { get; set; }
+        /// <remarks>
+        public EndpointEntry PartnerCenterEndpoint { get; set; }
     }
 }
