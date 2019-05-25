@@ -58,8 +58,8 @@ namespace SmartOffice.Aggregator
 
             customers.ForEach(async (entry) =>
             {
-                await profileSync.AddAsync(GetCustomerRecord(entry, input.AppEndpoint)).ConfigureAwait(false);
-                await securitySync.AddAsync(GetCustomerRecord(entry, input.AppEndpoint)).ConfigureAwait(false);
+                await profileSync.AddAsync(GetCustomerRecord(entry, input)).ConfigureAwait(false);
+                await securitySync.AddAsync(GetCustomerRecord(entry, input)).ConfigureAwait(false);
             });
         }
 
@@ -85,8 +85,8 @@ namespace SmartOffice.Aggregator
             {
                 CustomerEntry entry = GetCustomerEntry(customer);
 
-                profileSync.Add(GetCustomerRecord(entry, input.AppEndpoint));
-                securitySync.Add(GetCustomerRecord(entry, input.AppEndpoint));
+                profileSync.Add(GetCustomerRecord(entry, input));
+                securitySync.Add(GetCustomerRecord(entry, input));
             });
         }
 
@@ -107,7 +107,7 @@ namespace SmartOffice.Aggregator
             return entry;
         }
 
-        private static CustomerRecord GetCustomerRecord(CustomerEntry entry, EndpointEntry endpoint)
+        private static CustomerRecord GetCustomerRecord(CustomerEntry entry, EnvironmentRecord environment)
         {
             CustomerRecord record;
             int period;
@@ -132,7 +132,8 @@ namespace SmartOffice.Aggregator
                 period = 30;
             }
 
-            record.AppEndpoint = endpoint;
+            record.AppEndpoint = environment.AppEndpoint;
+            record.EnvironmentId = environment.Id;
             record.SecureScorePeriod = period;
 
             return record;

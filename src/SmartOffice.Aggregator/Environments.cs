@@ -11,23 +11,10 @@ namespace SmartOffice.Aggregator
     using Microsoft.Azure.WebJobs;
     using Microsoft.Extensions.Logging;
     using Models;
-    using Newtonsoft.Json;
-    using Newtonsoft.Json.Serialization;
     using Records;
 
     public static class Environments
     {
-        static Environments()
-        {
-            JsonConvert.DefaultSettings = () =>
-            {
-                return new JsonSerializerSettings
-                {
-                    ContractResolver = new CamelCasePropertyNamesContractResolver()
-                };
-            };
-        }
-
         [FunctionName("GetEnvironments")]
         public static async Task GetEnvironmentsAsync(
             [TimerTrigger("0 */5 * * * *")]TimerInfo myTimer,
