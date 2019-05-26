@@ -11,7 +11,6 @@ namespace SmartOffice.Aggregator
     using Microsoft.Azure.WebJobs;
     using Microsoft.Extensions.Logging;
     using Models;
-    using Records;
 
     public static class Environments
     {

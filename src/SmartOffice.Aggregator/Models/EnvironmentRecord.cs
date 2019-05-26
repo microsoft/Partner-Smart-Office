@@ -1,10 +1,8 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-namespace SmartOffice.Aggregator.Records
+namespace SmartOffice.Aggregator.Models
 {
-    using Models;
-
     /// <summary>
     /// Represents the details used to perform a delta or full sync of an environment.
     /// </summary>

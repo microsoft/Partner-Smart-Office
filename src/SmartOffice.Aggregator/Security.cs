@@ -5,13 +5,11 @@ namespace SmartOffice.Aggregator
 {
     using System.Collections.Generic;
     using System.Threading.Tasks;
-    using Converters;
     using Microsoft.Azure.WebJobs;
     using Microsoft.Azure.WebJobs.Extensions.MicrosoftGraph;
     using Microsoft.Extensions.Logging;
     using Microsoft.Graph;
     using Models;
-    using Records;
 
     public static class Security
     {
@@ -24,18 +22,23 @@ namespace SmartOffice.Aggregator
                 ApplicationId = "{AppEndpoint.ApplicationId}",
                 ApplicationSecretName = "{AppEndpoint.ApplicationSecretName}",
                 KeyVaultEndpoint = "%KeyVaultEndpoint%",
-                TenantId = "{Id}")]List<SecureScoreControlProfile> profiles,
+                TenantId = "{Id}")]List<SecureScoreControlProfile> controlProfiles,
             [CosmosDB(
                 databaseName: "smartoffice",
-                collectionName: "customers",
+                collectionName: "securityevents",
                 ConnectionStringSetting = "CosmosDbConnectionString",
-                CreateIfNotExists = true)]IAsyncCollector<CustomerEntry> items)
+                CreateIfNotExists = true,
+                PartitionKey = "/customerId")]IAsyncCollector<DataEntry<List<SecureScoreControlProfile>>> profiles)
         {
-            CustomerEntry entry = ResourceConverter.Convert<CustomerRecord, CustomerEntry>(input);
-
-            entry.SecureScoreControlProfiles = profiles;
-
-            await items.AddAsync(entry).ConfigureAwait(false);
+            await profiles.AddAsync(new DataEntry<List<SecureScoreControlProfile>>
+            {
+                CustomerId = input.Id,
+                CustomerName = input.Name,
+                Entry = controlProfiles,
+                EnvironmentId = input.EnvironmentId,
+                EnvironmentName = input.EnvironmentName,
+                Id = $"{input.Id}-controlprofile"
+            }).ConfigureAwait(false);
         }
 
         [FunctionName("SecuritySync")]
@@ -56,24 +59,46 @@ namespace SmartOffice.Aggregator
                 TenantId = "{Id}")]List<Alert> alerts,
             [CosmosDB(
                 databaseName: "smartoffice",
-                collectionName: "securescores",
+                collectionName: "securityevents",
                 ConnectionStringSetting = "CosmosDbConnectionString",
-                CreateIfNotExists = true)]IAsyncCollector<SecureScore> secureScores,
+                CreateIfNotExists = true,
+                PartitionKey = "/customerId")]IAsyncCollector<DataEntry<SecureScore>> secureScores,
             [CosmosDB(
                 databaseName: "smartoffice",
-                collectionName: "securityalerts",
+                collectionName: "securityevents",
                 ConnectionStringSetting = "CosmosDbConnectionString",
-                CreateIfNotExists = true)]IAsyncCollector<Alert> securityAlerts,
+                CreateIfNotExists = true,
+                PartitionKey = "/customerId")]IAsyncCollector<DataEntry<Alert>> securityAlerts,
             ILogger log)
         {
+            log.LogInformation($"Processing {alerts.Count} alerts for {input.Name}");
+
             alerts.ForEach(async (alert) =>
             {
-                await securityAlerts.AddAsync(alert).ConfigureAwait(false);
+                await securityAlerts.AddAsync(new DataEntry<Alert>
+                {
+                    CustomerId = input.Id,
+                    CustomerName = input.Name,
+                    Entry = alert,
+                    EnvironmentId = input.EnvironmentId,
+                    EnvironmentName = input.EnvironmentName,
+                    Id = alert.Id
+                }).ConfigureAwait(false);
             });
+
+            log.LogInformation($"Processing {scores.Count} Secure Score entries for {input.Name}");
 
             scores.ForEach(async (score) =>
             {
-                await secureScores.AddAsync(score).ConfigureAwait(false);
+                await secureScores.AddAsync(new DataEntry<SecureScore>
+                {
+                    CustomerId = input.Id,
+                    CustomerName = input.Name,
+                    Entry = score,
+                    EnvironmentId = input.EnvironmentId,
+                    EnvironmentName = input.EnvironmentName,
+                    Id = score.Id
+                }).ConfigureAwait(false);
             });
         }
     }
