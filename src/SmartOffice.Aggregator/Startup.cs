@@ -17,7 +17,10 @@ namespace SmartOffice.Aggregator
             {
                 return new JsonSerializerSettings
                 {
-                    ContractResolver = new CamelCasePropertyNamesContractResolver()
+                    ContractResolver = new CamelCasePropertyNamesContractResolver(),
+                    DateFormatHandling = DateFormatHandling.IsoDateFormat,
+                    DateTimeZoneHandling = DateTimeZoneHandling.Utc,
+                    ReferenceLoopHandling = ReferenceLoopHandling.Serialize
                 };
             };
         }
