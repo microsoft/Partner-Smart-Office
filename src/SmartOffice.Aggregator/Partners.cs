@@ -9,6 +9,7 @@ namespace SmartOffice.Aggregator
     using System.Threading.Tasks;
     using Converters;
     using Data;
+    using Microsoft.Azure.Documents;
     using Microsoft.Azure.Documents.Client;
     using Microsoft.Azure.WebJobs;
     using Microsoft.Azure.WebJobs.Extensions.PartnerCenter;
@@ -19,15 +20,13 @@ namespace SmartOffice.Aggregator
 
     public static class Partners
     {
-        [FunctionName("PartnerDeltaSync")]
+        [FunctionName(Constants.PartnerDeltaSync)]
         public static async Task PartnerDeltaSyncAsync(
-            [QueueTrigger(
-                "partnerdeltasync",
-                Connection = "StorageConnectionString")]EnvironmentRecord input,
+            [QueueTrigger(Constants.PartnerDeltaSync, Connection = Constants.StorageConnectionString)]EnvironmentRecord input,
             [CosmosDB(
-                databaseName: "smartoffice",
-                collectionName: "customers",
-                ConnectionStringSetting = "CosmosDbConnectionString")]DocumentClient client,
+                databaseName: Constants.DatabaseName,
+                collectionName: Constants.EnvironmentsCollection,
+                ConnectionStringSetting = Constants.CosmosDbConnectionString)]DocumentClient client,
             [AuditRecord(
                 ApplicationId = "{PartnerCenterEndpoint.ApplicationId}",
                 ApplicationSecretName = "{PartnerCenterEndpoint.ApplicationSecretName}",
@@ -36,17 +35,33 @@ namespace SmartOffice.Aggregator
                 EndDate = "{AuditEndDate}",
                 StartDate = "{AuditStartDate}")]List<AuditRecord> records,
             [CosmosDB(
-                databaseName: "smartoffice",
-                collectionName: "customers",
-                ConnectionStringSetting = "CosmosDbConnectionString",
+                databaseName: Constants.DatabaseName,
+                collectionName: Constants.EnvironmentsCollection,
+                ConnectionStringSetting = Constants.CosmosDbConnectionString,
                 CreateIfNotExists = true)]IAsyncCollector<CustomerEntry> customerOutput,
-            [Queue(
-                "controlprofilesync", Connection = "StorageConnectionString")]IAsyncCollector<CustomerRecord> profileSync,
-            [Queue(
-                "securitysync", Connection = "StorageConnectionString")]IAsyncCollector<CustomerRecord> securitySync,
+            [Queue(Constants.ControlProfileSync, Connection = Constants.StorageConnectionString)]IAsyncCollector<CustomerRecord> profileSync,
+            [Queue(Constants.SecurtityEventSync, Connection = Constants.StorageConnectionString)]IAsyncCollector<CustomerRecord> securitySync,
             ILogger log)
         {
-            List<CustomerEntry> customers = await DocumentRepository.GetAsync<CustomerEntry>(client, "smartoffice", "environments").ConfigureAwait(false);
+            List<CustomerEntry> customers = await DocumentRepository.QueryAsync<CustomerEntry>(
+                client,
+                Constants.DatabaseName,
+                Constants.EnvironmentsCollection,
+                "/environmentId",
+                new SqlQuerySpec
+                {
+                    Parameters = new SqlParameterCollection()
+                    {
+                        new SqlParameter("@entryType", nameof(CustomerEntry)),
+                    },
+                    QueryText = "SELECT * FROM c WHERE c.entryType = '@entryType'",
+                },
+                false).ConfigureAwait(false);
+
+            // TODO 
+            // Refactor that way you have to a way to track changes with the customers. That way you are only submitting the customers
+            // that change (e.g. a customer has changed their name). This will make it where you are not always update a customer after
+            // entry stored in Cosmos DB.
 
             records.Where(r => r.OperationStatus == OperationStatus.Succeeded && !string.IsNullOrEmpty(r.CustomerId))
                 .OrderBy(r => r.OperationDate).ToList().ForEach((r) =>
@@ -70,42 +85,38 @@ namespace SmartOffice.Aggregator
             });
         }
 
-        [FunctionName("PartnerFullSync")]
+        [FunctionName(Constants.PartnerFullSync)]
         public static void PartnerFullSync(
-            [QueueTrigger(
-                "partnerfullsync",
-                Connection = "StorageConnectionString")]EnvironmentRecord input,
+            [QueueTrigger(Constants.PartnerFullSync, Connection = Constants.StorageConnectionString)]EnvironmentRecord input,
             [Customer(
                 ApplicationId = "{PartnerCenterEndpoint.ApplicationId}",
                 ApplicationSecretName = "{PartnerCenterEndpoint.ApplicationSecretName}",
                 ApplicationTenantId = "{PartnerCenterEndpoint.TenantId}",
                 KeyVaultEndpoint = "%KeyVaultEndpoint%")]List<Customer> customers,
             [CosmosDB(
-                databaseName: "smartoffice",
-                collectionName: "customers",
-                ConnectionStringSetting = "CosmosDbConnectionString",
-                CreateIfNotExists = true)]IAsyncCollector<CustomerEntry> customerOutput,
-            [Queue(
-                "controlprofilesync", Connection = "StorageConnectionString")]IAsyncCollector<CustomerRecord> profileSync,
-            [Queue(
-                "securitysync", Connection = "StorageConnectionString")]IAsyncCollector<CustomerRecord> securitySync,
+                databaseName: Constants.DatabaseName,
+                collectionName: Constants.EnvironmentsCollection,
+                ConnectionStringSetting = Constants.CosmosDbConnectionString,
+                CreateIfNotExists = true)]ICollector<CustomerEntry> customerOutput,
+            [Queue(Constants.ControlProfileSync, Connection = Constants.StorageConnectionString)]ICollector<CustomerRecord> profileSync,
+            [Queue(Constants.SecurtityEventSync, Connection = Constants.StorageConnectionString)]ICollector<CustomerRecord> securitySync,
             ILogger log)
         {
-            log.LogInformation($"Processing the {input.FriendlyName} environment");
+            log.LogInformation($"Processing the {input.EnvironmentName} environment");
 
-            customers.ForEach(async (customer) =>
+            customers.ForEach((customer) =>
             {
-                CustomerEntry entry = GetCustomerEntry(customer);
+                CustomerEntry entry = GetCustomerEntry(customer, input);
 
                 log.LogInformation($"Processing {entry.Name} from the {entry.EnvironmentName} environment");
 
-                await customerOutput.AddAsync(entry).ConfigureAwait(false);
-                await profileSync.AddAsync(GetCustomerRecord(entry, input)).ConfigureAwait(false);
-                await securitySync.AddAsync(GetCustomerRecord(entry, input)).ConfigureAwait(false);
+                customerOutput.Add(entry);
+                profileSync.Add(GetCustomerRecord(entry, input));
+                securitySync.Add(GetCustomerRecord(entry, input));
             });
         }
 
-        private static CustomerEntry GetCustomerEntry(Customer customer)
+        private static CustomerEntry GetCustomerEntry(Customer customer, EnvironmentRecord environment)
         {
             CustomerEntry entry;
 
@@ -116,6 +127,9 @@ namespace SmartOffice.Aggregator
 
             entry = ResourceConverter.Convert<Customer, CustomerEntry>(customer);
 
+            entry.EntryType = nameof(CustomerEntry);
+            entry.EnvironmentId = environment.EnvironmentId;
+            entry.EnvironmentName = environment.EnvironmentName;
             entry.LastProcessed = null;
             entry.Name = customer.CompanyProfile.CompanyName;
 
@@ -149,7 +163,7 @@ namespace SmartOffice.Aggregator
 
             record.AppEndpoint = environment.AppEndpoint;
             record.EnvironmentId = environment.Id;
-            record.EnvironmentName = environment.FriendlyName;
+            record.EnvironmentName = environment.EnvironmentName;
             record.SecureScorePeriod = period;
 
             return record;

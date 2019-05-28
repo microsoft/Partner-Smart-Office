@@ -8,22 +8,12 @@ namespace SmartOffice.Aggregator.Models
     /// <summary>
     /// Represents an environment entry.
     /// </summary>
-    public class EnvironmentEntry
+    public class EnvironmentEntry : BaseDataEntry
     {
         /// <summary>
         /// Gets or sets the application endpoint information.
         /// </summary>
         public EndpointEntry AppEndpoint { get; set; }
-
-        /// <summary>
-        /// Gets or sets the friendly name.
-        /// </summary>
-        public string FriendlyName { get; set; }
-
-        /// <summary>
-        /// Gets or sets the identifier.
-        /// </summary>
-        public string Id { get; set; }
 
         /// <summary>
         /// Gets or sets the time last processed.

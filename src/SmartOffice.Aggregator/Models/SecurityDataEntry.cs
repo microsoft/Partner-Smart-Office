@@ -9,7 +9,7 @@ namespace SmartOffice.Aggregator.Models
     /// Represents a denormalized data entry.
     /// </summary>
     /// <typeparam name="TEntry">The type of data entry.</typeparam>
-    public class DataEntry<TEntry>
+    public class SecurityDataEntry<TEntry>
     {
         /// <summary>
         /// Gets or sets the customer identifier.

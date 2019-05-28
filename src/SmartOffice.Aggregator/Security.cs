@@ -11,26 +11,27 @@ namespace SmartOffice.Aggregator
     using Microsoft.Graph;
     using Models;
 
+    /// <summary>
+    /// Defines the Azure Functions used to aggregate security information.
+    /// </summary>
     public static class Security
     {
-        [FunctionName("controlprofilesync")]
+        [FunctionName(Constants.ControlProfileSync)]
         public static async Task ControlProfileSyncAsync(
-            [QueueTrigger(
-                "controlprofilesync",
-                Connection = "StorageConnectionString")]CustomerRecord input,
+            [QueueTrigger(Constants.ControlProfileSync, Connection = Constants.StorageConnectionString)]CustomerRecord input,
             [SecureScoreControlProfile(
                 ApplicationId = "{AppEndpoint.ApplicationId}",
                 ApplicationSecretName = "{AppEndpoint.ApplicationSecretName}",
                 KeyVaultEndpoint = "%KeyVaultEndpoint%",
                 TenantId = "{Id}")]List<SecureScoreControlProfile> controlProfiles,
             [CosmosDB(
-                databaseName: "smartoffice",
+                databaseName: Constants.DatabaseName,
                 collectionName: "securityevents",
-                ConnectionStringSetting = "CosmosDbConnectionString",
+                ConnectionStringSetting = Constants.CosmosDbConnectionString,
                 CreateIfNotExists = true,
-                PartitionKey = "/customerId")]IAsyncCollector<DataEntry<List<SecureScoreControlProfile>>> profiles)
+                PartitionKey = "/customerId")]IAsyncCollector<SecurityDataEntry<List<SecureScoreControlProfile>>> profiles)
         {
-            await profiles.AddAsync(new DataEntry<List<SecureScoreControlProfile>>
+            await profiles.AddAsync(new SecurityDataEntry<List<SecureScoreControlProfile>>
             {
                 CustomerId = input.Id,
                 CustomerName = input.Name,
@@ -41,11 +42,9 @@ namespace SmartOffice.Aggregator
             }).ConfigureAwait(false);
         }
 
-        [FunctionName("SecuritySync")]
-        public static void SecuritySync(
-            [QueueTrigger(
-                "securitysync",
-                Connection = "StorageConnectionString")]CustomerRecord input,
+        [FunctionName(Constants.SecurtityEventSync)]
+        public static void SecurityEventSync(
+            [QueueTrigger(Constants.SecurtityEventSync, Connection = Constants.StorageConnectionString)]CustomerRecord input,
             [SecureScore(
                 ApplicationId = "{AppEndpoint.ApplicationId}",
                 ApplicationSecretName = "{AppEndpoint.ApplicationSecretName}",
@@ -58,24 +57,24 @@ namespace SmartOffice.Aggregator
                 KeyVaultEndpoint = "%KeyVaultEndpoint%",
                 TenantId = "{Id}")]List<Alert> alerts,
             [CosmosDB(
-                databaseName: "smartoffice",
+                databaseName: Constants.DatabaseName,
                 collectionName: "securityevents",
-                ConnectionStringSetting = "CosmosDbConnectionString",
+                ConnectionStringSetting = Constants.CosmosDbConnectionString,
                 CreateIfNotExists = true,
-                PartitionKey = "/customerId")]IAsyncCollector<DataEntry<SecureScore>> secureScores,
+                PartitionKey = "/customerId")]IAsyncCollector<SecurityDataEntry<SecureScore>> secureScores,
             [CosmosDB(
-                databaseName: "smartoffice",
+                databaseName: Constants.DatabaseName,
                 collectionName: "securityevents",
-                ConnectionStringSetting = "CosmosDbConnectionString",
+                ConnectionStringSetting = Constants.CosmosDbConnectionString,
                 CreateIfNotExists = true,
-                PartitionKey = "/customerId")]IAsyncCollector<DataEntry<Alert>> securityAlerts,
+                PartitionKey = "/customerId")]IAsyncCollector<SecurityDataEntry<Alert>> securityAlerts,
             ILogger log)
         {
             log.LogInformation($"Processing {alerts.Count} alerts for {input.Name}");
 
             alerts.ForEach(async (alert) =>
             {
-                await securityAlerts.AddAsync(new DataEntry<Alert>
+                await securityAlerts.AddAsync(new SecurityDataEntry<Alert>
                 {
                     CustomerId = input.Id,
                     CustomerName = input.Name,
@@ -90,7 +89,7 @@ namespace SmartOffice.Aggregator
 
             scores.ForEach(async (score) =>
             {
-                await secureScores.AddAsync(new DataEntry<SecureScore>
+                await secureScores.AddAsync(new SecurityDataEntry<SecureScore>
                 {
                     CustomerId = input.Id,
                     CustomerName = input.Name,

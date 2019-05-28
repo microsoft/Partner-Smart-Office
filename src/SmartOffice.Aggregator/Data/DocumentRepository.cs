@@ -3,19 +3,20 @@
 
 namespace SmartOffice.Aggregator.Data
 {
+    using System;
     using System.Collections.Generic;
+    using System.Collections.ObjectModel;
     using System.Linq;
+    using System.Linq.Expressions;
     using System.Threading.Tasks;
     using Microsoft.Azure.Documents;
     using Microsoft.Azure.Documents.Client;
+    using Microsoft.Azure.Documents.Linq;
 
     public static class DocumentRepository
     {
-        public static async Task<List<TEntity>> GetAsync<TEntity>(IDocumentClient client, string databaseName, string collectionName)
+        public static async Task<List<TEntry>> QueryAsync<TEntry>(IDocumentClient client, string databaseName, string collectionName, string partitionKey, SqlQuerySpec querySpec, bool crossPartitionQuery)
         {
-            FeedResponse<dynamic> response;
-            List<TEntity> results = new List<TEntity>();
-
             ResourceResponse<Database> database = await client.CreateDatabaseIfNotExistsAsync(
                 new Database
                 {
@@ -26,26 +27,30 @@ namespace SmartOffice.Aggregator.Data
                 database.Resource.SelfLink,
                 new DocumentCollection
                 {
-                    Id = collectionName
+                    Id = collectionName,
+                    PartitionKey = new PartitionKeyDefinition
+                    {
+                        Paths = new Collection<string> { partitionKey }
+                    }
                 });
 
-            string continuation = string.Empty;
-
-            do
+            FeedOptions options = new FeedOptions
             {
-                response = await client.ReadDocumentFeedAsync(
-                    collection.Resource.SelfLink,
-                    new FeedOptions
-                    {
-                        MaxItemCount = 100,
-                        RequestContinuation = continuation
-                    }).ConfigureAwait(false);
+                EnableCrossPartitionQuery = crossPartitionQuery,
+                PartitionKey = (!crossPartitionQuery) ? new PartitionKey(partitionKey) : null
+            };
+   
+            IDocumentQuery<TEntry> query = client.CreateDocumentQuery<TEntry>(
+                collection.Resource.SelfLink,
+                querySpec,
+                options).AsDocumentQuery();
 
-                continuation = response.ResponseContinuation;
+            List<TEntry> results = new List<TEntry>();
 
-                results.AddRange(response.Select(d => (TEntity)d).ToList());
+            while (query.HasMoreResults)
+            {
+                results.AddRange(await query.ExecuteNextAsync<TEntry>().ConfigureAwait(false));
             }
-            while (!string.IsNullOrEmpty(continuation));
 
             return results;
         }

@@ -7,6 +7,7 @@ namespace SmartOffice.Aggregator
     using System.Collections.Generic;
     using System.Threading.Tasks;
     using Data;
+    using Microsoft.Azure.Documents;
     using Microsoft.Azure.Documents.Client;
     using Microsoft.Azure.WebJobs;
     using Microsoft.Extensions.Logging;
@@ -14,28 +15,38 @@ namespace SmartOffice.Aggregator
 
     public static class Environments
     {
-        [FunctionName("GetEnvironments")]
+        [FunctionName(Constants.StartSync)]
         public static async Task GetEnvironmentsAsync(
-            [TimerTrigger("0 */5 * * * *")]TimerInfo myTimer,
+            [TimerTrigger("0 0 4 * * *")]TimerInfo myTimer,
             [CosmosDB(
-                databaseName: "smartoffice",
-                collectionName: "environments",
-                ConnectionStringSetting = "CosmosDbConnectionString")]DocumentClient client,
-            [Queue(
-                "partnerdeltsync", Connection = "StorageConnectionString")]IAsyncCollector<EnvironmentRecord> deltaSyncQueue,
-            [Queue(
-                "partnerfullsync", Connection = "StorageConnectionString")]IAsyncCollector<EnvironmentRecord> fullSyncQueue,
+                databaseName: Constants.DatabaseName,
+                collectionName: Constants.EnvironmentsCollection,
+                ConnectionStringSetting = Constants.CosmosDbConnectionString)]DocumentClient client,
+            [Queue(Constants.PartnerDeltaSync, Connection = Constants.StorageConnectionString)]IAsyncCollector<EnvironmentRecord> partnerDeltaSyncQueue,
+            [Queue(Constants.PartnerFullSync, Connection = Constants.StorageConnectionString)]IAsyncCollector<EnvironmentRecord> partnerFullSyncQueue,
             ILogger log)
         {
             EnvironmentRecord record;
             int days;
 
-
-            List<EnvironmentEntry> environments = await DocumentRepository.GetAsync<EnvironmentEntry>(client, "smartoffice", "environments").ConfigureAwait(false);
+            List<EnvironmentEntry> environments = await DocumentRepository.QueryAsync<EnvironmentEntry>(
+                client,
+                Constants.DatabaseName,
+                Constants.EnvironmentsCollection,
+                "/environmentId",
+                new SqlQuerySpec
+                {
+                    Parameters = new SqlParameterCollection()
+                    {
+                        new SqlParameter("@entryType", nameof(EnvironmentEntry)),
+                    },
+                    QueryText = "SELECT * FROM c WHERE c.entryType = @entryType",
+                },
+                true).ConfigureAwait(false);
 
             environments.ForEach(async (entry) =>
             {
-                log.LogInformation(entry.FriendlyName);
+                log.LogInformation(entry.EnvironmentName);
 
                 // Calculate the number of days that have gone by, since the last successful synchronization.
                 days = (entry.LastProcessed == null) ? 30 : (DateTimeOffset.UtcNow - entry.LastProcessed).Value.Days;
@@ -43,7 +54,8 @@ namespace SmartOffice.Aggregator
                 record = new EnvironmentRecord
                 {
                     AppEndpoint = entry.AppEndpoint,
-                    FriendlyName = entry.FriendlyName,
+                    EnvironmentId = entry.EnvironmentId,
+                    EnvironmentName = entry.EnvironmentName,
                     Id = entry.Id,
                     LastProcessed = entry.LastProcessed,
                     PartnerCenterEndpoint = entry.PartnerCenterEndpoint
@@ -52,7 +64,7 @@ namespace SmartOffice.Aggregator
                 if (days >= 30)
                 {
                     // Perform a full sync because the environment has not been processed in the past 30 days.
-                    await fullSyncQueue.AddAsync(record).ConfigureAwait(false);
+                    await partnerFullSyncQueue.AddAsync(record).ConfigureAwait(false);
                 }
                 else
                 {
@@ -66,7 +78,7 @@ namespace SmartOffice.Aggregator
                     record.AuditEndDate = DateTime.UtcNow.ToString();
                     record.AuditStartDate = DateTime.UtcNow.AddDays(-days).ToString();
 
-                    await deltaSyncQueue.AddAsync(record).ConfigureAwait(false);
+                    await partnerDeltaSyncQueue.AddAsync(record).ConfigureAwait(false);
                 }
             });
         }
