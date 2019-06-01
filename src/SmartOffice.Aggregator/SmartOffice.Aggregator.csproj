@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netcoreapp2.1</TargetFramework>
     <AzureFunctionsVersion>v2</AzureFunctionsVersion>
@@ -8,8 +8,9 @@
     <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.CosmosDB" Version="3.0.3" />
     <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.Storage" Version="3.0.6" />
     <PackageReference Include="Microsoft.NET.Sdk.Functions" Version="1.0.28" />
-    <PackageReference Include="WebJobs.Extensions.MSGraph" Version="0.0.4-alpha" />
-    <PackageReference Include="WebJobs.Extensions.PartnerCenter" Version="0.0.3-alpha" />
+    <PackageReference Include="WebJobs.Extensions.AzureMonitor" Version="0.0.5-alpha" />
+    <PackageReference Include="WebJobs.Extensions.MSGraph" Version="0.0.5-alpha" />
+    <PackageReference Include="WebJobs.Extensions.PartnerCenter" Version="0.0.4-alpha" />
   </ItemGroup>
   <ItemGroup>
     <None Update="host.json">

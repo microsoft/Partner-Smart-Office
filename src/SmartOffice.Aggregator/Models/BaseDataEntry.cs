@@ -3,10 +3,8 @@
 
 namespace SmartOffice.Aggregator.Models
 {
-    using System.Collections.Generic;
-
     /// <summary>
-    /// Represents a denormalized data entry.
+    /// Represents a de-normalized data entry.
     /// </summary>
     public abstract class BaseDataEntry
     {

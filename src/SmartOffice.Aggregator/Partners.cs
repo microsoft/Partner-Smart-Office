@@ -8,7 +8,6 @@ namespace SmartOffice.Aggregator
     using System.Linq;
     using System.Threading.Tasks;
     using Converters;
-    using Data;
     using Microsoft.Azure.Documents;
     using Microsoft.Azure.Documents.Client;
     using Microsoft.Azure.WebJobs;
@@ -17,7 +16,11 @@ namespace SmartOffice.Aggregator
     using Microsoft.Store.PartnerCenter.Models.Auditing;
     using Microsoft.Store.PartnerCenter.Models.Customers;
     using Models;
+    using SmartOffice.Aggregator.Data;
 
+    /// <summary>
+    /// Defines the Azure Functions used to aggregate partner information.
+    /// </summary>
     public static class Partners
     {
         [FunctionName(Constants.PartnerDeltaSync)]
@@ -38,7 +41,8 @@ namespace SmartOffice.Aggregator
                 databaseName: Constants.DatabaseName,
                 collectionName: Constants.EnvironmentsCollection,
                 ConnectionStringSetting = Constants.CosmosDbConnectionString,
-                CreateIfNotExists = true)]IAsyncCollector<CustomerEntry> customerOutput,
+                CreateIfNotExists = true,
+                PartitionKey = "/environmentId")]IAsyncCollector<CustomerEntry> output,
             [Queue(Constants.ControlProfileSync, Connection = Constants.StorageConnectionString)]IAsyncCollector<CustomerRecord> profileSync,
             [Queue(Constants.SecurtityEventSync, Connection = Constants.StorageConnectionString)]IAsyncCollector<CustomerRecord> securitySync,
             ILogger log)
@@ -65,24 +69,25 @@ namespace SmartOffice.Aggregator
 
             records.Where(r => r.OperationStatus == OperationStatus.Succeeded && !string.IsNullOrEmpty(r.CustomerId))
                 .OrderBy(r => r.OperationDate).ToList().ForEach((r) =>
-            {
-                if (r.OperationType == OperationType.AddCustomer)
                 {
-                    Customer resource = AuditRecordConverter.Convert<Customer>(r);
-                    CustomerEntry entry = ResourceConverter.Convert<Customer, CustomerEntry>(resource);
+                    if (r.OperationType == OperationType.AddCustomer)
+                    {
+                        Customer resource = AuditRecordConverter.Convert<Customer>(r);
+                        CustomerEntry entry = ResourceConverter.Convert<Customer, CustomerEntry>(resource);
 
-                    customers.Add(entry);
-                }
-            });
+                        customers.Add(entry);
+                    }
+                });
 
             customers.ForEach(async (entry) =>
             {
                 log.LogInformation($"Processing {entry.Name} from the {entry.EnvironmentName} environment");
 
-                await customerOutput.AddAsync(entry).ConfigureAwait(false);
+                await output.AddAsync(entry).ConfigureAwait(false);
                 await profileSync.AddAsync(GetCustomerRecord(entry, input)).ConfigureAwait(false);
                 await securitySync.AddAsync(GetCustomerRecord(entry, input)).ConfigureAwait(false);
             });
+
         }
 
         [FunctionName(Constants.PartnerFullSync)]
@@ -97,22 +102,20 @@ namespace SmartOffice.Aggregator
                 databaseName: Constants.DatabaseName,
                 collectionName: Constants.EnvironmentsCollection,
                 ConnectionStringSetting = Constants.CosmosDbConnectionString,
-                CreateIfNotExists = true)]ICollector<CustomerEntry> customerOutput,
-            [Queue(Constants.ControlProfileSync, Connection = Constants.StorageConnectionString)]ICollector<CustomerRecord> profileSync,
-            [Queue(Constants.SecurtityEventSync, Connection = Constants.StorageConnectionString)]ICollector<CustomerRecord> securitySync,
+                CreateIfNotExists = true)]IAsyncCollector<CustomerEntry> output,
+            [Queue(Constants.ControlProfileSync, Connection = Constants.StorageConnectionString)]IAsyncCollector<CustomerRecord> profileSync,
+            [Queue(Constants.SecurtityEventSync, Connection = Constants.StorageConnectionString)]IAsyncCollector<CustomerRecord> securitySync,
             ILogger log)
         {
-            log.LogInformation($"Processing the {input.EnvironmentName} environment");
-
-            customers.ForEach((customer) =>
+            customers.ForEach(async customer =>
             {
                 CustomerEntry entry = GetCustomerEntry(customer, input);
 
                 log.LogInformation($"Processing {entry.Name} from the {entry.EnvironmentName} environment");
 
-                customerOutput.Add(entry);
-                profileSync.Add(GetCustomerRecord(entry, input));
-                securitySync.Add(GetCustomerRecord(entry, input));
+                await output.AddAsync(entry).ConfigureAwait(false);
+                await profileSync.AddAsync(GetCustomerRecord(entry, input)).ConfigureAwait(false);
+                await securitySync.AddAsync(GetCustomerRecord(entry, input)).ConfigureAwait(false);
             });
         }
 
@@ -165,6 +168,8 @@ namespace SmartOffice.Aggregator
             record.EnvironmentId = environment.Id;
             record.EnvironmentName = environment.EnvironmentName;
             record.SecureScorePeriod = period;
+            record.WorkspaceId = environment.WorkspaceId;
+            record.WorkspaceKeyName = environment.WorkspaceKeyName;
 
             return record;
         }

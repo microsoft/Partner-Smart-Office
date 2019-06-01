@@ -3,11 +3,8 @@
 
 namespace SmartOffice.Aggregator.Data
 {
-    using System;
     using System.Collections.Generic;
     using System.Collections.ObjectModel;
-    using System.Linq;
-    using System.Linq.Expressions;
     using System.Threading.Tasks;
     using Microsoft.Azure.Documents;
     using Microsoft.Azure.Documents.Client;
@@ -39,7 +36,7 @@ namespace SmartOffice.Aggregator.Data
                 EnableCrossPartitionQuery = crossPartitionQuery,
                 PartitionKey = (!crossPartitionQuery) ? new PartitionKey(partitionKey) : null
             };
-   
+
             IDocumentQuery<TEntry> query = client.CreateDocumentQuery<TEntry>(
                 collection.Resource.SelfLink,
                 querySpec,

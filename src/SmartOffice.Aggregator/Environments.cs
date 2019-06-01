@@ -13,10 +13,13 @@ namespace SmartOffice.Aggregator
     using Microsoft.Extensions.Logging;
     using Models;
 
+    /// <summary>
+    /// Defines the Azure Functions used to aggregate environment information.
+    /// </summary>
     public static class Environments
     {
         [FunctionName(Constants.StartSync)]
-        public static async Task GetEnvironmentsAsync(
+        public static async Task StartSyncAsync(
             [TimerTrigger("0 0 4 * * *")]TimerInfo myTimer,
             [CosmosDB(
                 databaseName: Constants.DatabaseName,
@@ -54,15 +57,20 @@ namespace SmartOffice.Aggregator
                 record = new EnvironmentRecord
                 {
                     AppEndpoint = entry.AppEndpoint,
+                    AuditEndDate = DateTime.UtcNow.ToString(),
                     EnvironmentId = entry.EnvironmentId,
                     EnvironmentName = entry.EnvironmentName,
                     Id = entry.Id,
                     LastProcessed = entry.LastProcessed,
-                    PartnerCenterEndpoint = entry.PartnerCenterEndpoint
+                    PartnerCenterEndpoint = entry.PartnerCenterEndpoint,
+                    WorkspaceId = entry.WorkspaceId,
+                    WorkspaceKeyName = entry.WorkspaceKeyName
                 };
 
                 if (days >= 30)
                 {
+                    record.AuditStartDate = DateTime.UtcNow.AddDays(-30).ToString();
+
                     // Perform a full sync because the environment has not been processed in the past 30 days.
                     await partnerFullSyncQueue.AddAsync(record).ConfigureAwait(false);
                 }
@@ -75,7 +83,6 @@ namespace SmartOffice.Aggregator
                      * the processs to update the environment and obtain information from Microsoft Graph.
                      */
 
-                    record.AuditEndDate = DateTime.UtcNow.ToString();
                     record.AuditStartDate = DateTime.UtcNow.AddDays(-days).ToString();
 
                     await partnerDeltaSyncQueue.AddAsync(record).ConfigureAwait(false);

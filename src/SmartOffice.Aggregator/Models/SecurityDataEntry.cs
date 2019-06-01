@@ -6,10 +6,10 @@ namespace SmartOffice.Aggregator.Models
     using System.Collections.Generic;
 
     /// <summary>
-    /// Represents a denormalized data entry.
+    /// Represents a de-normalized data entry.
     /// </summary>
     /// <typeparam name="TEntry">The type of data entry.</typeparam>
-    public class SecurityDataEntry<TEntry>
+    public class SecurityDataEntry<TEntry> : BaseDataEntry
     {
         /// <summary>
         /// Gets or sets the customer identifier.
@@ -29,7 +29,7 @@ namespace SmartOffice.Aggregator.Models
         /// <summary>
         /// Gets the type of entry.
         /// </summary>
-        public string EntryType
+        public new string EntryType
         {
             get
             {
@@ -41,20 +41,5 @@ namespace SmartOffice.Aggregator.Models
                 return typeof(TEntry).Name;
             }
         }
-
-        /// <summary>
-        /// Gets or sets the environment identifier.
-        /// </summary>
-        public string EnvironmentId { get; set; }
-
-        /// <summary>
-        /// Gets or sets the environment name.
-        /// </summary>
-        public string EnvironmentName { get; set; }
-
-        /// <summary>
-        /// Gets or sets the identifier.
-        /// </summary>
-        public string Id { get; set; }
     }
 }
