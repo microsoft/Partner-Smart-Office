@@ -18,10 +18,17 @@ namespace SmartOffice.Aggregator
     /// <summary>
     /// Defines the Azure Functions used to aggregate security information.
     /// </summary>
-    public static class Security
+    public class Security
     {
+        private readonly IDocumentRepository repository;
+
+        public Security(IDocumentRepository repository)
+        {
+            this.repository = repository;
+        }
+
         [FunctionName(Constants.ControlProfileSync)]
-        public static async Task ControlProfileSyncAsync(
+        public async Task ControlProfileSyncAsync(
             [QueueTrigger(Constants.ControlProfileSync, Connection = Constants.StorageConnectionString)]CustomerRecord input,
             [SecureScoreControlProfile(
                 ApplicationId = "{AppEndpoint.ApplicationId}",
@@ -50,12 +57,8 @@ namespace SmartOffice.Aggregator
         }
 
         [FunctionName(Constants.SecurtityEventSync)]
-        public static async Task SecurityEventSyncAsync(
+        public async Task SecurityEventSyncAsync(
             [QueueTrigger(Constants.SecurtityEventSync, Connection = Constants.StorageConnectionString)]CustomerRecord input,
-            [CosmosDB(
-                databaseName: Constants.DatabaseName,
-                collectionName: Constants.EnvironmentsCollection,
-                ConnectionStringSetting = Constants.CosmosDbConnectionString)]DocumentClient client,
             [DirectoryAudit(
                 ApplicationId = "{AppEndpoint.ApplicationId}",
                 ApplicationSecretName = "{AppEndpoint.ApplicationSecretName}",
@@ -80,8 +83,7 @@ namespace SmartOffice.Aggregator
         {
             log.LogInformation($"Processing {logs.Count} directory audit logs for {input.Name}");
 
-            await DocumentRepository.AddOrUpdateAsync(
-                client,
+            await repository.AddOrUpdateAsync(
                 Constants.DatabaseName,
                 Constants.SecurityEventsCollection,
                 input.Id,
@@ -104,8 +106,7 @@ namespace SmartOffice.Aggregator
 
             log.LogInformation($"Processing {alerts.Count} alerts for {input.Name}");
 
-            await DocumentRepository.AddOrUpdateAsync(
-                client,
+            await repository.AddOrUpdateAsync(
                 Constants.DatabaseName,
                 Constants.SecurityEventsCollection,
                 input.Id,
@@ -128,8 +129,7 @@ namespace SmartOffice.Aggregator
 
             log.LogInformation($"Processing {scores.Count} Secure Score entries for {input.Name}");
 
-            await DocumentRepository.AddOrUpdateAsync(
-                client,
+            await repository.AddOrUpdateAsync(
                 Constants.DatabaseName,
                 Constants.SecurityEventsCollection,
                 input.Id,

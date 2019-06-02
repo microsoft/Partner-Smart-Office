@@ -22,15 +22,18 @@ namespace SmartOffice.Aggregator
     /// <summary>
     /// Defines the Azure Functions used to aggregate partner information.
     /// </summary>
-    public static class Partners
+    public class Partners
     {
+        private readonly IDocumentRepository repository;
+
+        public Partners(IDocumentRepository repository)
+        {
+            this.repository = repository;
+        }
+
         [FunctionName(Constants.PartnerDeltaSync)]
-        public static async Task PartnerDeltaSyncAsync(
+        public async Task PartnerDeltaSyncAsync(
             [QueueTrigger(Constants.PartnerDeltaSync, Connection = Constants.StorageConnectionString)]EnvironmentRecord input,
-            [CosmosDB(
-                databaseName: Constants.DatabaseName,
-                collectionName: Constants.EnvironmentsCollection,
-                ConnectionStringSetting = Constants.CosmosDbConnectionString)]DocumentClient client,
             [AuditRecord(
                 ApplicationId = "{PartnerCenterEndpoint.ApplicationId}",
                 ApplicationSecretName = "{PartnerCenterEndpoint.ApplicationSecretName}",
@@ -48,8 +51,7 @@ namespace SmartOffice.Aggregator
             [Queue(Constants.SecurtityEventSync, Connection = Constants.StorageConnectionString)]IAsyncCollector<CustomerRecord> securitySync,
             ILogger log)
         {
-            List<CustomerEntry> customers = await DocumentRepository.QueryAsync<CustomerEntry>(
-                client,
+            List<CustomerEntry> customers = await repository.QueryAsync<CustomerEntry>(
                 Constants.DatabaseName,
                 Constants.EnvironmentsCollection,
                 "/environmentId",
@@ -92,12 +94,8 @@ namespace SmartOffice.Aggregator
         }
 
         [FunctionName(Constants.PartnerFullSync)]
-        public static async Task PartnerFullSyncAsync(
+        public async Task PartnerFullSyncAsync(
             [QueueTrigger(Constants.PartnerFullSync, Connection = Constants.StorageConnectionString)]EnvironmentRecord input,
-            [CosmosDB(
-                databaseName: Constants.DatabaseName,
-                collectionName: Constants.EnvironmentsCollection,
-                ConnectionStringSetting = Constants.CosmosDbConnectionString)]DocumentClient client,
             [Customer(
                 ApplicationId = "{PartnerCenterEndpoint.ApplicationId}",
                 ApplicationSecretName = "{PartnerCenterEndpoint.ApplicationSecretName}",
@@ -128,15 +126,13 @@ namespace SmartOffice.Aggregator
                 await securitySync.AddAsync(GetCustomerRecord(entry, input)).ConfigureAwait(false);
             }
 
-            await DocumentRepository.AddOrUpdateAsync(
-                client,
+            await repository.AddOrUpdateAsync(
                 Constants.DatabaseName,
                 Constants.EnvironmentsCollection,
                 input.Id,
                 customers.Select(c => GetCustomerEntry(c, input))).ConfigureAwait(false);
 
-            await DocumentRepository.AddOrUpdateAsync(
-                client,
+            await repository.AddOrUpdateAsync(
                 Constants.DatabaseName,
                 Constants.EnvironmentsCollection,
                 input.Id,

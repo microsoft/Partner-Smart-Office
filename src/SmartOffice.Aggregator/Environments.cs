@@ -16,15 +16,18 @@ namespace SmartOffice.Aggregator
     /// <summary>
     /// Defines the Azure Functions used to aggregate environment information.
     /// </summary>
-    public static class Environments
+    public class Environments
     {
+        private readonly IDocumentRepository repository;
+
+        public Environments(IDocumentRepository repository)
+        {
+            this.repository = repository;
+        }
+
         [FunctionName(Constants.StartSync)]
-        public static async Task StartSyncAsync(
+        public async Task StartSyncAsync(
             [TimerTrigger("0 0 4 * * *")]TimerInfo myTimer,
-            [CosmosDB(
-                databaseName: Constants.DatabaseName,
-                collectionName: Constants.EnvironmentsCollection,
-                ConnectionStringSetting = Constants.CosmosDbConnectionString)]DocumentClient client,
             [Queue(Constants.PartnerDeltaSync, Connection = Constants.StorageConnectionString)]IAsyncCollector<EnvironmentRecord> partnerDeltaSyncQueue,
             [Queue(Constants.PartnerFullSync, Connection = Constants.StorageConnectionString)]IAsyncCollector<EnvironmentRecord> partnerFullSyncQueue,
             ILogger log)
@@ -32,8 +35,7 @@ namespace SmartOffice.Aggregator
             EnvironmentRecord record;
             int days;
 
-            List<EnvironmentEntry> environments = await DocumentRepository.QueryAsync<EnvironmentEntry>(
-                client,
+            List<EnvironmentEntry> environments = await repository.QueryAsync<EnvironmentEntry>(
                 Constants.DatabaseName,
                 Constants.EnvironmentsCollection,
                 "/environmentId",

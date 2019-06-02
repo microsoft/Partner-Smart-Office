@@ -5,7 +5,11 @@
 
 namespace SmartOffice.Aggregator
 {
+    using System;
+    using System.Data.Common;
+    using Data;
     using Microsoft.Azure.Functions.Extensions.DependencyInjection;
+    using Microsoft.Extensions.DependencyInjection;
     using Newtonsoft.Json;
     using Newtonsoft.Json.Serialization;
 
@@ -13,6 +17,20 @@ namespace SmartOffice.Aggregator
     {
         public override void Configure(IFunctionsHostBuilder builder)
         {
+            builder.Services.AddSingleton<IDocumentRepository>(s =>
+            {
+                DbConnectionStringBuilder cnx = new DbConnectionStringBuilder
+                {
+                    ConnectionString = Environment.GetEnvironmentVariable("CosmosDbConnectionString")
+                };
+
+                cnx.TryGetValue("AccountEndpoint", out object accountEndpoint);
+                cnx.TryGetValue("AccountKey", out object accountKey);
+
+                return new DocumentRepository(new Uri(accountEndpoint.ToString()), accountKey.ToString());
+            });
+
+
             JsonConvert.DefaultSettings = () =>
             {
                 return new JsonSerializerSettings

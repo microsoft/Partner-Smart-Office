@@ -12,8 +12,9 @@ namespace SmartOffice.Aggregator.Data
     using Microsoft.Azure.Documents;
     using Microsoft.Azure.Documents.Client;
     using Microsoft.Azure.Documents.Linq;
+    using Newtonsoft.Json;
 
-    public static class DocumentRepository
+    public class DocumentRepository : IDocumentRepository
     {
         /// <summary>
         /// HTTP status code returned when the collection has exceeded the provisioned
@@ -23,6 +24,32 @@ namespace SmartOffice.Aggregator.Data
         private const int TooManyRequestStatusCode = 429;
 
         /// <summary>
+        /// Provides the ability to interact with the Azure Cosmos DB service.
+        /// </summary>
+        private readonly IDocumentClient client;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DocumentRepository" /> class.
+        /// </summary>
+        public DocumentRepository(Uri serviceEndpoint, string authKey)
+        {
+            client = new DocumentClient(serviceEndpoint,
+                authKey,
+                new JsonSerializerSettings
+                {
+                    DateFormatHandling = DateFormatHandling.IsoDateFormat,
+                    DateTimeZoneHandling = DateTimeZoneHandling.Utc,
+                    NullValueHandling = NullValueHandling.Ignore,
+                    ReferenceLoopHandling = ReferenceLoopHandling.Serialize
+                },
+                new ConnectionPolicy
+                {
+                    ConnectionMode = ConnectionMode.Direct,
+                    ConnectionProtocol = Protocol.Tcp
+                });
+        }
+
+        /// <summary>
         /// Add or update the collection of items in the repository.
         /// </summary>
         /// <param name="items">A collection of items to be added or updated.</param>
@@ -30,7 +57,7 @@ namespace SmartOffice.Aggregator.Data
         /// <returns>
         /// An instance of the <see cref="Task" /> class that represents the asynchronous operation.
         /// </returns>
-        public static async Task AddOrUpdateAsync<TEntry>(IDocumentClient client, string databaseId, string collectionId, string partitionKey, IEnumerable<TEntry> items)
+        public async Task AddOrUpdateAsync<TEntry>(string databaseId, string collectionId, string partitionKey, IEnumerable<TEntry> items)
         {
             RequestOptions requestOptions = requestOptions = new RequestOptions
             {
@@ -50,7 +77,7 @@ namespace SmartOffice.Aggregator.Data
             }
         }
 
-        public static async Task<List<TEntry>> QueryAsync<TEntry>(IDocumentClient client, string databaseName, string collectionName, string partitionKey, SqlQuerySpec querySpec, bool crossPartitionQuery)
+        public async Task<List<TEntry>> QueryAsync<TEntry>(string databaseName, string collectionName, string partitionKey, SqlQuerySpec querySpec, bool crossPartitionQuery)
         {
             ResourceResponse<Database> database = await client.CreateDatabaseIfNotExistsAsync(
                 new Database
