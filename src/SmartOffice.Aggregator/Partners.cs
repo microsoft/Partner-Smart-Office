@@ -8,15 +8,16 @@ namespace SmartOffice.Aggregator
     using System.Linq;
     using System.Threading.Tasks;
     using Converters;
+    using Data;
     using Microsoft.Azure.Documents;
     using Microsoft.Azure.Documents.Client;
     using Microsoft.Azure.WebJobs;
+    using Microsoft.Azure.WebJobs.Extensions.AzureMonitor;
     using Microsoft.Azure.WebJobs.Extensions.PartnerCenter;
     using Microsoft.Extensions.Logging;
     using Microsoft.Store.PartnerCenter.Models.Auditing;
     using Microsoft.Store.PartnerCenter.Models.Customers;
     using Models;
-    using SmartOffice.Aggregator.Data;
 
     /// <summary>
     /// Defines the Azure Functions used to aggregate partner information.
@@ -91,32 +92,68 @@ namespace SmartOffice.Aggregator
         }
 
         [FunctionName(Constants.PartnerFullSync)]
-        public static void PartnerFullSync(
+        public static async Task PartnerFullSyncAsync(
             [QueueTrigger(Constants.PartnerFullSync, Connection = Constants.StorageConnectionString)]EnvironmentRecord input,
+            [CosmosDB(
+                databaseName: Constants.DatabaseName,
+                collectionName: Constants.EnvironmentsCollection,
+                ConnectionStringSetting = Constants.CosmosDbConnectionString)]DocumentClient client,
             [Customer(
                 ApplicationId = "{PartnerCenterEndpoint.ApplicationId}",
                 ApplicationSecretName = "{PartnerCenterEndpoint.ApplicationSecretName}",
                 ApplicationTenantId = "{PartnerCenterEndpoint.TenantId}",
                 KeyVaultEndpoint = "%KeyVaultEndpoint%")]List<Customer> customers,
-            [CosmosDB(
-                databaseName: Constants.DatabaseName,
-                collectionName: Constants.EnvironmentsCollection,
-                ConnectionStringSetting = Constants.CosmosDbConnectionString,
-                CreateIfNotExists = true)]IAsyncCollector<CustomerEntry> output,
+            [AuditRecord(
+                ApplicationId = "{PartnerCenterEndpoint.ApplicationId}",
+                ApplicationSecretName = "{PartnerCenterEndpoint.ApplicationSecretName}",
+                ApplicationTenantId = "{PartnerCenterEndpoint.TenantId}",
+                KeyVaultEndpoint = "%KeyVaultEndpoint%",
+                EndDate = "{AuditEndDate}",
+                StartDate = "{AuditStartDate}")]List<AuditRecord> records,
+            [DataCollector(
+                KeyVaultEndpoint = "%KeyVaultEndpoint%",
+                WorkspaceId = "{WorkspaceId}",
+                WorkspaceKeyName = "{WorkspaceKeyName}")]IAsyncCollector<LogData> datacCollector,
             [Queue(Constants.ControlProfileSync, Connection = Constants.StorageConnectionString)]IAsyncCollector<CustomerRecord> profileSync,
             [Queue(Constants.SecurtityEventSync, Connection = Constants.StorageConnectionString)]IAsyncCollector<CustomerRecord> securitySync,
             ILogger log)
         {
-            customers.ForEach(async customer =>
+            foreach (Customer customer in customers)
             {
                 CustomerEntry entry = GetCustomerEntry(customer, input);
 
                 log.LogInformation($"Processing {entry.Name} from the {entry.EnvironmentName} environment");
 
-                await output.AddAsync(entry).ConfigureAwait(false);
                 await profileSync.AddAsync(GetCustomerRecord(entry, input)).ConfigureAwait(false);
                 await securitySync.AddAsync(GetCustomerRecord(entry, input)).ConfigureAwait(false);
-            });
+            }
+
+            await DocumentRepository.AddOrUpdateAsync(
+                client,
+                Constants.DatabaseName,
+                Constants.EnvironmentsCollection,
+                input.Id,
+                customers.Select(c => GetCustomerEntry(c, input))).ConfigureAwait(false);
+
+            await DocumentRepository.AddOrUpdateAsync(
+                client,
+                Constants.DatabaseName,
+                Constants.EnvironmentsCollection,
+                input.Id,
+                records.Select(r => new PartnerDataEntry<List<AuditRecord>>
+                {
+                    Entry = records,
+                    EnvironmentId = input.EnvironmentId,
+                    EnvironmentName = input.EnvironmentName,
+                    Id = r.Id
+                })).ConfigureAwait(false);
+
+            await datacCollector.AddAsync(new LogData
+            {
+                Data = records,
+                LogType = "PartnerCenterAudit",
+                TimeStampField = "OperationDate"
+            }).ConfigureAwait(false);
         }
 
         private static CustomerEntry GetCustomerEntry(Customer customer, EnvironmentRecord environment)

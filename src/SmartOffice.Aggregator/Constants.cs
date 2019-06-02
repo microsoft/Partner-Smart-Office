@@ -9,6 +9,11 @@ namespace SmartOffice.Aggregator
     public static class Constants
     {
         /// <summary>
+        /// Name of the bulk import stored procedure.
+        /// </summary>
+        public const string BulkImportStoredProcedureName = "BulkImport";
+
+        /// <summary>
         /// Name of the change feed environments operation.
         /// </summary>
         public const string ChangeFeedEnvironments = "changeFeed-environments";
@@ -47,6 +52,11 @@ namespace SmartOffice.Aggregator
         /// Name of the partner full sync operation.
         /// </summary>
         public const string PartnerFullSync = "sync-partnerfull";
+
+        /// <summary>
+        /// Name of the collection where security events will be stored.
+        /// </summary>
+        public const string SecurityEventsCollection = "securityevents";
 
         /// <summary>
         /// Name of the start sync operation.

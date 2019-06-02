@@ -3,9 +3,11 @@
 
 namespace SmartOffice.Aggregator
 {
-    using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Threading.Tasks;
+    using Data;
+    using Microsoft.Azure.Documents.Client;
     using Microsoft.Azure.WebJobs;
     using Microsoft.Azure.WebJobs.Extensions.AzureMonitor;
     using Microsoft.Azure.WebJobs.Extensions.MicrosoftGraph;
@@ -50,6 +52,10 @@ namespace SmartOffice.Aggregator
         [FunctionName(Constants.SecurtityEventSync)]
         public static async Task SecurityEventSyncAsync(
             [QueueTrigger(Constants.SecurtityEventSync, Connection = Constants.StorageConnectionString)]CustomerRecord input,
+            [CosmosDB(
+                databaseName: Constants.DatabaseName,
+                collectionName: Constants.EnvironmentsCollection,
+                ConnectionStringSetting = Constants.CosmosDbConnectionString)]DocumentClient client,
             [DirectoryAudit(
                 ApplicationId = "{AppEndpoint.ApplicationId}",
                 ApplicationSecretName = "{AppEndpoint.ApplicationSecretName}",
@@ -66,12 +72,6 @@ namespace SmartOffice.Aggregator
                 ApplicationSecretName = "{AppEndpoint.ApplicationSecretName}",
                 KeyVaultEndpoint = "%KeyVaultEndpoint%",
                 TenantId = "{Id}")]List<Alert> alerts,
-            [CosmosDB(
-                databaseName: Constants.DatabaseName,
-                collectionName: "securityevents",
-                ConnectionStringSetting = Constants.CosmosDbConnectionString,
-                CreateIfNotExists = true,
-                PartitionKey = "/customerId")]IAsyncCollector<BaseDataEntry> output,
             [DataCollector(
                 KeyVaultEndpoint = "%KeyVaultEndpoint%",
                 WorkspaceId = "{WorkspaceId}",
@@ -80,69 +80,75 @@ namespace SmartOffice.Aggregator
         {
             log.LogInformation($"Processing {logs.Count} directory audit logs for {input.Name}");
 
-            foreach (DirectoryAudit auditLog in logs)
-            {
-                await output.AddAsync(new SecurityDataEntry<DirectoryAudit>
+            await DocumentRepository.AddOrUpdateAsync(
+                client,
+                Constants.DatabaseName,
+                Constants.SecurityEventsCollection,
+                input.Id,
+                logs.Select(item => new SecurityDataEntry<DirectoryAudit>
                 {
                     CustomerId = input.Id,
                     CustomerName = input.Name,
-                    Entry = auditLog,
+                    Entry = item,
                     EnvironmentId = input.EnvironmentId,
                     EnvironmentName = input.EnvironmentName,
-                    Id = auditLog.Id
-                }).ConfigureAwait(false);
-            }
+                    Id = item.Id
+                })).ConfigureAwait(false);
 
             await datacCollector.AddAsync(new LogData
             {
                 Data = logs,
                 LogType = nameof(DirectoryAudit),
                 TimeStampField = "ActivityDateTime"
-            });
+            }).ConfigureAwait(false);
 
             log.LogInformation($"Processing {alerts.Count} alerts for {input.Name}");
 
-            foreach (Alert alert in alerts)
-            {
-                await output.AddAsync(new SecurityDataEntry<Alert>
+            await DocumentRepository.AddOrUpdateAsync(
+                client,
+                Constants.DatabaseName,
+                Constants.SecurityEventsCollection,
+                input.Id,
+                alerts.Select(item => new SecurityDataEntry<Alert>
                 {
                     CustomerId = input.Id,
                     CustomerName = input.Name,
-                    Entry = alert,
+                    Entry = item,
                     EnvironmentId = input.EnvironmentId,
                     EnvironmentName = input.EnvironmentName,
-                    Id = alert.Id
-                }).ConfigureAwait(false);
-            }
+                    Id = item.Id
+                })).ConfigureAwait(false);
 
             await datacCollector.AddAsync(new LogData
             {
                 Data = alerts,
                 LogType = nameof(Alert),
                 TimeStampField = "CreatedDateTime"
-            });
+            }).ConfigureAwait(false);
 
             log.LogInformation($"Processing {scores.Count} Secure Score entries for {input.Name}");
 
-            foreach (SecureScore score in scores)
-            {
-                await output.AddAsync(new SecurityDataEntry<SecureScore>
+            await DocumentRepository.AddOrUpdateAsync(
+                client,
+                Constants.DatabaseName,
+                Constants.SecurityEventsCollection,
+                input.Id,
+                scores.Select(item => new SecurityDataEntry<SecureScore>
                 {
                     CustomerId = input.Id,
                     CustomerName = input.Name,
-                    Entry = score,
+                    Entry = item,
                     EnvironmentId = input.EnvironmentId,
                     EnvironmentName = input.EnvironmentName,
-                    Id = score.Id
-                }).ConfigureAwait(false);
-            }
+                    Id = item.Id
+                })).ConfigureAwait(false);
 
             await datacCollector.AddAsync(new LogData
             {
                 Data = scores,
                 LogType = nameof(SecureScore),
                 TimeStampField = "CreatedDateTime"
-            });
+            }).ConfigureAwait(false);
         }
     }
 }
