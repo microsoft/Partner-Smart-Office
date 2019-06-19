@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 namespace SmartOffice.Aggregator
@@ -6,17 +6,22 @@ namespace SmartOffice.Aggregator
     /// <summary>
     /// Defines the constants used by the Azure Functions.
     /// </summary>
-    public static class Constants
+    public static class OperationConstants
     {
+        /// <summary>
+        /// Name of the account endpoint setting.
+        /// </summary>
+        public const string AccountEndpoint = "AccountEndpoint";
+
+        /// <summary>
+        /// Name of the account key setting.
+        /// </summary>
+        public const string AccountKey = "AccountKey";
+
         /// <summary>
         /// Name of the bulk import stored procedure.
         /// </summary>
         public const string BulkImportStoredProcedureName = "BulkImport";
-
-        /// <summary>
-        /// Name of the change feed environments operation.
-        /// </summary>
-        public const string ChangeFeedEnvironments = "changeFeed-environments";
 
         /// <summary>
         /// Name of the control profile sync operation.
@@ -29,34 +34,34 @@ namespace SmartOffice.Aggregator
         public const string CosmosDbConnectionString = "CosmosDbConnectionString";
 
         /// <summary>
-        /// Name of the database where entries will be stored.
+        /// Name of the database.
         /// </summary>
-        public const string DatabaseName = "smartoffice";
+        public const string DatabaseId = "smartoffice";
 
         /// <summary>
-        /// Name of the collection where environment information will be stored.
+        /// Name of the environments collection.
         /// </summary>
-        public const string EnvironmentsCollection = "environments";
+        public const string EnvironmentsCollectionId = "environments";
 
         /// <summary>
-        /// Name of the collection where lease information will be stored.
-        /// </summary>
-        public const string LeasesCollection = "leases";
-
-        /// <summary>
-        /// Name of the partner delta sync operation.
+        /// Name of the partner delta sync storage queue.
         /// </summary>
         public const string PartnerDeltaSync = "sync-partnerdelta";
 
         /// <summary>
-        /// Name of the partner full sync operation.
+        /// Name of the partner full sync storage queue.
         /// </summary>
         public const string PartnerFullSync = "sync-partnerfull";
 
         /// <summary>
         /// Name of the collection where security events will be stored.
         /// </summary>
-        public const string SecurityEventsCollection = "securityevents";
+        public const string SecurityEventsCollectionId = "securityevents";
+
+        /// <summary>
+        /// Name of the security event sync operation.
+        /// </summary>
+        public const string SecurityEventSync = "sync-securityevent";
 
         /// <summary>
         /// Name of the start sync operation.
@@ -69,8 +74,8 @@ namespace SmartOffice.Aggregator
         public const string StorageConnectionString = "StorageConnectionString";
 
         /// <summary>
-        /// Name of the security event sync operation.
+        /// Name of the subscriptions sync operation.
         /// </summary>
-        public const string SecurtityEventSync = "sync-securityevent";
+        public const string SubscriptionSync = "sync-subscriptions";
     }
 }

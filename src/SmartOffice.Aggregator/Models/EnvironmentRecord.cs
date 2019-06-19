@@ -1,12 +1,12 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 namespace SmartOffice.Aggregator.Models
 {
     /// <summary>
-    /// Represents the details used to perform a delta or full sync of an environment.
+    /// Represents an environment record used for data aggregration.
     /// </summary>
-    public sealed class EnvironmentRecord : EnvironmentEntry
+    public sealed class EnvironmentRecord : DataEntry<EnvironmentEntry>
     {
         /// <summary>
         /// Gets or sets the end date for the audit record request.

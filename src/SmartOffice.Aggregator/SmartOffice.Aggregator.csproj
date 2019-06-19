@@ -1,16 +1,36 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netcoreapp2.1</TargetFramework>
     <AzureFunctionsVersion>v2</AzureFunctionsVersion>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/microsoft/Partner-Smart-Office</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/microsoft/Partner-Smart-Office.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <NeutralLanguage>en-US</NeutralLanguage>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Microsoft.ApplicationInsights" Version="2.10.0" />
     <PackageReference Include="Microsoft.Azure.Functions.Extensions" Version="1.0.0" />
     <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.CosmosDB" Version="3.0.3" />
     <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.Storage" Version="3.0.6" />
     <PackageReference Include="Microsoft.NET.Sdk.Functions" Version="1.0.28" />
     <PackageReference Include="WebJobs.Extensions.AzureMonitor" Version="0.0.5-alpha" />
-    <PackageReference Include="WebJobs.Extensions.MSGraph" Version="0.0.5-alpha" />
-    <PackageReference Include="WebJobs.Extensions.PartnerCenter" Version="0.0.4-alpha" />
+    <PackageReference Include="WebJobs.Extensions.AzureSecurity" Version="0.0.4-alpha" />
+    <PackageReference Include="WebJobs.Extensions.MSGraph" Version="0.0.6-alpha" />
+    <PackageReference Include="WebJobs.Extensions.PartnerCenter" Version="0.0.5-alpha" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Update="Properties\Resources.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Update="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
     <None Update="host.json">

@@ -3,17 +3,18 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.28922.388
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{43A525EF-0E22-4BED-B655-2189BA341C01}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{026B34B0-6C65-43A9-BEA1-8D16790848C3}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{27AC74F4-B650-40C8-B6E0-4427CB5D7932}"
 	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
 		LICENSE = LICENSE
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SmartOffice.Aggregator", "src\SmartOffice.Aggregator\SmartOffice.Aggregator.csproj", "{FBAADFA3-2A77-441F-A623-A9817E94DF4C}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{2242F113-B37A-4660-BF35-58CFD4E9A709}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SmartOffice", "src\SmartOffice\SmartOffice.csproj", "{C2D795C6-EC9A-4754-95C2-D13F698A76FC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SmartOffice.Aggregator", "src\SmartOffice.Aggregator\SmartOffice.Aggregator.csproj", "{426B56D6-20E1-4DAC-ADE3-21A1C6EB9DD9}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SmartOffice", "src\SmartOffice\SmartOffice.csproj", "{44690187-A5B3-4709-9065-18EBC2897DD5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,23 +22,23 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{FBAADFA3-2A77-441F-A623-A9817E94DF4C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{FBAADFA3-2A77-441F-A623-A9817E94DF4C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{FBAADFA3-2A77-441F-A623-A9817E94DF4C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{FBAADFA3-2A77-441F-A623-A9817E94DF4C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C2D795C6-EC9A-4754-95C2-D13F698A76FC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C2D795C6-EC9A-4754-95C2-D13F698A76FC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C2D795C6-EC9A-4754-95C2-D13F698A76FC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C2D795C6-EC9A-4754-95C2-D13F698A76FC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{426B56D6-20E1-4DAC-ADE3-21A1C6EB9DD9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{426B56D6-20E1-4DAC-ADE3-21A1C6EB9DD9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{426B56D6-20E1-4DAC-ADE3-21A1C6EB9DD9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{426B56D6-20E1-4DAC-ADE3-21A1C6EB9DD9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{44690187-A5B3-4709-9065-18EBC2897DD5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{44690187-A5B3-4709-9065-18EBC2897DD5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{44690187-A5B3-4709-9065-18EBC2897DD5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{44690187-A5B3-4709-9065-18EBC2897DD5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{FBAADFA3-2A77-441F-A623-A9817E94DF4C} = {43A525EF-0E22-4BED-B655-2189BA341C01}
-		{C2D795C6-EC9A-4754-95C2-D13F698A76FC} = {43A525EF-0E22-4BED-B655-2189BA341C01}
+		{426B56D6-20E1-4DAC-ADE3-21A1C6EB9DD9} = {2242F113-B37A-4660-BF35-58CFD4E9A709}
+		{44690187-A5B3-4709-9065-18EBC2897DD5} = {2242F113-B37A-4660-BF35-58CFD4E9A709}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {B91FEF71-35FF-48DF-9312-70CDDDB14B17}
+		SolutionGuid = {7F54CFE1-76EA-4452-AFF0-1BFE7DC8BF34}
 	EndGlobalSection
 EndGlobal

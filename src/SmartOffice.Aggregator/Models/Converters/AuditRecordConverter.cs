@@ -1,7 +1,7 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-namespace SmartOffice.Aggregator.Converters
+namespace SmartOffice.Aggregator.Models.Converters
 {
     using Microsoft.Store.PartnerCenter.Models.Auditing;
     using Newtonsoft.Json;

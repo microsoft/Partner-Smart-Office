@@ -4,9 +4,11 @@
 namespace SmartOffice.Aggregator.Models
 {
     /// <summary>
-    /// Represents a customer entry.
+    /// Represents a data entry owned by a customer.
     /// </summary>
-    public class CustomerEntry
+    /// <typeparam name="TEntry"></typeparam>
+    public class CustomerDataEntry<TEntry> : DataEntry<TEntry>
+        where TEntry : new()
     {
         /// <summary>
         /// Gets or sets the customer identifier.
