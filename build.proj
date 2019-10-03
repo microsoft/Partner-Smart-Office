@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  # Targets
+  /t:Build
+    Builds assemblies.
+  /t:Clean
+    Removes temporary build outputs.
+  /t:Test
+    Runs tests
+-->
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildThisFileDirectory)repo.props" />
+
+  <PropertyGroup>
+    <!-- Folders -->
+    <TestOutputDirectory>$(RepoArtifacts)TestResults</TestOutputDirectory>
+    <StaticAnalysisOutputDirectory>$(RepoArtifacts)StaticAnalysisResults</StaticAnalysisOutputDirectory>
+
+    <!-- General -->
+    <Configuration Condition="'$(Configuration)' != 'Release'">Debug</Configuration>
+
+    <!-- PowerShell -->
+    <PowerShellCoreCommandPrefix>pwsh -NonInteractive -NoLogo -NoProfile -Command</PowerShellCoreCommandPrefix>
+  </PropertyGroup>
+
+  <Target Name="Build">
+    <!-- Build the project -->
+    <Exec Command="dotnet build Partner-Smart-Office.sln -c $(Configuration)" />
+  </Target>
+
+  <Target Name="Clean">
+    <Message Importance="high" Text="Cleaning..." />
+
+    <!-- Clean out the NuGet cache -->
+    <Exec Command="dotnet nuget locals global-packages --clear" ContinueOnError="WarnAndContinue" IgnoreExitCode="true" />
+
+    <!-- Remove Package, Publish, bin, obj, and TestResults directories -->
+    <Exec Command="$(PowerShellCoreCommandPrefix) &quot;Remove-Item -Path $(RepoArtifacts) -Recurse -Force -ErrorAction Ignore&quot;" IgnoreExitCode="true" />
+    <Exec Command="$(PowerShellCoreCommandPrefix) &quot;Get-ChildItem -Path $(MSBuildThisFileDirectory) -Recurse -Include 'bin','obj','TestResults' | Remove-Item -Recurse -Force -ErrorAction Ignore&quot;" IgnoreExitCode="true" />
+  </Target>
+
+  <Target Name="Full" DependsOnTargets="Clean;Build;Test" />
+
+  <Target Name="Test">
+    <Message Importance="high" Text="Running unit tests..." />
+    <MakeDir Directories="$(TestOutputDirectory)" ContinueOnError="false" />
+    <Exec Command="dotnet test Partner-Smart-Office.sln --configuration $(Configuration) --framework netcoreapp2.2 --logger trx --results-directory &quot;$(TestOutputDirectory)&quot;" />
+  </Target>
+</Project>
